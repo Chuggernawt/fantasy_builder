@@ -1,6 +1,8 @@
 import type { TacticalStyle } from "./types";
 import type { Channel } from "./formation-zones";
 import type { UniverseTrait } from "./universe-traits";
+import { extraTimeMultipliers } from "./stoppage-time";
+import type { ExtraTimeApproach } from "./types";
 
 export function tacticActiveForHalf(tacticHalf: number, currentHalf: 1 | 2): boolean {
   return tacticHalf === currentHalf;
@@ -98,6 +100,34 @@ export function captainXgBonus(
   if (!captainActiveForHalf(captainHalf, half)) return 0;
   if (captainBoostTicks <= 0) return 0;
   return 0.07;
+}
+
+export function applyExtraTimeBuildMod(
+  attacking: "home" | "away",
+  homeApproach: ExtraTimeApproach | null,
+  awayApproach: ExtraTimeApproach | null,
+  atkBuild: number,
+  defBuild: number
+): { atkBuild: number; defBuild: number } {
+  const atkApproach = attacking === "home" ? homeApproach : awayApproach;
+  const defApproach = attacking === "home" ? awayApproach : homeApproach;
+  const atkMod = extraTimeMultipliers(atkApproach);
+  const defMod = extraTimeMultipliers(defApproach);
+  return {
+    atkBuild: atkBuild * atkMod.atk,
+    defBuild: defBuild * defMod.def,
+  };
+}
+
+export function applyExtraTimeXgMod(
+  attacking: "home" | "away",
+  homeApproach: ExtraTimeApproach | null,
+  awayApproach: ExtraTimeApproach | null,
+  xg: number
+): number {
+  const atkApproach = attacking === "home" ? homeApproach : awayApproach;
+  const atkMod = extraTimeMultipliers(atkApproach);
+  return Math.max(0.04, Math.min(0.55, xg * atkMod.atk));
 }
 
 export const TACTICAL_OPTIONS: { id: TacticalStyle; label: string; hint: string }[] = [

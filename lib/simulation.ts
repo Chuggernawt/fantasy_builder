@@ -41,6 +41,13 @@ import {
   TICK_MS,
   TICKS_PER_HALF,
 } from "./simulation-utils";
+import {
+  computeStoppageMinutes,
+  spreadStoppageEventMinutes,
+  stoppageClockDisplay,
+  stoppageWeightForEvent,
+  TICKS_PER_STOPPAGE_MINUTE,
+} from "./stoppage-time";
 import type { AttackContext } from "./special-events-types";
 import {
   addSpecialCast,
@@ -49,8 +56,10 @@ import {
 } from "./special-events";
 import { applyDuelModifiers, applyXgModifiers } from "./special-effects";
 import {
+  applyExtraTimeBuildMod,
   applyTacticalBuildMod,
   applyTacticalXgMod,
+  applyExtraTimeXgMod,
   applyTraitFoulBias,
   applyTraitToXg,
   captainDuelBonus,
@@ -62,11 +71,21 @@ import { getUniverseTrait } from "./universe-traits";
 import { cpuRandomLineup } from "./lineup";
 import {
   recordAssist,
+  recordClearance,
+  recordDribble,
   recordGoal,
-  recordYellow,
+  recordPass,
   recordRed,
+  recordSave,
+  recordShot,
+  recordShotBlocked,
+  recordTackle,
+  recordYellow,
   resolveAssist,
 } from "./player-match-stats";
+import { formRatingBonus, inMatchPerformanceBoost } from "./match-rating";
+import { pickCornerTaker, pickHeaderThreat } from "./simulation-picks";
+import { normalizeMatchState } from "./match-state";
 
 export { TICK_MS, TICKS_PER_HALF };
 
@@ -124,16 +143,35 @@ function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+function ratingCtx(
+  ctx: AttackContext,
+  team: "home" | "away"
+): { playerForm: Record<string, number>; playerStats: Record<string, import("./types").PlayerMatchStats> } {
+  return {
+    playerForm: ctx.playerForm ?? {},
+    playerStats: team === "home" ? ctx.homePlayerStats : ctx.awayPlayerStats,
+  };
+}
+
 function effectiveRating(
   player: ResolvedPlayer,
   staminaMap: Record<string, number>,
   formationId: FormationId,
-  zoneMod = 0
+  zoneMod = 0,
+  perfCtx?: { playerForm: Record<string, number>; playerStats: Record<string, import("./types").PlayerMatchStats> }
 ): number {
-  const mult = staminaMultiplier(staminaMap[player.name] ?? 100);
+  const staminaMult = 0.94 + staminaMultiplier(staminaMap[player.name] ?? 100) * 0.06;
   const zone = slotZone(player.role);
   const formMod = FORMATION_ZONE_MOD[formationId][zone];
-  return roleRating(player.stats, player.role, mult) + formMod + zoneMod;
+  const form = perfCtx?.playerForm[player.name] ?? 0;
+  const stats = perfCtx?.playerStats[player.name];
+  return (
+    roleRating(player.stats, player.role, staminaMult) +
+    formMod +
+    zoneMod +
+    formRatingBonus(form) +
+    inMatchPerformanceBoost(stats, player.role)
+  );
 }
 
 function playersByZone(lineup: ResolvedPlayer[], zone: ResolvedPlayer["zone"]): ResolvedPlayer[] {
@@ -146,15 +184,20 @@ function playersByChannel(lineup: ResolvedPlayer[], channel: Channel): ResolvedP
 
 function pickAttacker(lineup: ResolvedPlayer[], channel: Channel): ResolvedPlayer {
   const inChannel = playersByChannel(lineup, channel);
-  const st = inChannel.filter((p) => p.role === "ST");
-  const w = inChannel.filter((p) => p.role === "W");
-  const am = inChannel.filter((p) => p.role === "AM" || p.role === "CM");
-  const pool =
+  const source = inChannel.length
+    ? inChannel
+    : lineup.filter((p) => p.role !== "GK" && p.name !== "Unknown");
+  const weights: Partial<Record<ResolvedPlayer["role"], number>> =
     channel === "center"
-      ? [...st, ...am, ...w]
-      : [...w, ...st, ...am];
+      ? { ST: 5, W: 3, AM: 3, CM: 2, FB: 2, CB: 2, DM: 1 }
+      : { W: 5, FB: 4, ST: 3, AM: 2, CM: 1, CB: 1 };
+  const pool: ResolvedPlayer[] = [];
+  for (const p of source) {
+    const w = weights[p.role] ?? 0;
+    for (let i = 0; i < w; i++) pool.push(p);
+  }
   if (pool.length) return pick(pool);
-  const forwards = lineup.filter((p) => ["ST", "W", "AM"].includes(p.role));
+  const forwards = lineup.filter((p) => ["ST", "W", "AM", "FB"].includes(p.role));
   return forwards.length ? pick(forwards) : pick(lineup);
 }
 
@@ -182,8 +225,8 @@ function computeXg(
   const margin = Math.max(-25, Math.min(25, atkRating - defRating));
   let xg = 0.12 + margin * 0.008;
   if (channel === "center") xg += 0.035;
-  const stMult = staminaMultiplier(staminaMap[striker.name] ?? 100);
-  xg *= 0.88 + stMult * 0.12;
+  const stMult = 0.96 + staminaMultiplier(staminaMap[striker.name] ?? 100) * 0.04;
+  xg *= 0.92 + stMult * 0.08;
   xg += setPieceBonus;
   xg += momentum * 0.01;
   return Math.max(0.06, Math.min(0.45, xg));
@@ -255,7 +298,7 @@ function recordCard(
 export function createInitialMatchState(
   home: TeamSetup,
   away: TeamSetup,
-  options?: { seasonMeta?: SeasonMatchMeta }
+  options?: { seasonMeta?: SeasonMatchMeta; playerForm?: Record<string, number> }
 ): MatchState {
   const homeLineup = resolveLineup(home);
   const awayLineup = resolveLineup(away);
@@ -305,6 +348,7 @@ export function createInitialMatchState(
     specialCooldown: {},
     recentCommentaryLines: syncCommentaryMemory(kickoffSession),
     seasonMeta: options?.seasonMeta,
+    playerForm: options?.playerForm ?? {},
     homePlayerStats: {},
     awayPlayerStats: {},
     homeTactic: null,
@@ -317,6 +361,12 @@ export function createInitialMatchState(
     awayCaptainHalf: 0,
     homeCaptainBoostTicks: 0,
     awayCaptainBoostTicks: 0,
+    stoppageCount: 0,
+    stoppageMinutes: 0,
+    stoppageTick: 0,
+    inStoppageTime: false,
+    homeExtraTimeApproach: null,
+    awayExtraTimeApproach: null,
   };
 }
 
@@ -359,6 +409,10 @@ function runAttackPhase(ctx: AttackContext): CommentaryEvent[] {
 
   const momBonus = attacking === "home" ? momentum : -momentum;
 
+  const atkRc = ratingCtx(ctx, attacking);
+  const defTeamSide = attacking === "home" ? "away" : "home";
+  const defRc = ratingCtx(ctx, defTeamSide);
+
   // --- Set piece (free kick) from prior foul ---
   if (pendingSetPiece?.team === attacking) {
     const taker = pickAttacker(atkLineup, "center");
@@ -367,12 +421,20 @@ function runAttackPhase(ctx: AttackContext): CommentaryEvent[] {
     ctx.playmaker = taker.name;
     mentionPhase(ctx, taker.name);
 
-    let atkR = effectiveRating(taker, atkStamina, atkForm, 4);
-    const defR = effectiveRating(wall, defStamina, defForm);
+    let atkR = effectiveRating(taker, atkStamina, atkForm, 4, atkRc);
+    const defR = effectiveRating(wall, defStamina, defForm, 0, defRc);
     let xg = computeXg(atkR, defR, "center", atkStamina, taker, pendingSetPiece.xgBonus + 0.1, momBonus);
     const atkTrait = traitForTeam(ctx, attacking);
     xg = applyTraitToXg(atkTrait, xg, true);
     xg = applyTacticalXgMod(activeTactic(ctx, attacking), true, "center", xg);
+    if (ctx.inStoppageTime) {
+      xg = applyExtraTimeXgMod(
+        attacking,
+        ctx.homeExtraTimeApproach,
+        ctx.awayExtraTimeApproach,
+        xg
+      );
+    }
 
     const capTicks = attacking === "home" ? ctx.homeCaptainBoostTicks : ctx.awayCaptainBoostTicks;
     const captain = attacking === "home" ? ctx.homeCaptain : ctx.awayCaptain;
@@ -400,7 +462,18 @@ function runAttackPhase(ctx: AttackContext): CommentaryEvent[] {
     xg = applyXgModifiers(ctx, attacking, xg);
 
     ctx.pendingSetPiece = null;
-    return resolveShot(events, ctx, taker, defLineup, xg, atkStats, defStats, attacking, half);
+    return resolveShot(
+      events,
+      ctx,
+      taker,
+      atkLineup,
+      defLineup,
+      xg,
+      atkStats,
+      defStats,
+      attacking,
+      half
+    );
   }
 
   atkStats.possessionPhases++;
@@ -409,24 +482,22 @@ function runAttackPhase(ctx: AttackContext): CommentaryEvent[] {
   const atkMids = playersByZone(atkLineup, "mid");
   const defMids = playersByZone(defLineup, "mid");
   let atkBuild =
-    avgRating(atkMids.map((p) => effectiveRating(p, atkStamina, atkForm))) +
+    avgRating(atkMids.map((p) => effectiveRating(p, atkStamina, atkForm, 0, atkRc))) +
     FORMATION_ZONE_MOD[atkForm].mid * 0.4 +
     avgRating(
-      atkMids.concat(playersByZone(atkLineup, "att").slice(0, 2)).map((p) => {
-        const mult = staminaMultiplier(atkStamina[p.name] ?? 100);
-        return p.stats.passing * mult;
-      })
+      atkMids.concat(playersByZone(atkLineup, "att").slice(0, 2)).map((p) =>
+        effectiveRating(p, atkStamina, atkForm, 0, atkRc)
+      )
     ) *
       0.35 +
     5;
   let defBuild =
-    avgRating(defMids.map((p) => effectiveRating(p, defStamina, defForm))) +
+    avgRating(defMids.map((p) => effectiveRating(p, defStamina, defForm, 0, defRc))) +
     FORMATION_ZONE_MOD[defForm].mid * 0.4 +
     avgRating(
-      defMids.concat(playersByZone(defLineup, "def").filter((p) => p.role !== "GK")).map((p) => {
-        const mult = staminaMultiplier(defStamina[p.name] ?? 100);
-        return p.stats.tackling * mult * 0.85 + p.stats.pace * mult * 0.15;
-      })
+      defMids.concat(playersByZone(defLineup, "def").filter((p) => p.role !== "GK")).map((p) =>
+        effectiveRating(p, defStamina, defForm, 0, defRc)
+      )
     ) *
       0.35;
 
@@ -444,11 +515,27 @@ function runAttackPhase(ctx: AttackContext): CommentaryEvent[] {
     defBuild = mod.defBuild;
   }
 
+  if (ctx.inStoppageTime) {
+    const et = applyExtraTimeBuildMod(
+      attacking,
+      ctx.homeExtraTimeApproach,
+      ctx.awayExtraTimeApproach,
+      atkBuild,
+      defBuild
+    );
+    atkBuild = et.atkBuild;
+    defBuild = et.defBuild;
+  }
+
   const turnoverBase = 0.042 - (traitForTeam(ctx, attacking).pressBonus ?? 0) * 0.15;
 
   if (!rollDuel(atkBuild, defBuild, turnoverBase)) {
     defStats.possessionPhases++;
     const breaker = defMids.length ? pick(defMids) : pick(defLineup);
+    recordTackle(playerStatsMap(ctx, defTeamSide), breaker.name, true);
+    for (const m of atkMids.slice(0, 2)) {
+      recordPass(playerStatsMap(ctx, attacking), m.name, false);
+    }
     events.push({
       id: commentaryId(),
       minute: 0,
@@ -470,6 +557,8 @@ function runAttackPhase(ctx: AttackContext): CommentaryEvent[] {
 
   const playmaker = atkMids.length ? pick(atkMids) : pick(atkLineup);
   ctx.playmaker = playmaker.name;
+  recordPass(playerStatsMap(ctx, attacking), playmaker.name, true);
+  recordDribble(playerStatsMap(ctx, attacking), playmaker.name, Math.random() < 0.55);
   if (Math.random() < 0.35) {
     mentionPhase(ctx, playmaker.name);
     events.push({
@@ -501,6 +590,7 @@ function runAttackPhase(ctx: AttackContext): CommentaryEvent[] {
     );
     const crosser = crossers.length ? pick(crossers) : striker;
     ctx.crosser = crosser.name;
+    recordPass(playerStatsMap(ctx, attacking), crosser.name, true);
     mentionPhase(ctx, crosser.name);
     mentionPhase(ctx, striker.name);
     events.push({
@@ -531,8 +621,10 @@ function runAttackPhase(ctx: AttackContext): CommentaryEvent[] {
   }
 
   const defender = pickDefender(defLineup, channel, striker);
-  let atkR = effectiveRating(striker, atkStamina, atkForm) + 2;
-  const defR = effectiveRating(defender, defStamina, defForm) + FORMATION_ZONE_MOD[defForm].def * 0.4;
+  let atkR = effectiveRating(striker, atkStamina, atkForm, 2, atkRc) + 2;
+  const defR =
+    effectiveRating(defender, defStamina, defForm, FORMATION_ZONE_MOD[defForm].def * 0.4, defRc) +
+    FORMATION_ZONE_MOD[defForm].def * 0.4;
 
   const capTicks = attacking === "home" ? ctx.homeCaptainBoostTicks : ctx.awayCaptainBoostTicks;
   const captain = attacking === "home" ? ctx.homeCaptain : ctx.awayCaptain;
@@ -593,6 +685,13 @@ function runAttackPhase(ctx: AttackContext): CommentaryEvent[] {
   }
 
   if (!rollDuel(atkR, defR, 0.052)) {
+    const defMap = playerStatsMap(ctx, defTeamSide);
+    if (Math.random() < 0.35) {
+      recordClearance(defMap, defender.name);
+    } else {
+      recordTackle(defMap, defender.name, true);
+      recordShotBlocked(defMap, defender.name);
+    }
     events.push({
       id: commentaryId(),
       minute: 0,
@@ -611,6 +710,14 @@ function runAttackPhase(ctx: AttackContext): CommentaryEvent[] {
   let xg = computeXg(atkR, defR, channel, atkStamina, striker, 0, momBonus);
   xg = applyTraitToXg(traitForTeam(ctx, attacking), xg, false);
   xg = applyTacticalXgMod(atkTactic ?? null, true, channel, xg);
+  if (ctx.inStoppageTime) {
+    xg = applyExtraTimeXgMod(
+      attacking,
+      ctx.homeExtraTimeApproach,
+      ctx.awayExtraTimeApproach,
+      xg
+    );
+  }
   xg += captainXgBonus(captain, capHalf, half, capTicks, striker.name);
   xg = applyXgModifiers(ctx, attacking, xg);
 
@@ -634,13 +741,24 @@ function runAttackPhase(ctx: AttackContext): CommentaryEvent[] {
     return events;
   }
 
-  return resolveShot(events, ctx, striker, defLineup, xg, atkStats, defStats, attacking, half);
+  return resolveShot(
+    events,
+    ctx,
+    striker,
+    atkLineup,
+    defLineup,
+    xg,
+    atkStats,
+    defStats,
+    attacking,
+    half
+  );
 }
 
 function maybeQueueInteractiveCorner(
   ctx: AttackContext,
   attacking: "home" | "away",
-  striker: ResolvedPlayer,
+  atkLineup: ResolvedPlayer[],
   gk: ResolvedPlayer
 ): boolean {
   const defending = attacking === "home" ? "away" : "home";
@@ -650,12 +768,14 @@ function maybeQueueInteractiveCorner(
   ) {
     return false;
   }
+  const header = pickHeaderThreat(atkLineup);
+  const cornerTaker = pickCornerTaker(atkLineup);
   ctx.setPieceTrigger = {
     kind: "corner",
     attacking,
-    taker: striker.name,
+    taker: header.name,
     keeper: gk.name,
-    cornerTaker: striker.name,
+    cornerTaker: cornerTaker.name,
   };
   return true;
 }
@@ -664,6 +784,7 @@ function resolveShot(
   events: CommentaryEvent[],
   ctx: AttackContext,
   striker: ResolvedPlayer,
+  atkLineup: ResolvedPlayer[],
   defLineup: ResolvedPlayer[],
   xg: number,
   atkStats: TeamMatchStats,
@@ -671,25 +792,42 @@ function resolveShot(
   attacking: "home" | "away",
   half: 1 | 2
 ): CommentaryEvent[] {
+  const defSide = attacking === "home" ? "away" : "home";
+  const atkMap = playerStatsMap(ctx, attacking);
+  const defMap = playerStatsMap(ctx, defSide);
+  const defRc = ratingCtx(ctx, defSide);
+
   const gk = defLineup.find((p) => p.role === "GK") ?? defLineup[0];
   const defStamina = attacking === "home" ? ctx.awayStamina : ctx.homeStamina;
-  const gkR = effectiveRating(gk, defStamina, attacking === "home" ? ctx.awayFormation : ctx.homeFormation);
+  const gkR = effectiveRating(
+    gk,
+    defStamina,
+    attacking === "home" ? ctx.awayFormation : ctx.homeFormation,
+    0,
+    defRc
+  );
+
+  recordShot(atkMap, striker.name, false);
 
   const onTarget = rollChance(0.62 + xg * 0.55);
   if (!onTarget) {
     const headerShot = Math.random() < 0.22;
+    const headerPlayer = headerShot ? pickHeaderThreat(atkLineup) : striker;
+    if (headerShot) {
+      recordShot(atkMap, headerPlayer.name, false);
+    }
     events.push({
       id: commentaryId(),
       minute: 0,
       half,
       type: headerShot ? "header" : "miss",
       text: headerShot
-        ? commLine(ctx, "header", { player: striker.name }, striker.name)
+        ? commLine(ctx, "header", { player: headerPlayer.name }, headerPlayer.name)
         : commLine(ctx, "miss", { shooter: striker.name }, striker.name),
       team: attacking,
     });
     if (Math.random() < 0.35) {
-      if (!maybeQueueInteractiveCorner(ctx, attacking, striker, gk)) {
+      if (!maybeQueueInteractiveCorner(ctx, attacking, atkLineup, gk)) {
         events.push({
           id: commentaryId(),
           minute: 0,
@@ -707,6 +845,7 @@ function resolveShot(
     return events;
   }
 
+  recordShot(atkMap, striker.name, true);
   atkStats.shotsOnTarget++;
 
   const gkStopChance = winProbability(gkR, striker.stats.power * 0.5 + striker.stats.passing * 0.3, 0.05);
@@ -731,8 +870,8 @@ function resolveShot(
       ctx.crosser,
       ctx.freekickTaker
     );
-    recordGoal(playerStatsMap(ctx, attacking), striker.name);
-    if (assister) recordAssist(playerStatsMap(ctx, attacking), assister);
+    recordGoal(atkMap, striker.name);
+    if (assister) recordAssist(atkMap, assister);
 
     events.push({
       id: commentaryId(),
@@ -751,6 +890,7 @@ function resolveShot(
     });
   } else {
     defStats.saves++;
+    recordSave(defMap, gk.name);
     events.push({
       id: commentaryId(),
       minute: 0,
@@ -760,7 +900,7 @@ function resolveShot(
       team: attacking,
     });
     if (Math.random() < 0.25) {
-      if (!maybeQueueInteractiveCorner(ctx, attacking, striker, gk)) {
+      if (!maybeQueueInteractiveCorner(ctx, attacking, atkLineup, gk)) {
         events.push({
           id: commentaryId(),
           minute: 0,
@@ -785,127 +925,101 @@ export interface TickResult {
   events: CommentaryEvent[];
 }
 
-import { normalizeMatchState } from "./match-state";
-
-export function processTick(state: MatchState, home: TeamSetup, away: TeamSetup): TickResult {
-  state = normalizeMatchState(state);
-
-  if (state.status === "finished" || state.status === "halftime" || state.status === "sub_window" || state.status === "set_piece_pause") {
-    return { state, events: [] };
-  }
-
-  const homeLineup = resolveLineup(home);
-  const awayLineup = resolveLineup(away);
-  const newState: MatchState = {
-    ...state,
-    commentary: [...state.commentary],
-    homeStamina: { ...state.homeStamina },
-    awayStamina: { ...state.awayStamina },
-    score: { ...state.score },
-    homeStats: { ...state.homeStats },
-    awayStats: { ...state.awayStats },
-    homePlayerStats: { ...(state.homePlayerStats ?? {}) },
-    awayPlayerStats: { ...(state.awayPlayerStats ?? {}) },
-    pendingSetPiece: state.pendingSetPiece ? { ...state.pendingSetPiece } : null,
-    setPieceBudget: state.setPieceBudget ?? defaultSetPieceBudget(),
-    interactiveSetPiece: state.interactiveSetPiece
-      ? { ...state.interactiveSetPiece }
-      : null,
-    momentum: state.momentum,
-    specialCooldown: { ...(state.specialCooldown ?? {}) },
+function endSecondHalf(
+  newState: MatchState,
+  home: TeamSetup,
+  away: TeamSetup,
+  homeLineup: ReturnType<typeof resolveLineup>,
+  awayLineup: ReturnType<typeof resolveLineup>,
+  endMinute: number,
+  events: CommentaryEvent[]
+): TickResult {
+  const homeName = getUniverse(home.universeId)?.name ?? "Home";
+  const awayName = getUniverse(away.universeId)?.name ?? "Away";
+  const endSession = createCommentarySession(
+    newState,
+    endMinute,
+    2,
+    newState.momentum,
+    homeName,
+    awayName
+  );
+  const scoreVars = {
+    homeScore: String(newState.score.home),
+    awayScore: String(newState.score.away),
   };
 
-  if (newState.homeCaptainBoostTicks > 0) newState.homeCaptainBoostTicks--;
-  if (newState.awayCaptainBoostTicks > 0) newState.awayCaptainBoostTicks--;
-  const events: CommentaryEvent[] = [];
+  const isCupDraw =
+    newState.score.home === newState.score.away &&
+    newState.tournamentMeta?.cupKnockout &&
+    newState.tournamentMeta.penaltyMode === "interactive";
 
-  let tick = state.tick + 1;
-  const half = state.half;
-
-  if (tick > TICKS_PER_HALF) {
-    const homeName = getUniverse(home.universeId)?.name ?? "Home";
-    const awayName = getUniverse(away.universeId)?.name ?? "Away";
-    const endSession = createCommentarySession(
+  if (isCupDraw) {
+    const homeSt =
+      homeLineup.find((p) => p.role === "ST") ??
+      homeLineup.find((p) => p.role !== "GK") ??
+      homeLineup[0];
+    const awayGk = awayLineup.find((p) => p.role === "GK") ?? awayLineup[0];
+    const decider = beginInteractiveSetPiece(
       newState,
-      half === 1 ? 45 : 90,
-      half,
-      newState.momentum,
-      homeName,
-      awayName
+      "penalty",
+      "home",
+      homeSt.name,
+      awayGk.name
     );
-    const scoreVars = {
-      homeScore: String(state.score.home),
-      awayScore: String(state.score.away),
-    };
-
-    if (half === 1) {
-      newState.status = "halftime";
-      newState.tick = TICKS_PER_HALF;
-      const htText = say(endSession, "halftime", scoreVars);
-      events.push({
-        id: commentaryId(),
-        minute: 45,
-        half: 1,
-        type: "halftime",
-        text: htText,
-      });
-      newState.recentCommentaryLines = syncCommentaryMemory(endSession);
-      newState.commentary.push(...events);
-      return { state: newState, events };
-    }
-
-    const isCupDraw =
-      state.score.home === state.score.away &&
-      state.tournamentMeta?.cupKnockout &&
-      state.tournamentMeta.penaltyMode === "interactive";
-
-    if (isCupDraw) {
-      const homeSt =
-        homeLineup.find((p) => p.role === "ST") ??
-        homeLineup.find((p) => p.role !== "GK") ??
-        homeLineup[0];
-      const awayGk = awayLineup.find((p) => p.role === "GK") ?? awayLineup[0];
-      const decider = beginInteractiveSetPiece(
-        newState,
-        "penalty",
-        "home",
-        homeSt.name,
-        awayGk.name
-      );
-      const ftLine = say(endSession, "fulltime", scoreVars);
-      events.push({
-        id: commentaryId(),
-        minute: 90,
-        half: 2,
-        type: "fulltime",
-        text: `${ftLine} — penalties to decide the tie.`,
-      });
-      decider.recentCommentaryLines = syncCommentaryMemory(endSession);
-      decider.commentary = [...decider.commentary, ...events];
-      return { state: decider, events };
-    }
-
-    newState.status = "finished";
-    const ftText = say(endSession, "fulltime", scoreVars);
+    const ftLine = say(endSession, "fulltime", scoreVars);
     events.push({
       id: commentaryId(),
-      minute: 90,
+      minute: endMinute,
       half: 2,
       type: "fulltime",
-      text: ftText,
+      text: `${ftLine} — penalties to decide the tie.`,
     });
-    newState.recentCommentaryLines = syncCommentaryMemory(endSession);
-    newState.commentary.push(...events);
-    return { state: newState, events };
+    decider.recentCommentaryLines = syncCommentaryMemory(endSession);
+    decider.commentary = [...decider.commentary, ...events];
+    return { state: decider, events };
   }
 
-  newState.tick = tick;
-  newState.status = "running";
-  const attackingTeam: "home" | "away" = tick % 2 === 0 ? "home" : "away";
+  newState.status = "finished";
+  const ftText = say(endSession, "fulltime", scoreVars);
+  events.push({
+    id: commentaryId(),
+    minute: endMinute,
+    half: 2,
+    type: "fulltime",
+    text: ftText,
+  });
+  newState.recentCommentaryLines = syncCommentaryMemory(endSession);
+  newState.commentary.push(...events);
+  return { state: newState, events };
+}
+
+function runSimTick(
+  newState: MatchState,
+  home: TeamSetup,
+  away: TeamSetup,
+  homeLineup: ReturnType<typeof resolveLineup>,
+  awayLineup: ReturnType<typeof resolveLineup>,
+  half: 1 | 2,
+  tick: number,
+  stoppageTick: number
+): TickResult {
+  const events: CommentaryEvent[] = [];
+  const inStoppage = newState.inStoppageTime;
+  const attackingTeam: "home" | "away" = inStoppage
+    ? stoppageTick % 2 === 0
+      ? "home"
+      : "away"
+    : tick % 2 === 0
+      ? "home"
+      : "away";
 
   drainTeamsForTick(homeLineup, awayLineup, newState.homeStamina, newState.awayStamina, attackingTeam);
   const homeName = getUniverse(home.universeId)?.name ?? "Home";
   const awayName = getUniverse(away.universeId)?.name ?? "Away";
+  const clockMinute = inStoppage
+    ? stoppageClockDisplay(stoppageTick).minute
+    : minuteFromTick(half, tick);
 
   const attackCtx: AttackContext = {
     attacking: attackingTeam,
@@ -922,10 +1036,14 @@ export function processTick(state: MatchState, home: TeamSetup, away: TeamSetup)
     pendingSetPiece: newState.pendingSetPiece,
     homeName,
     awayName,
-    currentMinute: minuteFromTick(half, tick),
+    currentMinute: clockMinute,
     specialCooldown: newState.specialCooldown,
     homePlayerStats: newState.homePlayerStats,
     awayPlayerStats: newState.awayPlayerStats,
+    playerForm: newState.playerForm ?? {},
+    inStoppageTime: inStoppage,
+    homeExtraTimeApproach: newState.homeExtraTimeApproach,
+    awayExtraTimeApproach: newState.awayExtraTimeApproach,
     homeTactic: newState.homeTactic,
     awayTactic: newState.awayTactic,
     homeTacticHalf: newState.homeTacticHalf,
@@ -941,7 +1059,7 @@ export function processTick(state: MatchState, home: TeamSetup, away: TeamSetup)
     setPieceBudget: newState.setPieceBudget ?? defaultSetPieceBudget(),
     comm: createCommentarySession(
       newState,
-      minuteFromTick(half, tick),
+      clockMinute,
       half,
       newState.momentum,
       homeName,
@@ -954,9 +1072,20 @@ export function processTick(state: MatchState, home: TeamSetup, away: TeamSetup)
   newState.momentum = attackCtx.momentum;
   newState.pendingSetPiece = attackCtx.pendingSetPiece;
 
+  for (const e of phaseEvents) {
+    newState.stoppageCount += stoppageWeightForEvent(e.type);
+  }
+
   if (attackCtx.setPieceTrigger) {
     const trigger = attackCtx.setPieceTrigger;
-    spreadEventMinutes(phaseEvents, half, tick);
+    newState.stoppageCount += stoppageWeightForEvent(
+      trigger.kind === "penalty" ? "penalty" : "corner"
+    );
+    if (inStoppage) {
+      spreadStoppageEventMinutes(phaseEvents, stoppageTick);
+    } else {
+      spreadEventMinutes(phaseEvents, half, tick);
+    }
     const paused = beginInteractiveSetPiece(
       {
         ...newState,
@@ -999,15 +1128,131 @@ export function processTick(state: MatchState, home: TeamSetup, away: TeamSetup)
     attackingTeam,
     attackingTeam === "home" ? homeName : awayName,
     commentaryId,
-    0.12
+    inStoppage ? 0.18 : 0.12
   );
   if (amb) phaseEvents.push(amb);
 
-  spreadEventMinutes(phaseEvents, half, tick);
+  if (inStoppage) {
+    spreadStoppageEventMinutes(phaseEvents, stoppageTick);
+  } else {
+    spreadEventMinutes(phaseEvents, half, tick);
+  }
 
   newState.recentCommentaryLines = syncCommentaryMemory(attackCtx.comm);
   newState.commentary.push(...phaseEvents);
   return { state: newState, events: phaseEvents };
+}
+
+export function processTick(state: MatchState, home: TeamSetup, away: TeamSetup): TickResult {
+  state = normalizeMatchState(state);
+
+  if (
+    state.status === "finished" ||
+    state.status === "halftime" ||
+    state.status === "sub_window" ||
+    state.status === "set_piece_pause" ||
+    state.status === "extra_time_choice"
+  ) {
+    return { state, events: [] };
+  }
+
+  const homeLineup = resolveLineup(home);
+  const awayLineup = resolveLineup(away);
+  const newState: MatchState = {
+    ...state,
+    commentary: [...state.commentary],
+    homeStamina: { ...state.homeStamina },
+    awayStamina: { ...state.awayStamina },
+    score: { ...state.score },
+    homeStats: { ...state.homeStats },
+    awayStats: { ...state.awayStats },
+    homePlayerStats: { ...(state.homePlayerStats ?? {}) },
+    awayPlayerStats: { ...(state.awayPlayerStats ?? {}) },
+    pendingSetPiece: state.pendingSetPiece ? { ...state.pendingSetPiece } : null,
+    setPieceBudget: state.setPieceBudget ?? defaultSetPieceBudget(),
+    interactiveSetPiece: state.interactiveSetPiece
+      ? { ...state.interactiveSetPiece }
+      : null,
+    momentum: state.momentum,
+    specialCooldown: { ...(state.specialCooldown ?? {}) },
+    stoppageCount: state.stoppageCount ?? 0,
+    stoppageMinutes: state.stoppageMinutes ?? 0,
+    stoppageTick: state.stoppageTick ?? 0,
+    inStoppageTime: state.inStoppageTime ?? false,
+    homeExtraTimeApproach: state.homeExtraTimeApproach ?? null,
+    awayExtraTimeApproach: state.awayExtraTimeApproach ?? null,
+  };
+
+  if (newState.homeCaptainBoostTicks > 0) newState.homeCaptainBoostTicks--;
+  if (newState.awayCaptainBoostTicks > 0) newState.awayCaptainBoostTicks--;
+  const events: CommentaryEvent[] = [];
+
+  if (newState.inStoppageTime) {
+    const nextStoppageTick = newState.stoppageTick + 1;
+    const maxTicks = newState.stoppageMinutes * TICKS_PER_STOPPAGE_MINUTE;
+    if (nextStoppageTick > maxTicks) {
+      const endMinute = stoppageClockDisplay(newState.stoppageTick).minute;
+      return endSecondHalf(newState, home, away, homeLineup, awayLineup, endMinute, events);
+    }
+    newState.stoppageTick = nextStoppageTick;
+    newState.status = "running";
+    return runSimTick(newState, home, away, homeLineup, awayLineup, 2, newState.tick, nextStoppageTick);
+  }
+
+  let tick = state.tick + 1;
+  const half = state.half;
+
+  if (tick > TICKS_PER_HALF) {
+    const homeName = getUniverse(home.universeId)?.name ?? "Home";
+    const awayName = getUniverse(away.universeId)?.name ?? "Away";
+    const endSession = createCommentarySession(
+      newState,
+      half === 1 ? 45 : 90,
+      half,
+      newState.momentum,
+      homeName,
+      awayName
+    );
+    const scoreVars = {
+      homeScore: String(state.score.home),
+      awayScore: String(state.score.away),
+    };
+
+    if (half === 1) {
+      newState.status = "halftime";
+      newState.tick = TICKS_PER_HALF;
+      const htText = say(endSession, "halftime", scoreVars);
+      events.push({
+        id: commentaryId(),
+        minute: 45,
+        half: 1,
+        type: "halftime",
+        text: htText,
+      });
+      newState.recentCommentaryLines = syncCommentaryMemory(endSession);
+      newState.commentary.push(...events);
+      return { state: newState, events };
+    }
+
+    const added = computeStoppageMinutes(newState.stoppageCount, newState.score);
+    newState.stoppageMinutes = added;
+    newState.status = "extra_time_choice";
+    newState.tick = TICKS_PER_HALF;
+    events.push({
+      id: commentaryId(),
+      minute: 90,
+      half: 2,
+      type: "stoppage",
+      text: `The fourth official indicates ${added} minute${added === 1 ? "" : "s"} of added time.`,
+    });
+    newState.recentCommentaryLines = syncCommentaryMemory(endSession);
+    newState.commentary.push(...events);
+    return { state: newState, events };
+  }
+
+  newState.tick = tick;
+  newState.status = "running";
+  return runSimTick(newState, home, away, homeLineup, awayLineup, half, tick, 0);
 }
 
 export function autoFillLineup(

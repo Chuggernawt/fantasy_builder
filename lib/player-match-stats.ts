@@ -1,7 +1,23 @@
 import type { PlayerMatchStats } from "./types";
 
 export function emptyPlayerStats(): PlayerMatchStats {
-  return { goals: 0, assists: 0, yellowCards: 0, redCards: 0 };
+  return {
+    goals: 0,
+    assists: 0,
+    yellowCards: 0,
+    redCards: 0,
+    passes: 0,
+    passesCompleted: 0,
+    shots: 0,
+    shotsOnTarget: 0,
+    dribbles: 0,
+    dribblesCompleted: 0,
+    tackles: 0,
+    tacklesCompleted: 0,
+    clearances: 0,
+    shotsBlocked: 0,
+    saves: 0,
+  };
 }
 
 export function ensurePlayerStats(
@@ -40,6 +56,67 @@ export function recordRed(
   ensurePlayerStats(map, player).redCards++;
 }
 
+export function recordPass(
+  map: Record<string, PlayerMatchStats>,
+  player: string,
+  completed: boolean
+): void {
+  const row = ensurePlayerStats(map, player);
+  row.passes++;
+  if (completed) row.passesCompleted++;
+}
+
+export function recordDribble(
+  map: Record<string, PlayerMatchStats>,
+  player: string,
+  completed: boolean
+): void {
+  const row = ensurePlayerStats(map, player);
+  row.dribbles++;
+  if (completed) row.dribblesCompleted++;
+}
+
+export function recordTackle(
+  map: Record<string, PlayerMatchStats>,
+  player: string,
+  won: boolean
+): void {
+  const row = ensurePlayerStats(map, player);
+  row.tackles++;
+  if (won) row.tacklesCompleted++;
+}
+
+export function recordClearance(
+  map: Record<string, PlayerMatchStats>,
+  player: string
+): void {
+  ensurePlayerStats(map, player).clearances++;
+}
+
+export function recordShotBlocked(
+  map: Record<string, PlayerMatchStats>,
+  player: string
+): void {
+  ensurePlayerStats(map, player).shotsBlocked++;
+}
+
+export function recordShot(
+  map: Record<string, PlayerMatchStats>,
+  player: string,
+  onTarget: boolean
+): void {
+  const row = ensurePlayerStats(map, player);
+  row.shots++;
+  if (onTarget) row.shotsOnTarget++;
+}
+
+export function recordSave(
+  map: Record<string, PlayerMatchStats>,
+  keeper: string
+): void {
+  ensurePlayerStats(map, keeper).saves++;
+}
+
 /** Pick assist: last phase mention (not scorer), else playmaker/crosser/taker. */
 export function resolveAssist(
   scorer: string,
@@ -61,11 +138,48 @@ export function playersWithMatchContributions(
   map: Record<string, PlayerMatchStats>
 ): { name: string; stats: PlayerMatchStats }[] {
   return Object.entries(map)
-    .filter(([, s]) => s.goals > 0 || s.assists > 0 || s.yellowCards > 0 || s.redCards > 0)
+    .filter(([, s]) => hasVisibleStats(s))
     .map(([name, stats]) => ({ name, stats }))
     .sort((a, b) => {
-      const ga = a.stats.goals * 10 + a.stats.assists * 5 - a.stats.yellowCards;
-      const gb = b.stats.goals * 10 + b.stats.assists * 5 - b.stats.yellowCards;
-      return gb - ga;
+      const ra = a.stats.matchRating ?? ratingSortScore(a.stats);
+      const rb = b.stats.matchRating ?? ratingSortScore(b.stats);
+      return rb - ra;
     });
+}
+
+function hasVisibleStats(s: PlayerMatchStats): boolean {
+  return (
+    s.matchRating != null ||
+    s.goals > 0 ||
+    s.assists > 0 ||
+    s.yellowCards > 0 ||
+    s.redCards > 0 ||
+    s.passes > 0 ||
+    s.shots > 0 ||
+    s.tackles > 0 ||
+    s.clearances > 0 ||
+    s.saves > 0
+  );
+}
+
+function ratingSortScore(s: PlayerMatchStats): number {
+  return (
+    s.goals * 10 +
+    s.assists * 5 +
+    s.shotsOnTarget * 2 +
+    s.tacklesCompleted +
+    s.saves * 2 -
+    s.yellowCards
+  );
+}
+
+export function seedLineupPlayerStats(
+  map: Record<string, PlayerMatchStats>,
+  names: string[]
+): Record<string, PlayerMatchStats> {
+  const next = { ...map };
+  for (const name of names) {
+    if (name && name !== "Unknown") ensurePlayerStats(next, name);
+  }
+  return next;
 }

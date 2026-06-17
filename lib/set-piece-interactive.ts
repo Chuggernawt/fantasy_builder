@@ -3,7 +3,8 @@ import { defaultSetPieceBudget } from "./types";
 import { getPlayer } from "./squads";
 import { roleRating } from "./stats";
 import { commentaryId } from "./simulation-utils";
-import { recordGoal } from "./player-match-stats";
+import { recordAssist, recordGoal } from "./player-match-stats";
+import { stoppageClockDisplay } from "./stoppage-time";
 
 export const SET_PIECE_CHOOSE_MS = 10_000;
 export const SET_PIECE_REVEAL_MS = 5_000;
@@ -215,6 +216,15 @@ export function setPieceTimeLeft(iso: string | undefined): number {
   return Math.max(0, Math.ceil((new Date(iso).getTime() - Date.now()) / 1000));
 }
 
+export function matchEventMinute(state: MatchState): number {
+  if (state.inStoppageTime && state.stoppageTick > 0) {
+    return stoppageClockDisplay(state.stoppageTick).minute;
+  }
+  return state.half === 1
+    ? Math.round((state.tick / state.ticksPerHalf) * 45)
+    : Math.min(90, 45 + Math.round((state.tick / state.ticksPerHalf) * 45));
+}
+
 export function finalizeSetPieceReveal(state: MatchState): MatchState {
   const piece = state.interactiveSetPiece;
   if (!piece) return { ...state, status: "running", interactiveSetPiece: null };
@@ -223,17 +233,19 @@ export function finalizeSetPieceReveal(state: MatchState): MatchState {
   const attacking = piece.attacking;
   const score = { ...state.score };
   const commentary = [...state.commentary];
-  const minute =
-    state.half === 1
-      ? Math.round((state.tick / state.ticksPerHalf) * 45)
-      : 45 + Math.round((state.tick / state.ticksPerHalf) * 45);
+  const minute = matchEventMinute(state);
 
   if (piece.goalScored) {
     if (attacking === "home") score.home++;
     else score.away++;
     const homePlayerStats = { ...state.homePlayerStats };
     const awayPlayerStats = { ...state.awayPlayerStats };
-    recordGoal(attacking === "home" ? homePlayerStats : awayPlayerStats, piece.taker);
+    const atkStats = attacking === "home" ? homePlayerStats : awayPlayerStats;
+    recordGoal(atkStats, piece.taker);
+    const cornerTaker = piece.cornerTaker;
+    if (piece.kind === "corner" && cornerTaker && cornerTaker !== piece.taker) {
+      recordAssist(atkStats, cornerTaker);
+    }
     commentary.push({
       id: commentaryId(),
       minute,
@@ -242,6 +254,10 @@ export function finalizeSetPieceReveal(state: MatchState): MatchState {
       text: piece.resultText ?? "Goal!",
       team: attacking,
       playerName: piece.taker,
+      assistPlayerName:
+        piece.kind === "corner" && cornerTaker && cornerTaker !== piece.taker
+          ? cornerTaker
+          : undefined,
     });
     return {
       ...state,

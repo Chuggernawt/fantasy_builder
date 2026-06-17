@@ -6,6 +6,7 @@ import {
   isMatchReady,
 } from "./lineup";
 import type { MultiplayerSnapshot, PlayerLobbyState } from "./multiplayer-types";
+import { buildMatchFormMap } from "./match-finalize";
 import { createInitialMatchState } from "./simulation";
 import type { FormationId, LineupSlot } from "./types";
 
@@ -56,7 +57,8 @@ export function validateLobbyPair(
 
 export function buildMatchSnapshotFromLobbies(
   host: PlayerLobbyState,
-  away: PlayerLobbyState
+  away: PlayerLobbyState,
+  storeForm?: Record<string, Record<string, number>>
 ): MultiplayerSnapshot {
   const homeSetup = {
     universeId: host.universeId!,
@@ -70,7 +72,14 @@ export function buildMatchSnapshotFromLobbies(
     lineup: away.lineup as LineupSlot[],
     bench: away.matchBench,
   };
-  const base = createInitialMatchState(homeSetup, awaySetup);
+  const playerForm = buildMatchFormMap(
+    homeSetup.universeId,
+    awaySetup.universeId,
+    homeSetup.lineup,
+    awaySetup.lineup,
+    storeForm ?? {}
+  );
+  const base = createInitialMatchState(homeSetup, awaySetup, { playerForm });
   return {
     selectedUniverseId: host.universeId,
     formationId: host.formationId,

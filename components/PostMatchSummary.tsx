@@ -17,7 +17,7 @@ import { useMultiplayerSync } from "@/hooks/useMultiplayerSync";
 import { useMultiplayerHostLoop } from "@/hooks/useMultiplayerHostLoop";
 import { signalMultiplayerRematch } from "@/lib/multiplayer-client";
 
-type PostMatchTab = "report" | "commentary";
+type PostMatchTab = "report" | "commentary" | "ratings";
 
 function revealPickClass(selected: boolean): string {
   return selected
@@ -224,6 +224,23 @@ export function PostMatchSummary() {
           </div>
         </div>
 
+        {summary.manOfTheMatch ? (
+          <div className="glass-panel mb-6 border border-broadcast-highlight/50 bg-broadcast-highlight/5 p-5 text-center">
+            <p className="broadcast-label mb-1 text-broadcast-highlight">Man of the Match</p>
+            <p className="font-display text-2xl font-bold uppercase tracking-wide text-slate-100">
+              {summary.manOfTheMatch.playerName}
+            </p>
+            <p className="mt-1 text-sm text-slate-400">
+              {summary.manOfTheMatch.team === "home" ? summary.homeName : summary.awayName}
+              {" · "}
+              <span className="font-mono text-broadcast-highlight">
+                {summary.manOfTheMatch.rating.toFixed(1)}
+              </span>{" "}
+              rating
+            </p>
+          </div>
+        ) : null}
+
         <div className="mb-6 grid gap-4 md:grid-cols-2">
           <GoalList title={summary.homeName} accent={summary.homeAccent} goals={summary.homeGoals} />
           <GoalList title={summary.awayName} accent={summary.awayAccent} goals={summary.awayGoals} />
@@ -236,6 +253,7 @@ export function PostMatchSummary() {
           awayAccent={summary.awayAccent}
           homeStats={summary.homePlayerStats}
           awayStats={summary.awayPlayerStats}
+          manOfTheMatch={summary.manOfTheMatch?.playerName}
         />
 
         <div className="glass-panel mb-6 grid grid-cols-2 gap-3 p-4 text-center md:grid-cols-4">
@@ -256,6 +274,9 @@ export function PostMatchSummary() {
         <div className="mb-4 flex gap-2">
           <TabButton active={tab === "report"} onClick={() => setTab("report")}>
             Match Report
+          </TabButton>
+          <TabButton active={tab === "ratings"} onClick={() => setTab("ratings")}>
+            Player Ratings
           </TabButton>
           <TabButton active={tab === "commentary"} onClick={() => setTab("commentary")}>
             Commentary
@@ -285,6 +306,18 @@ export function PostMatchSummary() {
                 </ul>
               </div>
             )}
+          </div>
+        ) : tab === "ratings" ? (
+          <div className="mb-6">
+            <DetailedRatingsTable
+              homeName={summary.homeName}
+              awayName={summary.awayName}
+              homeAccent={summary.homeAccent}
+              awayAccent={summary.awayAccent}
+              homeStats={summary.homePlayerStats}
+              awayStats={summary.awayPlayerStats}
+              manOfTheMatch={summary.manOfTheMatch?.playerName}
+            />
           </div>
         ) : (
           <div className="mb-6">
@@ -483,6 +516,7 @@ function PlayerStatsTable({
   awayAccent,
   homeStats,
   awayStats,
+  manOfTheMatch,
 }: {
   homeName: string;
   awayName: string;
@@ -490,6 +524,7 @@ function PlayerStatsTable({
   awayAccent: string;
   homeStats: import("@/lib/types").MatchSummary["homePlayerStats"];
   awayStats: import("@/lib/types").MatchSummary["awayPlayerStats"];
+  manOfTheMatch?: string;
 }) {
   const homePlayers = playersWithMatchContributions(homeStats);
   const awayPlayers = playersWithMatchContributions(awayStats);
@@ -497,56 +532,190 @@ function PlayerStatsTable({
 
   return (
     <div className="glass-panel mb-6 grid gap-4 p-4 md:grid-cols-2">
-      <div>
-        <p className="broadcast-label mb-2" style={{ color: homeAccent }}>
-          {homeName} — Player Stats
-        </p>
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="text-left text-slate-500">
-              <th className="pb-1">Player</th>
-              <th className="pb-1 text-center">G</th>
-              <th className="pb-1 text-center">A</th>
-              <th className="pb-1 text-center">YC</th>
+      <TeamQuickStats
+        teamName={homeName}
+        accent={homeAccent}
+        players={homePlayers}
+        motm={manOfTheMatch}
+      />
+      <TeamQuickStats
+        teamName={awayName}
+        accent={awayAccent}
+        players={awayPlayers}
+        motm={manOfTheMatch}
+      />
+    </div>
+  );
+}
+
+function TeamQuickStats({
+  teamName,
+  accent,
+  players,
+  motm,
+}: {
+  teamName: string;
+  accent: string;
+  players: { name: string; stats: import("@/lib/types").PlayerMatchStats }[];
+  motm?: string;
+}) {
+  return (
+    <div>
+      <p className="broadcast-label mb-2" style={{ color: accent }}>
+        {teamName} — Top performers
+      </p>
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="text-left text-slate-500">
+            <th className="pb-1">Player</th>
+            <th className="pb-1 text-center">Rtg</th>
+            <th className="pb-1 text-center">G</th>
+            <th className="pb-1 text-center">A</th>
+          </tr>
+        </thead>
+        <tbody>
+          {players.slice(0, 6).map((p) => (
+            <tr
+              key={p.name}
+              className={`border-t border-broadcast-border/50 ${
+                motm === p.name ? "bg-broadcast-highlight/10" : ""
+              }`}
+            >
+              <td className="py-1 font-display uppercase">
+                {p.name}
+                {motm === p.name ? (
+                  <span className="ml-1 text-[9px] text-broadcast-highlight">MOTM</span>
+                ) : null}
+              </td>
+              <td className="py-1 text-center font-mono text-broadcast-highlight">
+                {p.stats.matchRating?.toFixed(1) ?? "—"}
+              </td>
+              <td className="py-1 text-center font-mono">{p.stats.goals || "—"}</td>
+              <td className="py-1 text-center font-mono">{p.stats.assists || "—"}</td>
             </tr>
-          </thead>
-          <tbody>
-            {homePlayers.map((p) => (
-              <tr key={p.name} className="border-t border-broadcast-border/50">
-                <td className="py-1 font-display uppercase">{p.name}</td>
-                <td className="py-1 text-center font-mono text-broadcast-highlight">{p.stats.goals}</td>
-                <td className="py-1 text-center font-mono">{p.stats.assists}</td>
-                <td className="py-1 text-center font-mono">{p.stats.yellowCards || "—"}</td>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function DetailedRatingsTable({
+  homeName,
+  awayName,
+  homeAccent,
+  awayAccent,
+  homeStats,
+  awayStats,
+  manOfTheMatch,
+}: {
+  homeName: string;
+  awayName: string;
+  homeAccent: string;
+  awayAccent: string;
+  homeStats: import("@/lib/types").MatchSummary["homePlayerStats"];
+  awayStats: import("@/lib/types").MatchSummary["awayPlayerStats"];
+  manOfTheMatch?: string;
+}) {
+  const homePlayers = playersWithMatchContributions(homeStats);
+  const awayPlayers = playersWithMatchContributions(awayStats);
+
+  return (
+    <div className="glass-panel grid gap-6 p-4 md:grid-cols-2">
+      <TeamDetailedStats
+        teamName={homeName}
+        accent={homeAccent}
+        players={homePlayers}
+        motm={manOfTheMatch}
+      />
+      <TeamDetailedStats
+        teamName={awayName}
+        accent={awayAccent}
+        players={awayPlayers}
+        motm={manOfTheMatch}
+      />
+    </div>
+  );
+}
+
+function TeamDetailedStats({
+  teamName,
+  accent,
+  players,
+  motm,
+}: {
+  teamName: string;
+  accent: string;
+  players: { name: string; stats: import("@/lib/types").PlayerMatchStats }[];
+  motm?: string;
+}) {
+  return (
+    <div className="overflow-x-auto">
+      <p className="broadcast-label mb-2" style={{ color: accent }}>
+        {teamName}
+      </p>
+      <table className="w-full min-w-[280px] text-[10px] sm:text-xs">
+        <thead>
+          <tr className="text-left text-slate-500">
+            <th className="pb-1 pr-1">Player</th>
+            <th className="pb-1 text-center">Rtg</th>
+            <th className="pb-1 text-center">Pass</th>
+            <th className="pb-1 text-center">Sh</th>
+            <th className="pb-1 text-center">Drb</th>
+            <th className="pb-1 text-center">Tkl</th>
+            <th className="pb-1 text-center">G</th>
+            <th className="pb-1 text-center">A</th>
+          </tr>
+        </thead>
+        <tbody>
+          {players.map((p) => {
+            const s = p.stats;
+            const passPct =
+              s.passes > 0 ? Math.round((s.passesCompleted / s.passes) * 100) : null;
+            return (
+              <tr
+                key={p.name}
+                className={`border-t border-broadcast-border/50 ${
+                  motm === p.name ? "bg-broadcast-highlight/10" : ""
+                }`}
+              >
+                <td className="py-1 pr-1 font-display uppercase">
+                  {p.name}
+                  {motm === p.name ? (
+                    <span className="ml-0.5 text-[8px] text-broadcast-highlight">★</span>
+                  ) : null}
+                </td>
+                <td className="py-1 text-center font-mono font-bold text-broadcast-highlight">
+                  {s.matchRating?.toFixed(1) ?? "—"}
+                </td>
+                <td className="py-1 text-center font-mono">
+                  {s.passes > 0 ? `${s.passesCompleted}/${s.passes}` : "—"}
+                  {passPct != null ? (
+                    <span className="block text-[9px] text-slate-500">{passPct}%</span>
+                  ) : null}
+                </td>
+                <td className="py-1 text-center font-mono">
+                  {s.shots > 0 ? `${s.shotsOnTarget}/${s.shots}` : "—"}
+                </td>
+                <td className="py-1 text-center font-mono">
+                  {s.dribbles > 0 ? `${s.dribblesCompleted}/${s.dribbles}` : "—"}
+                </td>
+                <td className="py-1 text-center font-mono">
+                  {s.tackles > 0 ? `${s.tacklesCompleted}/${s.tackles}` : "—"}
+                  {s.clearances > 0 ? (
+                    <span className="block text-[9px] text-slate-500">clr {s.clearances}</span>
+                  ) : null}
+                  {s.saves > 0 ? (
+                    <span className="block text-[9px] text-slate-500">sv {s.saves}</span>
+                  ) : null}
+                </td>
+                <td className="py-1 text-center font-mono">{s.goals || "—"}</td>
+                <td className="py-1 text-center font-mono">{s.assists || "—"}</td>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div>
-        <p className="broadcast-label mb-2" style={{ color: awayAccent }}>
-          {awayName} — Player Stats
-        </p>
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="text-left text-slate-500">
-              <th className="pb-1">Player</th>
-              <th className="pb-1 text-center">G</th>
-              <th className="pb-1 text-center">A</th>
-              <th className="pb-1 text-center">YC</th>
-            </tr>
-          </thead>
-          <tbody>
-            {awayPlayers.map((p) => (
-              <tr key={p.name} className="border-t border-broadcast-border/50">
-                <td className="py-1 font-display uppercase">{p.name}</td>
-                <td className="py-1 text-center font-mono text-broadcast-highlight">{p.stats.goals}</td>
-                <td className="py-1 text-center font-mono">{p.stats.assists}</td>
-                <td className="py-1 text-center font-mono">{p.stats.yellowCards || "—"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }

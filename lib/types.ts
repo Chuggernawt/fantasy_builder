@@ -84,15 +84,36 @@ export type CommentaryType =
   | "redcard"
   | "penalty"
   | "longball"
-  | "substitution";
+  | "substitution"
+  | "stoppage";
 
 export type TacticalStyle = "press" | "sit_deep" | "direct" | "through_middle";
+
+/** One-time extra-time approach (stoppage time). */
+export type ExtraTimeApproach =
+  | "park_bus"
+  | "defend"
+  | "balanced"
+  | "attack"
+  | "kitchen_sink";
 
 export interface PlayerMatchStats {
   goals: number;
   assists: number;
   yellowCards: number;
   redCards: number;
+  passes: number;
+  passesCompleted: number;
+  shots: number;
+  shotsOnTarget: number;
+  dribbles: number;
+  dribblesCompleted: number;
+  tackles: number;
+  tacklesCompleted: number;
+  clearances: number;
+  shotsBlocked: number;
+  saves: number;
+  matchRating?: number;
 }
 
 export interface TeamMatchStats {
@@ -180,6 +201,7 @@ export type MatchStatus =
   | "sub_window"
   | "halftime"
   | "set_piece_pause"
+  | "extra_time_choice"
   | "finished";
 
 export interface MatchScore {
@@ -231,6 +253,22 @@ export interface MatchState {
     cupKnockout: boolean;
     penaltyMode: import("./tournament-types").PenaltyMode;
   };
+  /** Carried form per player name for both squads (from store at kickoff). */
+  playerForm?: Record<string, number>;
+  manOfTheMatch?: {
+    playerName: string;
+    team: "home" | "away";
+    rating: number;
+  };
+  /** Weighted stoppage events accumulated during the match. */
+  stoppageCount: number;
+  /** Minutes of added time (set at 90'). */
+  stoppageMinutes: number;
+  /** 1-based tick index during added time (3 ticks = 1 minute). */
+  stoppageTick: number;
+  inStoppageTime: boolean;
+  homeExtraTimeApproach: ExtraTimeApproach | null;
+  awayExtraTimeApproach: ExtraTimeApproach | null;
 }
 
 export interface MatchSummary {
@@ -255,6 +293,7 @@ export interface MatchSummary {
   awaySaves: number;
   homeFouls: number;
   awayFouls: number;
+  manOfTheMatch?: MatchState["manOfTheMatch"];
   commentary: CommentaryEvent[];
 }
 

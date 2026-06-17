@@ -22,5 +22,13 @@ export function normalizeMatchState(state: MatchState): MatchState {
     specialCooldown: state.specialCooldown ?? {},
     recentCommentaryLines: state.recentCommentaryLines ?? [],
     seasonMeta: state.seasonMeta,
+    playerForm: state.playerForm ?? {},
+    manOfTheMatch: state.manOfTheMatch,
+    stoppageCount: state.stoppageCount ?? 0,
+    stoppageMinutes: state.stoppageMinutes ?? 0,
+    stoppageTick: state.stoppageTick ?? 0,
+    inStoppageTime: state.inStoppageTime ?? false,
+    homeExtraTimeApproach: state.homeExtraTimeApproach ?? null,
+    awayExtraTimeApproach: state.awayExtraTimeApproach ?? null,
   };
 }

@@ -50,6 +50,7 @@ export function buildMatchSummary(state: MatchState): MatchSummary | null {
     awayFouls: as.foulsCommitted,
     homePlayerStats: { ...(state.homePlayerStats ?? {}) },
     awayPlayerStats: { ...(state.awayPlayerStats ?? {}) },
+    manOfTheMatch: state.manOfTheMatch,
     commentary: state.commentary,
   };
 }

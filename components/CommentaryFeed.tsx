@@ -27,6 +27,7 @@ const TYPE_COLORS: Record<CommentaryEvent["type"], string> = {
   substitution: "text-emerald-300",
   halftime: "text-broadcast-highlight font-bold",
   fulltime: "text-broadcast-highlight font-bold",
+  stoppage: "text-amber-300 font-semibold",
   info: "text-slate-300",
 };
 

@@ -18,7 +18,9 @@ import { MAX_MATCH_SUBS } from "@/lib/constants";
 import { getMultiplayerSession } from "@/lib/multiplayer-session";
 import { getMyTeamView, myMatchSide } from "@/lib/multiplayer-perspective";
 import { SetPiecePanel } from "@/components/SetPiecePanel";
+import { ExtraTimePanel } from "@/components/ExtraTimePanel";
 import { updateMyMpAction } from "@/lib/multiplayer";
+import { formatMatchClock } from "@/lib/stoppage-time";
 import { resolveMyMatchSide } from "@/lib/player-side";
 import {
   cpuSetPieceChoice,
@@ -62,6 +64,7 @@ export function MatchEngine() {
   const opponentLineup = useGameStore((s) => s.opponentLineup);
   const setMatchState = useGameStore((s) => s.setMatchState);
   const confirmHalftime = useGameStore((s) => s.confirmHalftime);
+  const confirmExtraTime = useGameStore((s) => s.confirmExtraTime);
   const confirmSubs = useGameStore((s) => s.confirmSubs);
   const setHomeTactic = useGameStore((s) => s.setHomeTactic);
   const callHomeCaptain = useGameStore((s) => s.callHomeCaptain);
@@ -232,19 +235,24 @@ export function MatchEngine() {
     matchState.half === 1
       ? Math.round((matchState.tick / matchState.ticksPerHalf) * 45)
       : 45 + Math.round((matchState.tick / matchState.ticksPerHalf) * 45);
+  const clockLabel = formatMatchClock(matchState);
 
   const statusLabel =
     matchState.status === "halftime"
       ? "HALF TIME"
-      : matchState.status === "sub_window"
-        ? "SUB WINDOW"
-        : matchState.status === "set_piece_pause"
-          ? matchState.interactiveSetPiece?.kind === "penalty"
-            ? "PENALTY"
-            : "CORNER"
-          : matchState.status === "finished"
-            ? "FULL TIME"
-            : `${minute}' · H${matchState.half}`;
+      : matchState.status === "extra_time_choice"
+        ? `90:00 · +${matchState.stoppageMinutes} ADDED`
+        : matchState.status === "sub_window"
+          ? "SUB WINDOW"
+          : matchState.status === "set_piece_pause"
+            ? matchState.interactiveSetPiece?.kind === "penalty"
+              ? "PENALTY"
+              : "CORNER"
+            : matchState.status === "finished"
+              ? "FULL TIME"
+              : matchState.inStoppageTime
+                ? `${clockLabel} · ADDED TIME`
+                : `${minute}' · H${matchState.half}`;
 
   const hs = matchState.homeStats;
   const as = matchState.awayStats;
@@ -393,7 +401,16 @@ export function MatchEngine() {
           />
         ) : null}
 
-        {matchState.status === "halftime" ? (
+        {matchState.status === "extra_time_choice" ? (
+          <ExtraTimePanel
+            accent={myTeam.accent}
+            teamName={myTeam.name}
+            addedMinutes={matchState.stoppageMinutes}
+            onConfirm={(approach) => {
+              confirmExtraTime(approach);
+            }}
+          />
+        ) : matchState.status === "halftime" ? (
           <SubstitutionPanel
             key="halftime"
             universeId={myTeam.universeId}

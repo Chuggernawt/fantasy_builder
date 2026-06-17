@@ -79,6 +79,10 @@ export interface AttackContext {
   awayCaptainBoostTicks: number;
   homeUniverseId: string;
   awayUniverseId: string;
+  playerForm: Record<string, number>;
+  inStoppageTime: boolean;
+  homeExtraTimeApproach: import("./types").ExtraTimeApproach | null;
+  awayExtraTimeApproach: import("./types").ExtraTimeApproach | null;
   setPieceBudget: import("./types").SetPieceBudget;
   setPieceTrigger: {
     kind: "corner" | "penalty";

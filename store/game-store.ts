@@ -51,6 +51,13 @@ import {
 } from "@/lib/season";
 import { resetSetPieceBudgetForHalf } from "@/lib/set-piece-interactive";
 import { prepareCpuOpponentForSeason } from "@/lib/season-lite";
+import {
+  buildMatchFormMap,
+  finalizeMatchStateRatings,
+  updateStoreFormFromMatch,
+} from "@/lib/match-finalize";
+import { cpuPickExtraTimeApproach, extraTimeLabel } from "@/lib/stoppage-time";
+import type { ExtraTimeApproach } from "@/lib/types";
 
 export interface SavedLineup {
   formationId: FormationId;
@@ -97,6 +104,8 @@ interface GameStore {
   tournament: TournamentState | null;
   tournamentActiveFixtureId: string | null;
   mpMatchMeta: MpMatchMeta | null;
+  /** Per-universe player form carried across season/tournament matches (-5..+5). */
+  playerForm: Record<string, Record<string, number>>;
 
   selectUniverse: (id: string) => void;
   setFormation: (id: FormationId) => void;
@@ -127,6 +136,7 @@ interface GameStore {
     tactic?: TacticalStyle | null,
     captain?: string | null
   ) => void;
+  confirmExtraTime: (approach: import("@/lib/types").ExtraTimeApproach) => void;
   chooseDrawReveal: (playerName: string) => void;
   chooseWinReveal: (ownPlayerName: string, awayPlayerName: string) => void;
   clearPendingReveal: () => void;
@@ -216,6 +226,7 @@ export const useGameStore = create<GameStore>()(
       tournament: null,
       tournamentActiveFixtureId: null,
       mpMatchMeta: null,
+      playerForm: {},
 
       selectUniverse: (id) => {
         set({
@@ -402,9 +413,21 @@ export const useGameStore = create<GameStore>()(
             ? { cupKnockout: true, penaltyMode: tournament.penaltyMode }
             : undefined;
 
+        const homeUni = playerIsHome ? selectedUniverseId : opponentUniverseId;
+        const awayUni = playerIsHome ? opponentUniverseId : selectedUniverseId;
+        const homeLineup = playerIsHome ? lineup : oppLineup;
+        const awayLineup = playerIsHome ? oppLineup : lineup;
+        const formMap = buildMatchFormMap(
+          homeUni,
+          awayUni,
+          homeLineup,
+          awayLineup,
+          get().playerForm
+        );
+
         const base = playerIsHome
-          ? createInitialMatchState(playerSetup, oppSetup, { seasonMeta })
-          : createInitialMatchState(oppSetup, playerSetup, { seasonMeta });
+          ? createInitialMatchState(playerSetup, oppSetup, { seasonMeta, playerForm: formMap })
+          : createInitialMatchState(oppSetup, playerSetup, { seasonMeta, playerForm: formMap });
 
         set({
           opponentLineup: oppLineup,
@@ -425,12 +448,26 @@ export const useGameStore = create<GameStore>()(
         const prev = get().matchState;
         if (!matchState) return set({ matchState: null });
 
+        let finalized = matchState;
+        if (prev?.status !== "finished" && matchState.status === "finished" && !matchState.manOfTheMatch) {
+          const homeSetup = getHomeMatchSetup();
+          const awaySetup = getAwayMatchSetup();
+          if (homeSetup && awaySetup) {
+            finalized = finalizeMatchStateRatings(
+              matchState,
+              homeSetup.lineup,
+              awaySetup.lineup
+            );
+          }
+        }
+
         let revealedStats = get().revealedStats;
         let pendingReveal: PendingReveal | null = get().pendingReveal;
         let revealHighlights: RevealHighlight[] | null = get().revealHighlights;
-        const patch: Partial<GameStore> = { matchState };
+        const patch: Partial<GameStore> = { matchState: finalized };
+        let nextPlayerForm = get().playerForm;
 
-        if (prev?.status !== "finished" && matchState.status === "finished") {
+        if (prev?.status !== "finished" && finalized.status === "finished") {
           const playerIsHome = resolvePlayerIsHome();
           const ownPlayed = get()
             .lineup.map((s) => s.playerName)
@@ -444,8 +481,20 @@ export const useGameStore = create<GameStore>()(
           const oppUniId = (playerIsHome
             ? get().opponentUniverseId
             : get().selectedUniverseId) ?? matchState.awayUniverseId ?? "";
-          const playerScore = playerIsHome ? matchState.score.home : matchState.score.away;
-          const oppScore = playerIsHome ? matchState.score.away : matchState.score.home;
+          const playerScore = playerIsHome ? finalized.score.home : finalized.score.away;
+          const oppScore = playerIsHome ? finalized.score.away : finalized.score.home;
+
+          const homeSetup = getHomeMatchSetup();
+          const awaySetup = getAwayMatchSetup();
+          if (homeSetup && awaySetup) {
+            nextPlayerForm = updateStoreFormFromMatch(
+              nextPlayerForm,
+              finalized,
+              homeSetup.lineup,
+              awaySetup.lineup
+            );
+            patch.playerForm = nextPlayerForm;
+          }
 
           if (playerScore > oppScore) {
             pendingReveal = {
@@ -487,14 +536,14 @@ export const useGameStore = create<GameStore>()(
           if (season?.status === "active" && fixtureId) {
             const fixture = season.fixtures.find((f) => f.id === fixtureId);
             if (fixture) {
-              const homeScore = playerIsHome ? matchState.score.home : matchState.score.away;
-              const awayScore = playerIsHome ? matchState.score.away : matchState.score.home;
+              const homeScore = playerIsHome ? finalized.score.home : finalized.score.away;
+              const awayScore = playerIsHome ? finalized.score.away : finalized.score.home;
               const homeStats = playerIsHome
-                ? matchState.homePlayerStats
-                : matchState.awayPlayerStats;
+                ? finalized.homePlayerStats
+                : finalized.awayPlayerStats;
               const awayStats = playerIsHome
-                ? matchState.awayPlayerStats
-                : matchState.homePlayerStats;
+                ? finalized.awayPlayerStats
+                : finalized.homePlayerStats;
               let nextSeason = recordPlayerMatchFromState(
                 season,
                 fixture,
@@ -504,8 +553,8 @@ export const useGameStore = create<GameStore>()(
                 awayStats
               );
               const userStats = playerIsHome
-                ? matchState.homePlayerStats
-                : matchState.awayPlayerStats;
+                ? finalized.homePlayerStats
+                : finalized.awayPlayerStats;
               for (const [name, row] of Object.entries(userStats)) {
                 if (row.redCards > 0) {
                   nextSeason = applyRedCardSuspension(
@@ -536,11 +585,11 @@ export const useGameStore = create<GameStore>()(
 
           const tourFixtureId = get().tournamentActiveFixtureId;
           let tournament = get().tournament;
-          if (tournament && tourFixtureId && matchState) {
+          if (tournament && tourFixtureId && finalized) {
             const result = resolveTournamentWinnerFromMatch(
               tournament,
               tourFixtureId,
-              matchState
+              finalized
             );
             if (result) {
               tournament = applyFixtureResult(tournament, tourFixtureId, result);
@@ -820,6 +869,41 @@ export const useGameStore = create<GameStore>()(
         });
       },
 
+      confirmExtraTime: (approach: ExtraTimeApproach) => {
+        const state = get().matchState;
+        if (!state || state.status !== "extra_time_choice") return;
+
+        const playerIsHome = resolvePlayerIsHome();
+        const homeApproach = playerIsHome
+          ? approach
+          : cpuPickExtraTimeApproach(state.score, true);
+        const awayApproach = playerIsHome
+          ? cpuPickExtraTimeApproach(state.score, false)
+          : approach;
+
+        const mins = state.stoppageMinutes;
+        set({
+          matchState: {
+            ...state,
+            status: "running",
+            inStoppageTime: true,
+            stoppageTick: 0,
+            homeExtraTimeApproach: homeApproach,
+            awayExtraTimeApproach: awayApproach,
+            commentary: [
+              ...state.commentary,
+              {
+                id: commentaryId(),
+                minute: 90,
+                half: 2,
+                type: "stoppage",
+                text: `ADDED TIME — Home: ${extraTimeLabel(homeApproach)}. Away: ${extraTimeLabel(awayApproach)}. ${mins} minute${mins === 1 ? "" : "s"} to play.`,
+              },
+            ],
+          },
+        });
+      },
+
       chooseDrawReveal: (playerName) => {
         const pending = get().pendingReveal;
         const { myUniId } = playerRevealUniverses();
@@ -957,6 +1041,7 @@ export const useGameStore = create<GameStore>()(
         season: s.season,
         seasonHonours: s.seasonHonours,
         tournament: s.tournament,
+        playerForm: s.playerForm,
       }),
     }
   )
