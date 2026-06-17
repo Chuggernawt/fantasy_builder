@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-stadium: #0a0a0a;
+  --text-primary: #f1f5f9;
+  --text-highlight: #eab308;
+  --panel-border: #334155;
+  --glass-bg: rgba(0, 0, 0, 0.7);
+  --font-oswald: "Arial Narrow", "Franklin Gothic Medium", "Segoe UI", Impact, sans-serif;
+  --font-roboto-mono: Consolas, "Courier New", ui-monospace, monospace;
+}
+
+body {
+  background-color: var(--bg-stadium);
+  background-image:
+    radial-gradient(ellipse at 50% 0%, rgba(51, 65, 85, 0.35) 0%, transparent 55%),
+    linear-gradient(180deg, #0a0a0a 0%, #050505 100%);
+}
+
+@layer components {
+  .glass-panel {
+    @apply border border-broadcast-border bg-black/70 backdrop-blur-md;
+  }
+
+  .broadcast-title {
+    @apply font-display text-2xl font-bold uppercase tracking-widest text-broadcast-text md:text-4xl;
+  }
+
+  .broadcast-label {
+    @apply font-display text-xs font-semibold uppercase tracking-[0.2em] text-broadcast-highlight;
+  }
+
+  .stat-bar-track {
+    @apply h-1.5 w-full bg-broadcast-border;
+  }
+
+  .stat-bar-fill {
+    @apply h-full bg-broadcast-highlight transition-all duration-500;
+  }
+
+  .btn-broadcast {
+    @apply border border-broadcast-highlight bg-black/80 px-5 py-3 font-display text-sm font-semibold uppercase tracking-wider text-broadcast-highlight transition hover:bg-broadcast-highlight hover:text-stadium;
+  }
+
+  .btn-broadcast:disabled {
+    @apply cursor-not-allowed border-broadcast-border text-slate-500 hover:bg-black/80 hover:text-slate-500;
+  }
+
+  .btn-broadcast-solid {
+    @apply border border-broadcast-highlight bg-broadcast-highlight px-5 py-3 font-display text-sm font-semibold uppercase tracking-wider text-stadium transition hover:bg-yellow-400;
+  }
+}
+
+/* scrollbar for commentary */
+.commentary-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.commentary-scroll::-webkit-scrollbar-thumb {
+  background: #334155;
+}

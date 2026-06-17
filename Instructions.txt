@@ -1,0 +1,100 @@
+**Football Universe Draft & Simulator - Cursor Instruction / Reference File**
+
+**Project Goal**  
+Build a fun, replayable, head-to-head football (soccer) team builder where players pick one fictional universe, draft 11 players from its 22-player squad, choose a formation, assign players to roles, then simulate matches against friends (async link sharing + live Supabase Realtime). Emphasize humor from mismatched fictional characters in a serious tactical football simulation.
+
+### Core Rules & Constraints (Non-Negotiable)
+- **No mixed universes** — one universe per team for thematic coherence and strategic choice.
+- **Squads**: Use the exact balanced player lists below (with stats and Overall). Do not change names or drastically alter stats unless balancing is needed later.
+- **Stats** (0-100): Pace, Power, Stamina, Tackling, Passing, GK.
+- **Overall formula**: `(Pace×0.18 + Power×0.18 + Stamina×0.18 + Tackling×0.18 + Passing×0.18 + GK×0.10)`
+- **Simulation**: Real-time feel. 60-second halves. One tick every 5 seconds (~12 ticks per half). Full stat-driven logic + randomness + commentary text on events (chances, goals, tackles, stamina issues, special triggers).
+- **UI/UX Priority**: **Avoid all standard AI/vibe-coded aesthetics** (no default Tailwind indigo/blue cards, soft shadows, rounded everything, Inter font defaults). Make it feel like **live football broadcast graphics** (Sky Sports / ESPN style): dark backgrounds, glassmorphic or semi-transparent panels, high-contrast white/yellow text, team-color accents, scoreboard overlays, clean but dramatic.
+
+### Visual Direction (Enforce This Strictly)
+- **Color Palette** (define as CSS variables):
+  - Background: `#0a0a0a` (deep stadium black)
+  - Accents: Team-specific (e.g., gold for LOTR `#f59e0b`, red for Harry Potter `#b91c1c`, green for Mammals `#166534`)
+  - Text: `#f1f5f9` (off-white), bright yellow `#eab308` for highlights
+  - Panels: Dark glass (`bg-black/70` backdrop-blur-md, subtle borders `#334155`)
+- **Fonts**: Import `Oswald` or `Impact` for headers (broadcast feel), `Roboto Mono` or system sans for data/stats.
+- **Style**: Bold, high-contrast, scoreboard-like. Large player cards with position badges, animated stat bars, ticker-style commentary feed. Mobile-first responsive (vertical layout on phone feels like watching on a phone).
+- **Polish Instructions**: Use broadcast-inspired animations (slide-ins, goal flash, red/yellow card pops). No generic neumorphism or minimal cards.
+
+### Universes & Squads
+
+Squad data lives in **`data/squads.json`** (8 universes × 22 players). Regenerate from `scripts/build_squads.py` if stats change.
+
+**Launch universes & team ratings** (avg player OVR):
+
+| Universe | Team OVR | Identity |
+|----------|----------|----------|
+| Fighting Legends | 73.7 | Power, pace, tackling — lowest passing |
+| World Leaders | 72.3 | Passing, stamina — tactical control |
+| Harry Potter | 70.1 | Pace + passing — Quidditch counter-attack |
+| Lord of the Rings | 70.0 | Stamina — grinds you down late |
+| Futurama | 65.9 | Robot power, weird GK options |
+| The Simpsons | 64.9 | Chaos — high variance outliers |
+| Family Guy | 64.6 | Brawlers — Joe Swanson / Death backbone |
+| Famous Retards | 62.1 | Lowest rated but viable — route-one, Mr. Bean in goal |
+
+Balance intent: top-tier universes ~70–74, comedy squads ~64–66, Famous Retards ~62 as the underdog pick (not an auto-loss).
+
+### Formations & Roles
+**Available Formations**:
+- 4-4-2
+- 4-3-3
+- 4-2-3-1
+- 3-5-2
+- 5-3-2
+
+**Roles & Stat Weights** (use these percentages for contribution in simulation):
+- GK: Pace 10%, Power 15%, Stamina 10%, Tackling 15%, Passing 10%, GK 40%
+- CB: Pace 10%, Power 25%, Stamina 15%, Tackling 35%, Passing 15%, GK 0%
+- FB: Pace 25%, Power 15%, Stamina 20%, Tackling 25%, Passing 15%
+- CM: Pace 15%, Power 15%, Stamina 25%, Tackling 20%, Passing 25%
+- DM: Pace 10%, Power 20%, Stamina 20%, Tackling 35%, Passing 15%
+- AM: Pace 20%, Power 15%, Stamina 20%, Tackling 10%, Passing 35%
+- W (Winger): Pace 35%, Power 10%, Stamina 20%, Tackling 10%, Passing 25%
+- ST: Pace 30%, Power 30%, Stamina 20%, Tackling 5%, Passing 15%
+
+Formation dictates exact role slots (e.g., 4-4-2 = GK + 2 CB + 2 FB + 2 CM + 2 W + 2 ST).
+
+### Match Simulation Logic
+- 2 halves × 60 real-time seconds.
+- Tick every 5 seconds.
+- Per tick (alternating teams or simultaneous):
+  1. Attacking team computes Attack Rating (weighted relevant stats of forwards/midfield).
+  2. Defending team computes Defence Rating.
+  3. Chance creation roll (Attack vs Defence + randomness).
+  4. If chance: Shot resolution (Power + Passing vs GK + randomness) → Goal or save + commentary.
+- Stamina: Drains per tick. Low base Stamina = faster degradation. Effective stats = base × (current stamina multiplier, min ~60%).
+- Substitutions: Up to 5 total. Halftime (3 subs), post-goal window (1 sub).
+- Commentary: Flavor text on every major event + character-specific specials (e.g., Gandalf “You shall not pass!” free tackle).
+
+### Tech Stack Recommendations
+- Next.js 14+ (App Router)
+- TypeScript
+- Tailwind (but heavily customized per visual rules above)
+- Supabase (Auth, Database for matches, Realtime for live games)
+- Zustand or React Context for game state
+- Responsive: Mobile + Desktop
+
+### Core Screens / Flow
+1. **Home/Landing** — Hero with “Build Your Squad” + live match examples.
+2. **Universe Selection** — Grid of 9 universes with logos/illustrations.
+3. **Squad Overview** — List 22 players with stats, filters, OVR.
+4. **Formation & Draft** — Choose formation → Drag & drop or assign players to role slots.
+5. **Match Lobby** — Create game or join via link/code. Async or live.
+6. **Live Match Screen** — Big scoreboard, pitch visualization (simple), live commentary ticker, stamina bars, sub button.
+7. **Post-Match** — Stats, highlights, rematch.
+
+**Start with**: Universe selection + squad viewer + formation picker + basic simulation engine (single-player test mode first).
+
+**Additional Polish**:
+- Player “Special” traits with rare narrative events.
+- Shareable match links.
+- Leaderboards / most fun universes.
+- Sound effects (optional later: crowd cheers, whistles).
+
+Prioritize fun, humor, and tactical depth over perfect realism. Build iteratively — start with data + UI skeleton, then simulation engine, then multiplayer.

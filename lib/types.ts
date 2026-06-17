@@ -1,0 +1,267 @@
+export type StatKey = "pace" | "power" | "stamina" | "tackling" | "passing" | "gk";
+
+export type PlayerStats = Record<StatKey, number>;
+
+export interface Player {
+  name: string;
+  stats: PlayerStats;
+  ovr: number;
+}
+
+export interface Universe {
+  id: string;
+  name: string;
+  accentColor: string;
+  tagline: string;
+  players: Player[];
+}
+
+export interface SquadsData {
+  version: number;
+  overallFormula: string;
+  universes: Universe[];
+}
+
+export type Role =
+  | "GK"
+  | "CB"
+  | "FB"
+  | "CM"
+  | "DM"
+  | "AM"
+  | "W"
+  | "ST";
+
+export type FormationId = "4-4-2" | "4-3-3" | "4-2-3-1" | "3-5-2" | "5-3-2";
+
+export interface FormationSlot {
+  id: string;
+  role: Role;
+  label: string;
+}
+
+export interface Formation {
+  id: FormationId;
+  label: string;
+  slots: FormationSlot[];
+}
+
+export interface LineupSlot {
+  slotId: string;
+  role: Role;
+  playerName: string | null;
+}
+
+export interface MatchPlayerState {
+  playerName: string;
+  role: Role;
+  baseStats: PlayerStats;
+  currentStamina: number;
+  onPitch: boolean;
+}
+
+export type CommentaryType =
+  | "info"
+  | "chance"
+  | "goal"
+  | "save"
+  | "miss"
+  | "tackle"
+  | "foul"
+  | "freekick"
+  | "stamina"
+  | "special"
+  | "halftime"
+  | "fulltime"
+  | "turnover"
+  | "corner"
+  | "cross"
+  | "clearance"
+  | "pressure"
+  | "header"
+  | "offside"
+  | "yellowcard"
+  | "redcard"
+  | "penalty"
+  | "longball"
+  | "substitution";
+
+export type TacticalStyle = "press" | "sit_deep" | "direct" | "through_middle";
+
+export interface PlayerMatchStats {
+  goals: number;
+  assists: number;
+  yellowCards: number;
+  redCards: number;
+}
+
+export interface TeamMatchStats {
+  possessionPhases: number;
+  shots: number;
+  shotsOnTarget: number;
+  chances: number;
+  saves: number;
+  foulsCommitted: number;
+  freeKicksWon: number;
+}
+
+export interface PendingSetPiece {
+  team: "home" | "away";
+  kind: "freekick";
+  xgBonus: number;
+}
+
+export interface SetPieceBudgetSide {
+  attackCorner: boolean;
+  defendCorner: boolean;
+}
+
+export interface SetPieceBudget {
+  home: SetPieceBudgetSide;
+  away: SetPieceBudgetSide;
+}
+
+export function defaultSetPieceBudget(): SetPieceBudget {
+  return {
+    home: { attackCorner: false, defendCorner: false },
+    away: { attackCorner: false, defendCorner: false },
+  };
+}
+
+export interface InteractiveSetPiece {
+  kind: "corner" | "penalty";
+  attacking: "home" | "away";
+  phase: "choose" | "reveal";
+  chooseEndsAt: string;
+  revealEndsAt?: string;
+  taker: string;
+  keeper: string;
+  cornerTaker?: string;
+  attackerChoice?: number;
+  defenderChoice?: number;
+  attackerPick?: number;
+  defenderPick?: number;
+  goalScored?: boolean;
+  resultText?: string;
+}
+
+export function emptySetPieceBudget(): SetPieceBudget {
+  return defaultSetPieceBudget();
+}
+
+export function emptyTeamStats(): TeamMatchStats {
+  return {
+    possessionPhases: 0,
+    shots: 0,
+    shotsOnTarget: 0,
+    chances: 0,
+    saves: 0,
+    foulsCommitted: 0,
+    freeKicksWon: 0,
+  };
+}
+
+export interface CommentaryEvent {
+  id: string;
+  minute: number;
+  half: 1 | 2;
+  type: CommentaryType;
+  text: string;
+  team?: "home" | "away";
+  /** Primary player involved (e.g. goal scorer). */
+  playerName?: string;
+  /** Assist on goal events. */
+  assistPlayerName?: string;
+}
+
+export type MatchStatus =
+  | "idle"
+  | "running"
+  | "sub_window"
+  | "halftime"
+  | "set_piece_pause"
+  | "finished";
+
+export interface MatchScore {
+  home: number;
+  away: number;
+}
+
+export interface MatchState {
+  status: MatchStatus;
+  half: 1 | 2;
+  tick: number;
+  ticksPerHalf: number;
+  score: MatchScore;
+  homeStamina: Record<string, number>;
+  awayStamina: Record<string, number>;
+  commentary: CommentaryEvent[];
+  homeUniverseId: string;
+  awayUniverseId: string;
+  homeSubsUsed: number;
+  awaySubsUsed: number;
+  homeStats: TeamMatchStats;
+  awayStats: TeamMatchStats;
+  homePlayerStats: Record<string, PlayerMatchStats>;
+  awayPlayerStats: Record<string, PlayerMatchStats>;
+  homeTactic: TacticalStyle | null;
+  awayTactic: TacticalStyle | null;
+  /** Half number when home tactic was last set (0 = unset). */
+  homeTacticHalf: number;
+  awayTacticHalf: number;
+  homeCaptain: string | null;
+  awayCaptain: string | null;
+  homeCaptainHalf: number;
+  awayCaptainHalf: number;
+  /** Ticks remaining on home captain's boost after Captain's Call. */
+  homeCaptainBoostTicks: number;
+  awayCaptainBoostTicks: number;
+  pendingSetPiece: PendingSetPiece | null;
+  setPieceBudget: SetPieceBudget;
+  interactiveSetPiece: InteractiveSetPiece | null;
+  momentum: number;
+  /** Last in-game minute a player had a special event (soft anti-repeat). */
+  specialCooldown: Record<string, number>;
+  /** Recent commentary lines for anti-repetition (last ~14). */
+  recentCommentaryLines?: string[];
+  /** Season context when playing a league fixture. */
+  seasonMeta?: import("./commentary-types").SeasonMatchMeta;
+  /** Cup knockout decider — penalties after a draw at full time. */
+  tournamentMeta?: {
+    cupKnockout: boolean;
+    penaltyMode: import("./tournament-types").PenaltyMode;
+  };
+}
+
+export interface MatchSummary {
+  homeName: string;
+  awayName: string;
+  homeAccent: string;
+  awayAccent: string;
+  score: MatchScore;
+  homeGoals: { scorer: string; assist: string | null; minute: number }[];
+  awayGoals: { scorer: string; assist: string | null; minute: number }[];
+  homePlayerStats: Record<string, PlayerMatchStats>;
+  awayPlayerStats: Record<string, PlayerMatchStats>;
+  homePossessionPct: number;
+  awayPossessionPct: number;
+  homeShots: number;
+  awayShots: number;
+  homeShotsOnTarget: number;
+  awayShotsOnTarget: number;
+  homeChances: number;
+  awayChances: number;
+  homeSaves: number;
+  awaySaves: number;
+  homeFouls: number;
+  awayFouls: number;
+  commentary: CommentaryEvent[];
+}
+
+export interface TeamSetup {
+  universeId: string;
+  formationId: FormationId;
+  lineup: LineupSlot[];
+  /** Up to 5 named subs — only these players may enter from the bench. */
+  bench: string[];
+}

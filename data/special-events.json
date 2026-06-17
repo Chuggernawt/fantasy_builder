@@ -1,0 +1,4627 @@
+{
+  "pools": {
+    "quidditch_seeker": {
+      "members": [
+        "Harry Potter",
+        "Oliver Wood",
+        "Viktor Krum",
+        "Cedric Diggory"
+      ],
+      "lines": [
+        {
+          "text": "{name} looks distracted — eyes on the sky for a Snitch?",
+          "effect": "disrupt"
+        },
+        {
+          "text": "{name} breaks into a seeker dive down the wing!",
+          "effect": "wide"
+        },
+        {
+          "text": "{name} spots gold glinting — wrong ball, full sprint!",
+          "effect": "boost"
+        }
+      ]
+    },
+    "force_user": {
+      "members": [
+        "Luke Skywalker",
+        "Darth Vader",
+        "Yoda",
+        "Obi-Wan Kenobi",
+        "Emperor Palpatine",
+        "Anakin Skywalker",
+        "Mace Windu",
+        "Qui-Gon Jinn",
+        "Rey",
+        "Kylo Ren"
+      ],
+      "lines": [
+        {
+          "text": "{name} uses the Force — the ball swerves unnaturally!",
+          "effect": "chaos"
+        },
+        {
+          "text": "{name} meditates mid-press... then explodes forward.",
+          "effect": "boost"
+        },
+        {
+          "text": "{name} extends a hand — the pass obeys.",
+          "effect": "boost"
+        }
+      ]
+    },
+    "slasher_stalk": {
+      "members": [
+        "Jason Voorhees",
+        "Michael Myers",
+        "Leatherface",
+        "Ghostface",
+        "Chucky",
+        "Freddy Krueger"
+      ],
+      "lines": [
+        {
+          "text": "{name} emerges from nowhere — silent footsteps.",
+          "effect": "disrupt"
+        },
+        {
+          "text": "{name} raises the weapon — pure menace.",
+          "effect": "yellow"
+        },
+        {
+          "text": "{name} stalks through the mist — defenders freeze.",
+          "effect": "stamina_opp"
+        }
+      ]
+    },
+    "wwe_promo": {
+      "members": [
+        "Stone Cold Steve Austin",
+        "The Undertaker",
+        "Ric Flair",
+        "Shawn Michaels",
+        "Bret Hart",
+        "Triple H",
+        "Mick Foley",
+        "Edge",
+        "Goldberg",
+        "Kane",
+        "Rey Mysterio",
+        "Roman Reigns",
+        "André the Giant",
+        "Macho Man Randy Savage",
+        "Ultimate Warrior",
+        "Jake 'The Snake' Roberts",
+        "Yokozuna",
+        "Mr. Perfect",
+        "Razor Ramon",
+        "Dusty Rhodes",
+        "Hulk Hogan",
+        "Randy Orton"
+      ],
+      "lines": [
+        {
+          "text": "{name} grabs the mic — crowd goes wild, play stops briefly.",
+          "effect": "chaos"
+        },
+        {
+          "text": "{name} hits a stiff worked shot off the ball!",
+          "effect": "yellow"
+        },
+        {
+          "text": "{name} cuts a promo on the touchline — momentum shifts!",
+          "effect": "momentum_up"
+        }
+      ]
+    },
+    "super_strength": {
+      "members": [
+        "Hulk",
+        "Thor",
+        "Superman",
+        "Doomsday",
+        "André the Giant",
+        "Great Dragon",
+        "Mongo",
+        "Bowser",
+        "Titan",
+        "Donkey Kong",
+        "Bane",
+        "Thanos"
+      ],
+      "lines": [
+        {
+          "text": "{name} absolutely clatters someone — legal, somehow.",
+          "effect": "yellow"
+        },
+        {
+          "text": "{name} shoots from downtown — power only!",
+          "effect": "chance"
+        },
+        {
+          "text": "{name} launches the ball like a freight train!",
+          "effect": "boost"
+        }
+      ]
+    },
+    "mad_scientist": {
+      "members": [
+        "Professor Frink",
+        "Professor Hubert Farnsworth",
+        "Lex Luthor",
+        "Stewie Griffin"
+      ],
+      "lines": [
+        {
+          "text": "{name} unveils an untested gadget on the pitch!",
+          "effect": "chaos"
+        },
+        {
+          "text": "{name}'s invention backfires spectacularly.",
+          "effect": "gk_moment"
+        },
+        {
+          "text": "{name} calculates trajectory with a slide rule — chaos ensues.",
+          "effect": "chaos"
+        }
+      ]
+    },
+    "trickster": {
+      "members": [
+        "Stewie Griffin",
+        "Bart Simpson",
+        "Loki",
+        "Beetlejuice",
+        "Rumpelstiltskin"
+      ],
+      "lines": [
+        {
+          "text": "{name} plots something off the ball...",
+          "effect": "chaos"
+        },
+        {
+          "text": "{name} pulls a prank — chaos in the box!",
+          "effect": "set_piece"
+        },
+        {
+          "text": "{name} says the magic words — reality wobbles.",
+          "effect": "chaos"
+        }
+      ]
+    },
+    "tv_antihero": {
+      "members": [
+        "Tony Soprano",
+        "Walter White",
+        "Jesse Pinkman",
+        "Saul Goodman",
+        "Don Draper",
+        "Dexter Morgan",
+        "Omar Little",
+        "Stringer Bell",
+        "Tyrion Lannister",
+        "Jack Bauer",
+        "Vic Mackey",
+        "Tommy Shelby"
+      ],
+      "lines": [
+        {
+          "text": "{name} calculates coldly — slow build, then knife.",
+          "effect": "boost"
+        },
+        {
+          "text": "{name}'s mask slips — reckless lunge!",
+          "effect": "chaos"
+        },
+        {
+          "text": "{name} plays the long con — defense overcommits.",
+          "effect": "disrupt"
+        }
+      ]
+    }
+  },
+  "players": {
+    "Abby Anderson": [
+      {
+        "text": "Golf club flashback from Abby.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Seattle day — relentless press.",
+        "effect": "boost"
+      }
+    ],
+    "Abraham Lincoln": [
+      {
+        "text": "Emancipation through ball from Lincoln.",
+        "effect": "boost"
+      },
+      {
+        "text": "Theatre box distraction.",
+        "effect": "chaos"
+      }
+    ],
+    "Ace Ventura": [
+      {
+        "text": "Laces out! — Ace's placement.",
+        "effect": "chance"
+      },
+      {
+        "text": "Pet detective sniffs out the pass.",
+        "effect": "boost"
+      }
+    ],
+    "Adele": [
+      {
+        "text": "Hello from the other side — long ball.",
+        "effect": "boost"
+      },
+      {
+        "text": "Rolling in the deep — driven shot.",
+        "effect": "chance"
+      }
+    ],
+    "Adolf Hitler": [
+      {
+        "text": "Bunker rant — Hitler's meltdown.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Questionable tactic — the crowd boos.",
+        "effect": "momentum_down"
+      }
+    ],
+    "Al Swearengen": [
+      {
+        "text": "Welcome to Deadwood — profane.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Hearst monologue delay.",
+        "effect": "chaos"
+      }
+    ],
+    "Aladdin": [
+      {
+        "text": "Magic carpet cross.",
+        "effect": "wide"
+      },
+      {
+        "text": "Diamond in the rough — lucky bounce.",
+        "effect": "chaos"
+      }
+    ],
+    "Alex the Lion": [
+      {
+        "text": "King of New York — roar.",
+        "effect": "momentum_up"
+      },
+      {
+        "text": "Zoo escape pace.",
+        "effect": "wide"
+      }
+    ],
+    "Alexander the Great": [
+      {
+        "text": "Alexander conquers the flank.",
+        "effect": "wide"
+      },
+      {
+        "text": "Alexander weeps — no more worlds to dribble.",
+        "effect": "chaos"
+      }
+    ],
+    "Alfred Pennyworth": [
+      {
+        "text": "Very good sir — perfect tea stop.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Butler save — dignified from Alfred.",
+        "effect": "gk_moment"
+      }
+    ],
+    "Aloy": [
+      {
+        "text": "Focus scan — weakness found by Aloy.",
+        "effect": "boost"
+      },
+      {
+        "text": "Ropecaster pull from Aloy.",
+        "effect": "boost"
+      }
+    ],
+    "Amy Wong": [
+      {
+        "text": "Clumsy rich kid trap from Amy.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Martian sweatshop work rate from Amy.",
+        "effect": "stamina_opp"
+      }
+    ],
+    "Anakin Skywalker": [
+      {
+        "text": "Sand hatred — Anakin overhits the pass.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Podracer pace from Anakin.",
+        "effect": "wide"
+      }
+    ],
+    "Anderson Silva": [
+      {
+        "text": "Matrix dodge — Silva baits the offside trap.",
+        "effect": "boost"
+      },
+      {
+        "text": "Front kick — keeper stunned.",
+        "effect": "gk_moment"
+      }
+    ],
+    "André the Giant": [
+      {
+        "text": "Can't top rope — still dominates.",
+        "effect": "boost"
+      },
+      {
+        "text": "André's colossal footprint on the pitch.",
+        "effect": "boost"
+      }
+    ],
+    "Andy Stitzer": [
+      {
+        "text": "Action figure collection huddle from Andy.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Wax off — unexpected skill from Andy.",
+        "effect": "boost"
+      }
+    ],
+    "Angela Merkel": [
+      {
+        "text": "Pragmatic sideways pass from Merkel.",
+        "effect": "boost"
+      },
+      {
+        "text": "EU summit hold — slow play.",
+        "effect": "chaos"
+      }
+    ],
+    "Annabelle": [
+      {
+        "text": "Doll on bench — everyone scared.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Static on radio — comms fail.",
+        "effect": "chaos"
+      }
+    ],
+    "Ant-Man": [
+      {
+        "text": "Go subatomic — the ball vanishes.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Giant-Man clearance from Ant-Man.",
+        "effect": "boost"
+      }
+    ],
+    "Apu Nahasapeemapetilon": [
+      {
+        "text": "Thank you come again — Apu's rapid counter.",
+        "effect": "wide"
+      },
+      {
+        "text": "Kwik-E-Mart shift stamina from Apu.",
+        "effect": "stamina_opp"
+      }
+    ],
+    "Aquaman": [
+      {
+        "text": "Talks to fish — offside trap intel.",
+        "effect": "boost"
+      },
+      {
+        "text": "Trident poke from Aquaman.",
+        "effect": "yellow"
+      }
+    ],
+    "Aragorn": [
+      {
+        "text": "Ranger sprint down the flank from Aragorn.",
+        "effect": "wide"
+      },
+      {
+        "text": "Kingly rally — teammates surge with Aragorn.",
+        "effect": "momentum_up"
+      }
+    ],
+    "Ariel": [
+      {
+        "text": "Under the sea — slippery surface.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Part of your world — long ball.",
+        "effect": "boost"
+      }
+    ],
+    "Astro Bot": [
+      {
+        "text": "DualSense haptic nutmeg from Astro.",
+        "effect": "boost"
+      },
+      {
+        "text": "Sony IP cameo distraction.",
+        "effect": "chaos"
+      }
+    ],
+    "Atreus": [
+      {
+        "text": "Father watch! — Atreus arrow assist.",
+        "effect": "boost"
+      },
+      {
+        "text": "L2 + R2 skill move from Atreus.",
+        "effect": "boost"
+      }
+    ],
+    "B.O.B.": [
+      {
+        "text": "Candy corn brain — random touch.",
+        "effect": "chaos"
+      },
+      {
+        "text": "No gravity — float pass.",
+        "effect": "wide"
+      }
+    ],
+    "Bambi": [
+      {
+        "text": "Ice on pond — first time on grass.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Mother! — trauma sprint.",
+        "effect": "wide"
+      }
+    ],
+    "Bane": [
+      {
+        "text": "Break the back — brutal foul from Bane.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Venom surge from Bane.",
+        "effect": "stamina_opp"
+      }
+    ],
+    "Banshee": [
+      {
+        "text": "Scream — ball shatters.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Wail — keeper covers ears.",
+        "effect": "gk_moment"
+      }
+    ],
+    "Barack Obama": [
+      {
+        "text": "Yes we can — Obama's patient build-up.",
+        "effect": "boost"
+      },
+      {
+        "text": "Mic drop celebration pending.",
+        "effect": "chaos"
+      }
+    ],
+    "Barney Gumble": [
+      {
+        "text": "Burp wave — the ball wobbles off Barney.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Belly block — Barney's accidental save.",
+        "effect": "gk_moment"
+      }
+    ],
+    "Bart Simpson": [
+      {
+        "text": "Bart skateboards down the wing!",
+        "effect": "wide"
+      },
+      {
+        "text": "Eat my shorts! — Bart's nutmeg attempt.",
+        "effect": "boost"
+      }
+    ],
+    "Basilisk": [
+      {
+        "text": "Serpent king — death stare.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Mirror trick — own goal scare.",
+        "effect": "gk_moment"
+      }
+    ],
+    "Batman": [
+      {
+        "text": "I'm Batman — shadow tackle from the Dark Knight.",
+        "effect": "boost"
+      },
+      {
+        "text": "Prep time — Batman reads everything.",
+        "effect": "disrupt"
+      }
+    ],
+    "Beast": [
+      {
+        "text": "Tale as old as time — power header.",
+        "effect": "chance"
+      },
+      {
+        "text": "Rose petal fall — time running out.",
+        "effect": "momentum_up"
+      }
+    ],
+    "Beetlejuice": [
+      {
+        "text": "Daylight come and me wanna score!",
+        "effect": "boost"
+      },
+      {
+        "text": "Beetlejuice says his name — chaos tripled.",
+        "effect": "chaos"
+      }
+    ],
+    "Bellatrix Lestrange": [
+      {
+        "text": "Unhinged cackle press from Bellatrix.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Crucio curl — nasty bend on the shot.",
+        "effect": "chaos"
+      }
+    ],
+    "Bender Bending Rodriguez": [
+      {
+        "text": "Bite my shiny metal— tackle from Bender.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Blackjack and hookers break on the touchline.",
+        "effect": "chaos"
+      }
+    ],
+    "Beyoncé": [
+      {
+        "text": "Single ladies — formation change.",
+        "effect": "momentum_up"
+      },
+      {
+        "text": "Halo — divine save assist.",
+        "effect": "boost"
+      }
+    ],
+    "Black Panther": [
+      {
+        "text": "Wakanda forever! — T'Challa inspires.",
+        "effect": "momentum_up"
+      },
+      {
+        "text": "Vibranium tackle from Black Panther.",
+        "effect": "boost"
+      }
+    ],
+    "Black Widow": [
+      {
+        "text": "Widow's bite — leg hook from Natasha.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Spy seduction misdirection.",
+        "effect": "disrupt"
+      }
+    ],
+    "Bob Dylan": [
+      {
+        "text": "The times they are a-changin' — slow build.",
+        "effect": "boost"
+      },
+      {
+        "text": "Blowin' in the wind — unpredictable curl.",
+        "effect": "chaos"
+      }
+    ],
+    "Bob Marley": [
+      {
+        "text": "One love — no foul given.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Jammin' — reggae rhythm possession.",
+        "effect": "boost"
+      }
+    ],
+    "Boba Fett": [
+      {
+        "text": "No disintegrations — Boba Fett's controlled foul.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Jetpack chase from Boba Fett.",
+        "effect": "wide"
+      }
+    ],
+    "Borat Sagdiyev": [
+      {
+        "text": "Very nice! Great success! — Borat celebrates early.",
+        "effect": "boost"
+      },
+      {
+        "text": "Kazakhstan national anthem confusion.",
+        "effect": "chaos"
+      }
+    ],
+    "Boris Johnson": [
+      {
+        "text": "Zip line stuck — Boris kills momentum.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Bus lie metaphor — wrong direction run.",
+        "effect": "disrupt"
+      }
+    ],
+    "Boromir": [
+      {
+        "text": "Boromir overcommits for glory.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Gondor needs this goal! Boromir roars.",
+        "effect": "momentum_up"
+      }
+    ],
+    "Bowser": [
+      {
+        "text": "Shell spin — fire breath from Bowser.",
+        "effect": "boost"
+      },
+      {
+        "text": "Princess kidnap metaphor hold.",
+        "effect": "yellow"
+      }
+    ],
+    "Bret Hart": [
+      {
+        "text": "Best there is — precision from Hitman.",
+        "effect": "boost"
+      },
+      {
+        "text": "Sharpshooter — submission hold foul.",
+        "effect": "yellow"
+      }
+    ],
+    "Brian Griffin": [
+      {
+        "text": "Pretentious novelist touch from Brian.",
+        "effect": "boost"
+      },
+      {
+        "text": "Dog chase instinct — Brian loses the ball.",
+        "effect": "disrupt"
+      }
+    ],
+    "Brick Tamland": [
+      {
+        "text": "I love lamp — Brick carries a lamp on the pitch.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Brick yells a random city name.",
+        "effect": "chaos"
+      }
+    ],
+    "Bruce": [
+      {
+        "text": "Oh honey honey — Bruce distracts.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Camp run — defender embarrassed.",
+        "effect": "wide"
+      }
+    ],
+    "Bruce Lee": [
+      {
+        "text": "Be water — Lee's untouchable dribble.",
+        "effect": "wide"
+      },
+      {
+        "text": "One-inch punch clearance from Bruce Lee.",
+        "effect": "boost"
+      }
+    ],
+    "Bruce Springsteen": [
+      {
+        "text": "Born to run — never tires.",
+        "effect": "stamina_opp"
+      },
+      {
+        "text": "Boss bandanna leadership.",
+        "effect": "momentum_up"
+      }
+    ],
+    "C-3PO": [
+      {
+        "text": "We're doomed! — C-3PO's panic backpass.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Protocol panic — offside flag.",
+        "effect": "chaos"
+      }
+    ],
+    "Calculon": [
+      {
+        "text": "Dramatic monologue before Calculon's shot.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Oscar-worthy dive from Calculon.",
+        "effect": "yellow"
+      }
+    ],
+    "Candyman": [
+      {
+        "text": "Say his name five times.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Hook mirror break.",
+        "effect": "chaos"
+      }
+    ],
+    "Canelo Alvarez": [
+      {
+        "text": "Body shot specialist — Canelo digs in.",
+        "effect": "boost"
+      },
+      {
+        "text": "Red hair dye trail on the turf.",
+        "effect": "chaos"
+      }
+    ],
+    "Captain America": [
+      {
+        "text": "Avengers assemble! — Cap rallies the team.",
+        "effect": "momentum_up"
+      },
+      {
+        "text": "Shield ricochet pass from Cap.",
+        "effect": "boost"
+      }
+    ],
+    "Captain Falcon": [
+      {
+        "text": "FALCON PUNCH! — shoulder charge.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Show me your moves! — Falcon dances.",
+        "effect": "chaos"
+      }
+    ],
+    "Captain Hook": [
+      {
+        "text": "Tick tock — croc panic from Hook.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Hook hand — handball?",
+        "effect": "chaos"
+      }
+    ],
+    "Captain Marvel": [
+      {
+        "text": "Photon blast — keeper blinded.",
+        "effect": "gk_moment"
+      },
+      {
+        "text": "Binary mode — unstoppable from Carol.",
+        "effect": "boost"
+      }
+    ],
+    "Carol Miller (Mom)": [
+      {
+        "text": "Mother knows best — robotic press from Mom.",
+        "effect": "boost"
+      },
+      {
+        "text": "Pop and lock discipline foul.",
+        "effect": "yellow"
+      }
+    ],
+    "Carter Pewterschmidt": [
+      {
+        "text": "Billionaire bribe ref attempt from Carter.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Heart attack fake from Carter.",
+        "effect": "chaos"
+      }
+    ],
+    "Catwoman": [
+      {
+        "text": "Purr-fect theft of the ball from Catwoman.",
+        "effect": "boost"
+      },
+      {
+        "text": "Whip crack foul.",
+        "effect": "yellow"
+      }
+    ],
+    "Cedric Diggory": [
+      {
+        "text": "Hufflepuff fair play... then Cedric burns past.",
+        "effect": "wide"
+      },
+      {
+        "text": "Cedric's sportsmanship masks ruthless pace.",
+        "effect": "boost"
+      }
+    ],
+    "Centaur": [
+      {
+        "text": "Gallop — can you foul the horse part?",
+        "effect": "chaos"
+      },
+      {
+        "text": "Bow shot from midfield.",
+        "effect": "chance"
+      }
+    ],
+    "Cerberus": [
+      {
+        "text": "Three-headed guard dog press.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Underworld chain foul.",
+        "effect": "yellow"
+      }
+    ],
+    "Cersei Lannister": [
+      {
+        "text": "Shame walk — psychological.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Wildfire — scorched earth.",
+        "effect": "chaos"
+      }
+    ],
+    "Chewbacca": [
+      {
+        "text": "Rawr — Chewbacca's riposte tackle.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Co-pilot scream — tempo rises.",
+        "effect": "momentum_up"
+      }
+    ],
+    "Chief Clancy Wiggum": [
+      {
+        "text": "Chief Wiggum books the wrong person.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Donut crumb trail — Wiggum slips the defender.",
+        "effect": "boost"
+      }
+    ],
+    "Chimera": [
+      {
+        "text": "Three-headed attack — triple threat.",
+        "effect": "boost"
+      },
+      {
+        "text": "Fire goat lion — chaos.",
+        "effect": "chaos"
+      }
+    ],
+    "Chris Griffin": [
+      {
+        "text": "Giant baby stumble from Chris.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Buttermilk keyword — random power from Chris.",
+        "effect": "boost"
+      }
+    ],
+    "Christopher Moltisanti": [
+      {
+        "text": "Cleaver film — distracted.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Mob wife drama.",
+        "effect": "chaos"
+      }
+    ],
+    "Chuck Norris": [
+      {
+        "text": "Roundhouse — goal from midfield, Chuck Norris style.",
+        "effect": "chance"
+      },
+      {
+        "text": "Facts say Chuck Norris scored twice.",
+        "effect": "chaos"
+      }
+    ],
+    "Chucky": [
+      {
+        "text": "Hi I'm Chucky — swear at the ref.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Good guy doll sprint.",
+        "effect": "wide"
+      }
+    ],
+    "Cinderella": [
+      {
+        "text": "Midnight curfew — rushed shot.",
+        "effect": "chance"
+      },
+      {
+        "text": "Glass slipper — fragile skill.",
+        "effect": "boost"
+      }
+    ],
+    "Clank": [
+      {
+        "text": "Helpack thruster — aerial duel from Clank.",
+        "effect": "boost"
+      },
+      {
+        "text": "Lombax support calculations.",
+        "effect": "boost"
+      }
+    ],
+    "Cleopatra": [
+      {
+        "text": "Charm offensive — Cleopatra, ref lenient.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Asp bite drama on the touchline.",
+        "effect": "yellow"
+      }
+    ],
+    "Cleveland Brown": [
+      {
+        "text": "Tub accident flashback — Cleveland slips.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Quahog deli calm finish from Cleveland.",
+        "effect": "boost"
+      }
+    ],
+    "Clone Trooper": [
+      {
+        "text": "Roger roger — synchronized press.",
+        "effect": "boost"
+      },
+      {
+        "text": "Order 66 — switches sides?!",
+        "effect": "chaos"
+      }
+    ],
+    "Cole MacGrath": [
+      {
+        "text": "Karmic lightning bolt from Cole.",
+        "effect": "chance"
+      },
+      {
+        "text": "Good or evil — unpredictable foul.",
+        "effect": "chaos"
+      }
+    ],
+    "Comic Book Guy": [
+      {
+        "text": "Worst. Pass. Ever. — still works for Comic Book Guy.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Mint condition tackle — never touched.",
+        "effect": "disrupt"
+      }
+    ],
+    "Conor McGregor": [
+      {
+        "text": "Mystic Mac prediction — McGregor scores.",
+        "effect": "chance"
+      },
+      {
+        "text": "Bus throw energy from McGregor.",
+        "effect": "yellow"
+      }
+    ],
+    "Consuela": [
+      {
+        "text": "No no no... — Consuela refuses to release the ball.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Lemon pledge slide from Consuela.",
+        "effect": "boost"
+      }
+    ],
+    "Cosmo Kramer": [
+      {
+        "text": "Kramer entrance — sliding through the door.",
+        "effect": "wide"
+      },
+      {
+        "text": "Mocha Joe sabotage from Kramer.",
+        "effect": "chaos"
+      }
+    ],
+    "Count Dracula": [
+      {
+        "text": "Hypnotic stare — missed tackle.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Bat swarm — lost ball.",
+        "effect": "chaos"
+      }
+    ],
+    "Crabbe & Goyle": [
+      {
+        "text": "Combined lump tackle from Crabbe & Goyle.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Crabbe & Goyle confused which way to run.",
+        "effect": "disrupt"
+      }
+    ],
+    "Crash Bandicoot": [
+      {
+        "text": "Wumpa bounce — spin attack from Crash.",
+        "effect": "wide"
+      },
+      {
+        "text": "TNT crate mishap.",
+        "effect": "chaos"
+      }
+    ],
+    "Cubert Farnsworth": [
+      {
+        "text": "Smarter than grandpa — Cubert's wrong anyway.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Puberty whine — tempo killed.",
+        "effect": "chaos"
+      }
+    ],
+    "Cyborg": [
+      {
+        "text": "Boom tube teleport run from Cyborg.",
+        "effect": "wide"
+      },
+      {
+        "text": "Mother box analysis.",
+        "effect": "boost"
+      }
+    ],
+    "Cyclops": [
+      {
+        "text": "One-eyed through ball — narrow vision.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Odysseus trauma — rage.",
+        "effect": "yellow"
+      }
+    ],
+    "Daredevil": [
+      {
+        "text": "Radar sense — blind pass from Daredevil.",
+        "effect": "boost"
+      },
+      {
+        "text": "Catholic guilt — Daredevil hesitates.",
+        "effect": "disrupt"
+      }
+    ],
+    "Darkseid": [
+      {
+        "text": "Omega beams — keeper vaporized.",
+        "effect": "gk_moment"
+      },
+      {
+        "text": "Anti-life equation — team stops trying.",
+        "effect": "disrupt"
+      }
+    ],
+    "Darth Maul": [
+      {
+        "text": "Double kick rabona from Darth Maul.",
+        "effect": "chance"
+      },
+      {
+        "text": "Silent rage sprint from Maul.",
+        "effect": "wide"
+      }
+    ],
+    "Darth Vader": [
+      {
+        "text": "I find your lack of faith disturbing.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Vader's breathing intimidates the press.",
+        "effect": "momentum_up"
+      }
+    ],
+    "David Bowie": [
+      {
+        "text": "Ziggy stardust — alien skill.",
+        "effect": "boost"
+      },
+      {
+        "text": "Ch-ch-changes — tactical switch.",
+        "effect": "momentum_up"
+      }
+    ],
+    "Deacon St. John": [
+      {
+        "text": "Freaker horde chase onto the pitch.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Bike jump cross from Deacon.",
+        "effect": "wide"
+      }
+    ],
+    "Deadpool": [
+      {
+        "text": "Fourth wall — Deadpool argues with the commentator.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Maximum effort dive from Deadpool.",
+        "effect": "yellow"
+      }
+    ],
+    "Death": [
+      {
+        "text": "Touch of death — legal tackle from Death.",
+        "effect": "boost"
+      },
+      {
+        "text": "Reap what you sow — turnover.",
+        "effect": "turnover"
+      }
+    ],
+    "Delsin Rowe": [
+      {
+        "text": "Neon smoke trail from Delsin.",
+        "effect": "wide"
+      },
+      {
+        "text": "Concrete armor — immovable.",
+        "effect": "boost"
+      }
+    ],
+    "Denethor": [
+      {
+        "text": "Steward madness — Denethor's wrong-sub energy.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Denethor burns the playbook — chaos.",
+        "effect": "chaos"
+      }
+    ],
+    "Derek Zoolander": [
+      {
+        "text": "Blue steel — Zoolander freezes the defender.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Magnum — Zoolander can't turn left.",
+        "effect": "disrupt"
+      }
+    ],
+    "Dexter Morgan": [
+      {
+        "text": "Tonight's the night — clinical.",
+        "effect": "boost"
+      },
+      {
+        "text": "Dark passenger — cold finish.",
+        "effect": "chance"
+      }
+    ],
+    "Diddy Kong": [
+      {
+        "text": "Banana peel — slapstick foul.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Jetpack peanut popgun sprint.",
+        "effect": "wide"
+      }
+    ],
+    "Dobby": [
+      {
+        "text": "Master gave Dobby a sock! — freed run from Dobby.",
+        "effect": "wide"
+      },
+      {
+        "text": "Dobby's iron fist — surprisingly fierce.",
+        "effect": "boost"
+      }
+    ],
+    "Doctor Strange": [
+      {
+        "text": "14 million outcomes — Strange picks the pass.",
+        "effect": "boost"
+      },
+      {
+        "text": "Time stone rewind — offside erased?",
+        "effect": "chaos"
+      }
+    ],
+    "Don Draper": [
+      {
+        "text": "Carousel pitch — hypnotic pass.",
+        "effect": "boost"
+      },
+      {
+        "text": "That's what the money's for — walk.",
+        "effect": "chaos"
+      }
+    ],
+    "Donald Duck": [
+      {
+        "text": "Incomprehensible rage foul from Donald.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Sailor suit dive.",
+        "effect": "yellow"
+      }
+    ],
+    "Donald Trump": [
+      {
+        "text": "Tremendous shot — believe me.",
+        "effect": "chance"
+      },
+      {
+        "text": "Executive order — ref confused.",
+        "effect": "chaos"
+      }
+    ],
+    "Donbot": [
+      {
+        "text": "Mob calculation — efficient foul from Donbot.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Cement shoes metaphor tackle.",
+        "effect": "boost"
+      }
+    ],
+    "Donkey": [
+      {
+        "text": "In the mornin' — chatter delay.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Dragon romance distraction.",
+        "effect": "chaos"
+      }
+    ],
+    "Donkey Kong": [
+      {
+        "text": "Barrel roll throw from DK.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Ground pound — seismic foul.",
+        "effect": "yellow"
+      }
+    ],
+    "Doomsday": [
+      {
+        "text": "Death of football — Doomsday rampages.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Doomsday cannot be stopped.",
+        "effect": "boost"
+      }
+    ],
+    "Dr. John Zoidberg": [
+      {
+        "text": "Whoop whoop — Zoidberg's scuttle dribble.",
+        "effect": "wide"
+      },
+      {
+        "text": "Poor sad sack — Zoidberg's accidental block.",
+        "effect": "gk_moment"
+      }
+    ],
+    "Dr. Zoidberg (Claw Keeper)": [
+      {
+        "text": "Claw save! — Zoidberg between the sticks.",
+        "effect": "gk_moment"
+      },
+      {
+        "text": "Medical malpractice punch clear.",
+        "effect": "yellow"
+      }
+    ],
+    "Draco Malfoy": [
+      {
+        "text": "Father will hear about this — Draco dives.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Slytherin cunning foul from Malfoy.",
+        "effect": "yellow"
+      }
+    ],
+    "Drake": [
+      {
+        "text": "Started from the bottom.",
+        "effect": "momentum_up"
+      },
+      {
+        "text": "Hotline bling — dance celebration too early.",
+        "effect": "chaos"
+      }
+    ],
+    "Duffman": [
+      {
+        "text": "Oh yeah! — Duffman's belly bounce pass.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Sponsored celebration — play delayed.",
+        "effect": "chaos"
+      }
+    ],
+    "Dumbledore": [
+      {
+        "text": "Elder Wand touch — physics optional for Dumbledore.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Calm twinkle — Dumbledore resets the team.",
+        "effect": "momentum_up"
+      }
+    ],
+    "Dumbo": [
+      {
+        "text": "Baby mine — aerial sob story.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Feather flight — hang time.",
+        "effect": "wide"
+      }
+    ],
+    "Dusty Rhodes": [
+      {
+        "text": "Hard times — elbow.",
+        "effect": "boost"
+      },
+      {
+        "text": "American dream speech.",
+        "effect": "momentum_up"
+      }
+    ],
+    "Dwayne 'The Rock' Johnson": [
+      {
+        "text": "Can you smell what— tackle from The Rock.",
+        "effect": "yellow"
+      },
+      {
+        "text": "People's eyebrow — defender freezes.",
+        "effect": "disrupt"
+      }
+    ],
+    "Ed (Ed, Edd n Eddy)": [
+      {
+        "text": "Jawbreaker fuel sprint from Ed.",
+        "effect": "wide"
+      },
+      {
+        "text": "Scam play — ref bamboozled by Ed.",
+        "effect": "chaos"
+      }
+    ],
+    "Edge": [
+      {
+        "text": "Spear!",
+        "effect": "chance"
+      },
+      {
+        "text": "Rated R — sneaky foul.",
+        "effect": "yellow"
+      }
+    ],
+    "Ellie": [
+      {
+        "text": "Look for the light — Ellie's through ball.",
+        "effect": "boost"
+      },
+      {
+        "text": "Clicker scream — chaos.",
+        "effect": "chaos"
+      }
+    ],
+    "Elrond": [
+      {
+        "text": "Council wisdom — Elrond's perfect switch.",
+        "effect": "boost"
+      },
+      {
+        "text": "Half-Elven calm under the press.",
+        "effect": "boost"
+      }
+    ],
+    "Elvis Presley": [
+      {
+        "text": "Thank you very much — Elvis hip swivel.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Hound dog run — greasy pace.",
+        "effect": "wide"
+      }
+    ],
+    "Eminem": [
+      {
+        "text": "Lose yourself — one moment.",
+        "effect": "chance"
+      },
+      {
+        "text": "8 Mile — underdog sprint.",
+        "effect": "wide"
+      }
+    ],
+    "Emmanuel Macron": [
+      {
+        "text": "Baguette diplomacy from Macron.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Yellow vest protest on the pitch.",
+        "effect": "chaos"
+      }
+    ],
+    "Emperor Palpatine": [
+      {
+        "text": "Unlimited power! — Palpatine unleashes.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Deceptive old man flop from Palpatine.",
+        "effect": "yellow"
+      }
+    ],
+    "Eomer": [
+      {
+        "text": "Rohan charge! Eomer flies down the line.",
+        "effect": "wide"
+      },
+      {
+        "text": "Horse-lord fury tackle from Eomer.",
+        "effect": "yellow"
+      }
+    ],
+    "Eowyn": [
+      {
+        "text": "I am no man! — Eowyn bursts past her marker.",
+        "effect": "wide"
+      },
+      {
+        "text": "Eowyn slays the angle — clinical finish setup.",
+        "effect": "boost"
+      }
+    ],
+    "Ernie the Giant Chicken": [
+      {
+        "text": "Epic chicken fight off the ball.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Pecker peck — possession won.",
+        "effect": "boost"
+      }
+    ],
+    "Evil Monkey": [
+      {
+        "text": "Points from the closet — psychological warfare.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Chris's monkey business on the wing.",
+        "effect": "chaos"
+      }
+    ],
+    "Falcon": [
+      {
+        "text": "Redwing recon — perfect cross from Falcon.",
+        "effect": "wide"
+      },
+      {
+        "text": "On your left! — Falcon flies past.",
+        "effect": "wide"
+      }
+    ],
+    "Faramir": [
+      {
+        "text": "Patient captain's pass from Faramir.",
+        "effect": "boost"
+      },
+      {
+        "text": "Faramir sacrifices his body in the press.",
+        "effect": "boost"
+      }
+    ],
+    "Fedor Emelianenko": [
+      {
+        "text": "Expressionless destruction from Fedor.",
+        "effect": "boost"
+      },
+      {
+        "text": "Ring of red pressure from Fedor.",
+        "effect": "disrupt"
+      }
+    ],
+    "Fleming": [
+      {
+        "text": "James Bond parody run from Fleming.",
+        "effect": "wide"
+      },
+      {
+        "text": "Martini spill — slick surface.",
+        "effect": "chaos"
+      }
+    ],
+    "Forrest Gump": [
+      {
+        "text": "Run Forrest run! — pace down the channel.",
+        "effect": "wide"
+      },
+      {
+        "text": "Life is like a through ball — Forrest delivers.",
+        "effect": "boost"
+      }
+    ],
+    "Fox McCloud": [
+      {
+        "text": "Do a barrel roll! — Fox flies.",
+        "effect": "wide"
+      },
+      {
+        "text": "Falco laser — offside tech.",
+        "effect": "chaos"
+      }
+    ],
+    "Frankenstein's Monster": [
+      {
+        "text": "Fire bad — panics near flares.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "It's alive! — lumbering goal.",
+        "effect": "chance"
+      }
+    ],
+    "Franklin D. Roosevelt": [
+      {
+        "text": "Nothing to fear — FDR's comeback spirit.",
+        "effect": "momentum_up"
+      },
+      {
+        "text": "Fireside chat — slows the game.",
+        "effect": "chaos"
+      }
+    ],
+    "Fred Weasley": [
+      {
+        "text": "Weasley Wizard Wheeze on the touchline!",
+        "effect": "chaos"
+      },
+      {
+        "text": "Twin confusion — who's on the ball?",
+        "effect": "disrupt"
+      }
+    ],
+    "Freddie Mercury": [
+      {
+        "text": "Galileo! — operatic volley.",
+        "effect": "chance"
+      },
+      {
+        "text": "We will rock you — stomp tempo.",
+        "effect": "momentum_up"
+      }
+    ],
+    "Freddy Krueger": [
+      {
+        "text": "Welcome to your nightmare — sleep tackle from Freddy.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "One two — Freddy's claw rake.",
+        "effect": "yellow"
+      }
+    ],
+    "Frodo": [
+      {
+        "text": "The Ring weighs heavy — Frodo hesitates.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Unexpected Samwise-style heart from Frodo.",
+        "effect": "boost"
+      }
+    ],
+    "Galadriel": [
+      {
+        "text": "Mirror vision — Galadriel sees the through ball.",
+        "effect": "chance"
+      },
+      {
+        "text": "Terrifying light — opponents stumble.",
+        "effect": "disrupt"
+      }
+    ],
+    "Gandalf": [
+      {
+        "text": "You shall not pass! Gandalf with a heroic last-ditch block.",
+        "effect": "boost"
+      },
+      {
+        "text": "Gandalf's staff glows — sudden long ball over the top.",
+        "effect": "momentum_up"
+      },
+      {
+        "text": "A wizard is never late — nor is his through ball.",
+        "effect": "boost"
+      }
+    ],
+    "Ganondorf": [
+      {
+        "text": "Triforce of power stomp.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Gerudo king menace.",
+        "effect": "momentum_up"
+      }
+    ],
+    "Gaston": [
+      {
+        "text": "No one fights like Gaston!",
+        "effect": "yellow"
+      },
+      {
+        "text": "Antler decoration — illegal kit.",
+        "effect": "chaos"
+      }
+    ],
+    "General Grievous": [
+      {
+        "text": "Cough cough — Grievous's four-arm clearance.",
+        "effect": "boost"
+      },
+      {
+        "text": "Collection of kits from Grievous.",
+        "effect": "chaos"
+      }
+    ],
+    "Genghis Khan": [
+      {
+        "text": "Mongol horde counter from Genghis Khan.",
+        "effect": "wide"
+      },
+      {
+        "text": "Pillage press from the Khan.",
+        "effect": "yellow"
+      }
+    ],
+    "Genie": [
+      {
+        "text": "Phenomenal cosmic power!",
+        "effect": "chance"
+      },
+      {
+        "text": "Itty bitty living space — cramped dribble.",
+        "effect": "boost"
+      }
+    ],
+    "George Weasley": [
+      {
+        "text": "George's prank smoke — visibility zero.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Synchronized twin run — defense bamboozled.",
+        "effect": "boost"
+      }
+    ],
+    "Georges St-Pierre": [
+      {
+        "text": "Superhuman distance control from GSP.",
+        "effect": "boost"
+      },
+      {
+        "text": "Canadian politeness foul.",
+        "effect": "yellow"
+      }
+    ],
+    "Ghostface": [
+      {
+        "text": "What's your favorite scary movie?",
+        "effect": "chaos"
+      },
+      {
+        "text": "Phone call — defense unorganized.",
+        "effect": "disrupt"
+      }
+    ],
+    "Gilligan": [
+      {
+        "text": "Skipper! — Gilligan's botched escape plan.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Island coconut ball from Gilligan.",
+        "effect": "chaos"
+      }
+    ],
+    "Gimli": [
+      {
+        "text": "And my axe! Gimli with a crunching tackle.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Gimli refuses to tire — second wind in the press.",
+        "effect": "stamina_opp"
+      }
+    ],
+    "Glenn Quagmire": [
+      {
+        "text": "Giggity — Quagmire's off-ball creepiness.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Helicopter spin celebration too early.",
+        "effect": "chaos"
+      }
+    ],
+    "Gloria the Hippo": [
+      {
+        "text": "Hippo ballerina — surprisingly agile.",
+        "effect": "boost"
+      },
+      {
+        "text": "Water hole — pitch crater.",
+        "effect": "chaos"
+      }
+    ],
+    "Goldberg": [
+      {
+        "text": "Spear! Jackhammer!",
+        "effect": "chance"
+      },
+      {
+        "text": "Who's next? — Goldberg targets the keeper.",
+        "effect": "gk_moment"
+      }
+    ],
+    "Golem": [
+      {
+        "text": "Clay slow — unstoppable late.",
+        "effect": "boost"
+      },
+      {
+        "text": "Rabbi control — loses script.",
+        "effect": "disrupt"
+      }
+    ],
+    "Gollum": [
+      {
+        "text": "My precious... wrong kind of ball, says Gollum.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Split personality dribble — Gollum baffles the defender.",
+        "effect": "chaos"
+      }
+    ],
+    "Goofy": [
+      {
+        "text": "Gawrsh — klutz nutmeg from Goofy.",
+        "effect": "boost"
+      },
+      {
+        "text": "Goofy holler — accidental brilliance.",
+        "effect": "boost"
+      }
+    ],
+    "Greased-up Deaf Guy": [
+      {
+        "text": "Can't catch him! — Greased-up Deaf Guy sprints.",
+        "effect": "wide"
+      },
+      {
+        "text": "Too slippery to tackle — defenders slide off.",
+        "effect": "boost"
+      }
+    ],
+    "Great Dragon": [
+      {
+        "text": "Fire breath — scorched turf.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Hoard gold — time waste.",
+        "effect": "chaos"
+      }
+    ],
+    "Green Arrow": [
+      {
+        "text": "Trick arrow through the ball.",
+        "effect": "chance"
+      },
+      {
+        "text": "Justice League snark from Oliver.",
+        "effect": "chaos"
+      }
+    ],
+    "Green Lantern": [
+      {
+        "text": "Construct catapult shot from Green Lantern.",
+        "effect": "chance"
+      },
+      {
+        "text": "Willpower fail — the ball fades.",
+        "effect": "disrupt"
+      }
+    ],
+    "Griffin": [
+      {
+        "text": "Eagle eye cross.",
+        "effect": "wide"
+      },
+      {
+        "text": "Lion claws foul.",
+        "effect": "yellow"
+      }
+    ],
+    "Groot": [
+      {
+        "text": "I am Groot — tactical.",
+        "effect": "boost"
+      },
+      {
+        "text": "Branch tangle foul from Groot.",
+        "effect": "yellow"
+      }
+    ],
+    "Groundskeeper Willie": [
+      {
+        "text": "Freedom! — Willie's scythe clearance.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Scottish fury in the box from Willie.",
+        "effect": "boost"
+      }
+    ],
+    "Gus Fring": [
+      {
+        "text": "Pollos Hermanos — calm menace.",
+        "effect": "boost"
+      },
+      {
+        "text": "Box cutter — surgical.",
+        "effect": "yellow"
+      }
+    ],
+    "Han Solo": [
+      {
+        "text": "Never tell me the odds! — Han charges.",
+        "effect": "boost"
+      },
+      {
+        "text": "Han shoots first.",
+        "effect": "boost"
+      }
+    ],
+    "Hannibal Lecter": [
+      {
+        "text": "Fava beans — psychological from Lecter.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Rude to play while he's hungry.",
+        "effect": "chaos"
+      }
+    ],
+    "Harley Quinn": [
+      {
+        "text": "Baseball bat swing from Harley.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Mallet clearance from Harley.",
+        "effect": "boost"
+      }
+    ],
+    "Harry Dunne": [
+      {
+        "text": "Dumb and dumber tandem run from Harry.",
+        "effect": "wide"
+      },
+      {
+        "text": "Pet store bird on Harry's shoulder.",
+        "effect": "chaos"
+      }
+    ],
+    "Harry Potter": [
+      {
+        "text": "Expelliarmus! — Harry strips the ball.",
+        "effect": "boost"
+      },
+      {
+        "text": "Harry's scar prickles — he anticipates the pass.",
+        "effect": "disrupt"
+      }
+    ],
+    "Hawkeye": [
+      {
+        "text": "Trick arrow — absurd curve from Hawkeye.",
+        "effect": "chance"
+      },
+      {
+        "text": "Ronin blade — dark phase.",
+        "effect": "yellow"
+      }
+    ],
+    "Herbert the Pervert": [
+      {
+        "text": "Uh-oh — inappropriate slide from Herbert.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Walker pace deception from Herbert.",
+        "effect": "wide"
+      }
+    ],
+    "Hermes Conrad": [
+      {
+        "text": "Bureaucratic filing of the opponent by Hermes.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Limbo! — absurd flexibility from Hermes.",
+        "effect": "boost"
+      }
+    ],
+    "Hermione Granger": [
+      {
+        "text": "Hermione reads the game three moves ahead.",
+        "effect": "boost"
+      },
+      {
+        "text": "Honestly! — Hermione corrects the ref's angle.",
+        "effect": "chaos"
+      }
+    ],
+    "Hiccup": [
+      {
+        "text": "Dragon rider aerial.",
+        "effect": "wide"
+      },
+      {
+        "text": "Toothless! — link-up.",
+        "effect": "boost"
+      }
+    ],
+    "Homer Simpson": [
+      {
+        "text": "D'oh! — Homer trips over his own feet.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Donut break — Homer stops play.",
+        "effect": "chaos"
+      }
+    ],
+    "Hulk": [
+      {
+        "text": "SMASH — Hulk earns a yellow card.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Hulk's rage clears the entire defense.",
+        "effect": "boost"
+      }
+    ],
+    "Hulk Hogan": [
+      {
+        "text": "Brother! — Hogan's leg drop foul.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Hulk up — Hogan's second wind.",
+        "effect": "stamina_opp"
+      },
+      {
+        "text": "Leg drop! — Hogan clears the area.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Hulkamania running wild on the wing!",
+        "effect": "momentum_up"
+      }
+    ],
+    "Hydra": [
+      {
+        "text": "Cut down one — two pressers appear.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Regrows stamina.",
+        "effect": "stamina_opp"
+      }
+    ],
+    "Hypnotoad": [
+      {
+        "text": "ALL GLORY TO THE HYPNOTOAD.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Ribbit — everyone stops.",
+        "effect": "chaos"
+      }
+    ],
+    "Inkling": [
+      {
+        "text": "Splat zone — pitch repainted.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Squid roll — untaggable.",
+        "effect": "wide"
+      }
+    ],
+    "Ip Man": [
+      {
+        "text": "Wing Chun rapid touches from Ip Man.",
+        "effect": "boost"
+      },
+      {
+        "text": "Wooden dummy training — reflex save.",
+        "effect": "gk_moment"
+      }
+    ],
+    "Iron Man": [
+      {
+        "text": "JARVIS calculated finish from Iron Man.",
+        "effect": "chance"
+      },
+      {
+        "text": "Suit malfunction — Stark falls from the sky.",
+        "effect": "chaos"
+      }
+    ],
+    "Jack Bauer": [
+      {
+        "text": "Dammit! — 24 seconds to score.",
+        "effect": "chance"
+      },
+      {
+        "text": "Torture intel — where's the ball?",
+        "effect": "boost"
+      }
+    ],
+    "Jafar": [
+      {
+        "text": "Sultan of swing pass from Jafar.",
+        "effect": "boost"
+      },
+      {
+        "text": "Snake staff hypnosis.",
+        "effect": "disrupt"
+      }
+    ],
+    "Jake 'The Snake' Roberts": [
+      {
+        "text": "DDT — cobra out.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Snake in bag — chaos.",
+        "effect": "chaos"
+      }
+    ],
+    "Jar Jar Binks": [
+      {
+        "text": "Mesa cause total chaos!",
+        "effect": "chaos"
+      },
+      {
+        "text": "Booma ball — random bounce from Jar Jar.",
+        "effect": "chaos"
+      }
+    ],
+    "Jason Voorhees": [
+      {
+        "text": "Machete clearance from Jason.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Camp Crystal Lake stare — defenders freeze.",
+        "effect": "disrupt"
+      }
+    ],
+    "Jasper T. Jaspers": [
+      {
+        "text": "Old gay army bit — vintage press from Jasper.",
+        "effect": "boost"
+      },
+      {
+        "text": "Hip replacement delay.",
+        "effect": "chaos"
+      }
+    ],
+    "Jean-Claude Van Damme": [
+      {
+        "text": "Split dodge between defenders from Van Damme.",
+        "effect": "wide"
+      },
+      {
+        "text": "Epic split — groin pull risk.",
+        "effect": "stamina_self"
+      }
+    ],
+    "Jesse Pinkman": [
+      {
+        "text": "Yeah science! — chaos touch.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Bitch! — yellow for language.",
+        "effect": "yellow"
+      }
+    ],
+    "Jigsaw": [
+      {
+        "text": "Live or die — choice pass from Jigsaw.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Tape recording delay.",
+        "effect": "chaos"
+      }
+    ],
+    "Jimi Hendrix": [
+      {
+        "text": "Purple haze — keeper sees double.",
+        "effect": "gk_moment"
+      },
+      {
+        "text": "Star-spangled banner — anthem delay.",
+        "effect": "chaos"
+      }
+    ],
+    "Jimmy McGill": [
+      {
+        "text": "S'all good man! — con.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Slippin' Jimmy sprint.",
+        "effect": "wide"
+      }
+    ],
+    "Jimmy McNulty": [
+      {
+        "text": "Fake serial killer — chaos.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Drunk detective brilliance.",
+        "effect": "boost"
+      }
+    ],
+    "Jin Sakai": [
+      {
+        "text": "Ghost stance — wind whispers.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Iai strike — instant shot from Jin.",
+        "effect": "chance"
+      }
+    ],
+    "Joe Swanson": [
+      {
+        "text": "Leg day — iron tackle from Joe.",
+        "effect": "boost"
+      },
+      {
+        "text": "Police chase intensity from Joe.",
+        "effect": "momentum_up"
+      }
+    ],
+    "Joel": [
+      {
+        "text": "Dad mode — Joel's ruthless tackle.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Brick — Joel throws a brick.",
+        "effect": "yellow"
+      }
+    ],
+    "John Cena": [
+      {
+        "text": "You can't see me — Cena's invisible run.",
+        "effect": "wide"
+      },
+      {
+        "text": "Five moves of doom from Cena.",
+        "effect": "boost"
+      }
+    ],
+    "John F. Kennedy": [
+      {
+        "text": "Ask not — JFK's header attempt.",
+        "effect": "chance"
+      },
+      {
+        "text": "Dallas motorcade pace from JFK.",
+        "effect": "wide"
+      }
+    ],
+    "John Lennon": [
+      {
+        "text": "Imagine — no defenders.",
+        "effect": "boost"
+      },
+      {
+        "text": "Give peace a chance — refuses to foul.",
+        "effect": "chaos"
+      }
+    ],
+    "Johnny Bravo": [
+      {
+        "text": "Hey mama — Johnny's flex off.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Hair gel slip hazard from Johnny.",
+        "effect": "chaos"
+      }
+    ],
+    "Johnny Cash": [
+      {
+        "text": "Man in black — outlaw tackle.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Folsom prison blues — trapped wide.",
+        "effect": "disrupt"
+      }
+    ],
+    "Johnny Knoxville": [
+      {
+        "text": "Jackass stunt tackle from Knoxville.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Cup check foul from Knoxville.",
+        "effect": "yellow"
+      }
+    ],
+    "Jon Jones": [
+      {
+        "text": "Eye poke — Jones gets away with it.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Cocaine chicken celebration from Jones.",
+        "effect": "chaos"
+      }
+    ],
+    "Joseph Stalin": [
+      {
+        "text": "Gulag press — no escape from Stalin.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Purge — teammate sacrificed.",
+        "effect": "chaos"
+      }
+    ],
+    "Julius Caesar": [
+      {
+        "text": "Et tu — Caesar's betrayal pass to the wrong player.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Alea iacta est — all-out attack from Caesar.",
+        "effect": "momentum_up"
+      }
+    ],
+    "Kane": [
+      {
+        "text": "Fire pyro — smoke delay.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Chokeslam clearance.",
+        "effect": "yellow"
+      }
+    ],
+    "Karl Childers": [
+      {
+        "text": "Mmhmm — Karl's throat-slash metaphor tackle.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Biscuits discipline — Karl's slow build.",
+        "effect": "boost"
+      }
+    ],
+    "Khabib Nurmagomedov": [
+      {
+        "text": "Smesh — Khabib smothers the tackle.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Dagestani chain wrestling press.",
+        "effect": "disrupt"
+      }
+    ],
+    "Kif Kroker": [
+      {
+        "text": "Sigh — Kif's passive aggressive pass.",
+        "effect": "boost"
+      },
+      {
+        "text": "Zapp's victim — Kif spills coffee on the pitch.",
+        "effect": "chaos"
+      }
+    ],
+    "Kim Jong-un": [
+      {
+        "text": "Dear leader applause — 110th minute energy.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Nuclear option long shot from Kim.",
+        "effect": "chance"
+      }
+    ],
+    "King Julian": [
+      {
+        "text": "I like to move it — dance foul.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Throw me — assist.",
+        "effect": "boost"
+      }
+    ],
+    "King K. Rool": [
+      {
+        "text": "Crown crush from K. Rool.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Kremling invasion — numbers up.",
+        "effect": "momentum_up"
+      }
+    ],
+    "Kirby": [
+      {
+        "text": "Inhale — Kirby steals the move.",
+        "effect": "boost"
+      },
+      {
+        "text": "Copy ability — random skill.",
+        "effect": "chaos"
+      }
+    ],
+    "Kitsune": [
+      {
+        "text": "Fox fire illusion.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Nine tails — nine stepovers.",
+        "effect": "wide"
+      }
+    ],
+    "Kraken": [
+      {
+        "text": "Tentacle grab from goalmouth.",
+        "effect": "gk_moment"
+      },
+      {
+        "text": "Shipwreck pitch flooding.",
+        "effect": "chaos"
+      }
+    ],
+    "Kratos": [
+      {
+        "text": "BOY! — Kratos war cry charge.",
+        "effect": "momentum_up"
+      },
+      {
+        "text": "Blades of chaos slash clearance.",
+        "effect": "yellow"
+      }
+    ],
+    "Krusty the Clown": [
+      {
+        "text": "Hey hey! — Krusty's showbiz flick.",
+        "effect": "boost"
+      },
+      {
+        "text": "Pie to the face for the opponent.",
+        "effect": "yellow"
+      }
+    ],
+    "Kurt Cobain": [
+      {
+        "text": "Smells like teen spirit — chaos.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Grunge shrug — no celebration.",
+        "effect": "chaos"
+      }
+    ],
+    "Kylo Ren": [
+      {
+        "text": "Tantrum — Kylo kicks the touchline equipment.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Crossguard block from Kylo.",
+        "effect": "boost"
+      }
+    ],
+    "Lady Gaga": [
+      {
+        "text": "Poker face — unreadable dribble.",
+        "effect": "boost"
+      },
+      {
+        "text": "Meat dress — kit violation.",
+        "effect": "chaos"
+      }
+    ],
+    "Lando Calrissian": [
+      {
+        "text": "Calrissian shuffle — smooth.",
+        "effect": "boost"
+      },
+      {
+        "text": "Cloud City betrayal pass?",
+        "effect": "chaos"
+      }
+    ],
+    "Leatherface": [
+      {
+        "text": "Chainsaw buzz — play halted.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Family dinner distraction.",
+        "effect": "chaos"
+      }
+    ],
+    "Legolas": [
+      {
+        "text": "Legolas surfing a shield down the wing!",
+        "effect": "wide"
+      },
+      {
+        "text": "Pinpoint elven volley from Legolas.",
+        "effect": "chance"
+      }
+    ],
+    "Lennie Small": [
+      {
+        "text": "Tell me about the rabbits — Lennie's distraction.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Soft thing grip — Lennie won't let the ball go.",
+        "effect": "chaos"
+      }
+    ],
+    "Leviathan": [
+      {
+        "text": "Sea swell — pitch underwater.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Biblical swallow — ball gone.",
+        "effect": "chaos"
+      }
+    ],
+    "Lex Luthor": [
+      {
+        "text": "Billionaire buys ref? — Luthor schemes.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Kryptonite in the ball from Luthor.",
+        "effect": "chaos"
+      }
+    ],
+    "Link": [
+      {
+        "text": "Hyah! — Link's sword foot slide.",
+        "effect": "boost"
+      },
+      {
+        "text": "Triforce wisdom pass.",
+        "effect": "boost"
+      }
+    ],
+    "Lisa Simpson": [
+      {
+        "text": "Sax solo on the touchline — Lisa shifts the tempo.",
+        "effect": "momentum_up"
+      },
+      {
+        "text": "Smart pass with environmental impact report attached.",
+        "effect": "boost"
+      }
+    ],
+    "Lloyd Christmas": [
+      {
+        "text": "So you're telling me there's a chance!",
+        "effect": "chance"
+      },
+      {
+        "text": "Most annoying sound in the world from Lloyd.",
+        "effect": "disrupt"
+      }
+    ],
+    "Lois Griffin": [
+      {
+        "text": "Mom rage tackle from Lois.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Piano lesson discipline — Lois restores team shape.",
+        "effect": "boost"
+      }
+    ],
+    "Loki": [
+      {
+        "text": "Illusion — which Loki has the ball?",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Glorious purpose flop from Loki.",
+        "effect": "yellow"
+      }
+    ],
+    "Lord Shen": [
+      {
+        "text": "Fireworks — pitch lit.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Peacock vanity.",
+        "effect": "chaos"
+      }
+    ],
+    "Lord Voldemort": [
+      {
+        "text": "Avada— wait, that's a through ball from Voldemort.",
+        "effect": "chance"
+      },
+      {
+        "text": "Horcrux split — Voldemort appears twice off the ball.",
+        "effect": "chaos"
+      }
+    ],
+    "Lrrr": [
+      {
+        "text": "I am Lrrr! — demands the ball.",
+        "effect": "momentum_up"
+      },
+      {
+        "text": "Omicronian stomp from Lrrr.",
+        "effect": "yellow"
+      }
+    ],
+    "Luigi": [
+      {
+        "text": "Luigi time! — nervous brilliance.",
+        "effect": "chance"
+      },
+      {
+        "text": "Scaredy sprint from Luigi.",
+        "effect": "wide"
+      }
+    ],
+    "Luke Skywalker": [
+      {
+        "text": "Trust your feelings — Luke curls into the top corner.",
+        "effect": "chance"
+      },
+      {
+        "text": "Father... — Luke hesitates.",
+        "effect": "disrupt"
+      }
+    ],
+    "Luna Lovegood": [
+      {
+        "text": "Nargles stole the ball! — Luna's explanation.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Luna sees the play nobody else does.",
+        "effect": "boost"
+      }
+    ],
+    "Mace Windu": [
+      {
+        "text": "Purple lightsaber — illegal kit from Mace.",
+        "effect": "chaos"
+      },
+      {
+        "text": "This party's over — Mace ends the move.",
+        "effect": "boost"
+      }
+    ],
+    "Macho Man Randy Savage": [
+      {
+        "text": "Ooh yeah! — elbow from the top rope.",
+        "effect": "chance"
+      },
+      {
+        "text": "Slim jim energy.",
+        "effect": "stamina_opp"
+      }
+    ],
+    "Madonna": [
+      {
+        "text": "Vogue — strike a pose.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Material girl — time waste.",
+        "effect": "chaos"
+      }
+    ],
+    "Mahatma Gandhi": [
+      {
+        "text": "Non-violent resistance — Gandhi refuses to foul.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Salt march stamina from Gandhi.",
+        "effect": "stamina_opp"
+      }
+    ],
+    "Maleficent": [
+      {
+        "text": "Mistress of evil — thorns on pitch.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Dragon form — keeper flees.",
+        "effect": "gk_moment"
+      }
+    ],
+    "Manny Pacquiao": [
+      {
+        "text": "Pac-man multi-angle shot from Pacquiao.",
+        "effect": "chance"
+      },
+      {
+        "text": "Congressman pace down the wing.",
+        "effect": "wide"
+      }
+    ],
+    "Mao Zedong": [
+      {
+        "text": "Cultural revolution chaos from Mao.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Little red book set piece.",
+        "effect": "set_piece"
+      }
+    ],
+    "Margaret Thatcher": [
+      {
+        "text": "Handbag swing from Thatcher.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Iron lady won't turn.",
+        "effect": "boost"
+      }
+    ],
+    "Marge Simpson": [
+      {
+        "text": "Disapproving hum — Marge makes the team behave.",
+        "effect": "momentum_up"
+      },
+      {
+        "text": "Hidden steel — Marge wins the header.",
+        "effect": "boost"
+      }
+    ],
+    "Mario": [
+      {
+        "text": "Let's-a-go! — Mario's classic jump header.",
+        "effect": "chance"
+      },
+      {
+        "text": "Wrong castle — Mario offside.",
+        "effect": "chaos"
+      }
+    ],
+    "Marty the Zebra": [
+      {
+        "text": "Wild streak — stripes blur.",
+        "effect": "wide"
+      },
+      {
+        "text": "I like to move it.",
+        "effect": "wide"
+      }
+    ],
+    "Mayor Adam West": [
+      {
+        "text": "Batman mayor logic from Adam West.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Adam West name confusion delays kickoff.",
+        "effect": "chaos"
+      }
+    ],
+    "Medusa": [
+      {
+        "text": "Stone gaze — defenders freeze.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Snakes — offside line alive.",
+        "effect": "chaos"
+      }
+    ],
+    "Meg Griffin": [
+      {
+        "text": "Shut up Meg — ignored, then Meg's open.",
+        "effect": "boost"
+      },
+      {
+        "text": "Self-esteem surge — shock run from Meg.",
+        "effect": "wide"
+      }
+    ],
+    "Megamind": [
+      {
+        "text": "Presentation! — evil plan.",
+        "effect": "chaos"
+      },
+      {
+        "text": "No fault of mine — blame shift.",
+        "effect": "chaos"
+      }
+    ],
+    "Merry": [
+      {
+        "text": "Merry stabs the play in the foot — literally.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Merry and Pippin partner crime down the wing.",
+        "effect": "wide"
+      }
+    ],
+    "Meta Knight": [
+      {
+        "text": "Galaxia dark dash from Meta Knight.",
+        "effect": "wide"
+      },
+      {
+        "text": "Masked mystery — ref can't ID for card.",
+        "effect": "chaos"
+      }
+    ],
+    "Metro Man": [
+      {
+        "text": "Megamind's opposite — perfect hero.",
+        "effect": "boost"
+      },
+      {
+        "text": "Too much justice — offside.",
+        "effect": "chaos"
+      }
+    ],
+    "Michael Jackson": [
+      {
+        "text": "Moonwalk — defender wrong way.",
+        "effect": "wide"
+      },
+      {
+        "text": "Smooth criminal lean — no foul.",
+        "effect": "chaos"
+      }
+    ],
+    "Michael Myers": [
+      {
+        "text": "The Shape stands — terror pause.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Michael walks — unstoppable.",
+        "effect": "boost"
+      }
+    ],
+    "Mick Foley": [
+      {
+        "text": "Hell in a cell — off the ball.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Three faces — random style.",
+        "effect": "chaos"
+      }
+    ],
+    "Mick Jagger": [
+      {
+        "text": "Moves like Jagger — never offside.",
+        "effect": "wide"
+      },
+      {
+        "text": "Satisfaction — can't get the goal.",
+        "effect": "disrupt"
+      }
+    ],
+    "Mickey Mouse": [
+      {
+        "text": "Ha-ha! — whistle conduct from Mickey.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Sorcerer's apprentice — broom flood.",
+        "effect": "chaos"
+      }
+    ],
+    "Mike Ehrmantraut": [
+      {
+        "text": "No half measures.",
+        "effect": "boost"
+      },
+      {
+        "text": "Cleaner — body gone, ball kept.",
+        "effect": "boost"
+      }
+    ],
+    "Mike Tyson": [
+      {
+        "text": "Tyson bites the ear — even the ball isn't safe.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Iron Mike body blow foul.",
+        "effect": "yellow"
+      }
+    ],
+    "Milhouse Van Houten": [
+      {
+        "text": "Everything's coming up Milhouse!",
+        "effect": "chance"
+      },
+      {
+        "text": "Allergic to grass — Milhouse's sneezing fit.",
+        "effect": "disrupt"
+      }
+    ],
+    "Minerva McGonagall": [
+      {
+        "text": "Transfiguration — the ball becomes a moth briefly.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Strict glare — McGonagall's opponent hesitates.",
+        "effect": "disrupt"
+      }
+    ],
+    "Minotaur": [
+      {
+        "text": "Labyrinth dribble — defender lost.",
+        "effect": "boost"
+      },
+      {
+        "text": "Bull rush.",
+        "effect": "yellow"
+      }
+    ],
+    "Moe Szyslak": [
+      {
+        "text": "Bar rag wipe — Moe's keeper style.",
+        "effect": "gk_moment"
+      },
+      {
+        "text": "I'm a whale! — Moe's hopeless lunge.",
+        "effect": "chaos"
+      }
+    ],
+    "Mongo": [
+      {
+        "text": "Mongo punch horse energy — Mongo charges.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Only pawn in game of life — Mongo wanders.",
+        "effect": "chaos"
+      }
+    ],
+    "Morbo": [
+      {
+        "text": "Morbo will crush puny ball!",
+        "effect": "boost"
+      },
+      {
+        "text": "WINDMILLS DO NOT WORK THAT WAY!",
+        "effect": "chaos"
+      }
+    ],
+    "Mort Goldman": [
+      {
+        "text": "Hypochondriac timeout from Mort.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Pharmacy stamina boost for Mort.",
+        "effect": "stamina_opp"
+      }
+    ],
+    "Moses": [
+      {
+        "text": "Let my people go — parting defense.",
+        "effect": "boost"
+      },
+      {
+        "text": "Burning bush — delay.",
+        "effect": "chaos"
+      }
+    ],
+    "Mr. Bean": [
+      {
+        "text": "Mr. Bean's knee save from nowhere.",
+        "effect": "gk_moment"
+      },
+      {
+        "text": "Teddy in goal consultation.",
+        "effect": "chaos"
+      }
+    ],
+    "Mr. Burns": [
+      {
+        "text": "Release the hounds! — Burns interrupts play.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Excellent... — Burns's offside trap somehow works.",
+        "effect": "disrupt"
+      }
+    ],
+    "Mr. Perfect": [
+      {
+        "text": "Perfectplex — showboat.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Hair flick — vanity delay.",
+        "effect": "chaos"
+      }
+    ],
+    "Muhammad Ali": [
+      {
+        "text": "Float like a butterfly — Ali stings with the pass.",
+        "effect": "boost"
+      },
+      {
+        "text": "Rope-a-dope — Ali absorbs the press.",
+        "effect": "stamina_opp"
+      }
+    ],
+    "Mulan": [
+      {
+        "text": "Man bun disguise — surprise pace.",
+        "effect": "wide"
+      },
+      {
+        "text": "Honor before kickoff.",
+        "effect": "momentum_up"
+      }
+    ],
+    "Napoleon Bonaparte": [
+      {
+        "text": "Hand in jacket — Napoleon's tactical masterstroke.",
+        "effect": "boost"
+      },
+      {
+        "text": "Waterloo flashback — Napoleon overcommits.",
+        "effect": "disrupt"
+      }
+    ],
+    "Napoleon Dynamite": [
+      {
+        "text": "Vote for Pedro dance from Napoleon.",
+        "effect": "momentum_up"
+      },
+      {
+        "text": "Liger roar — intimidation from Napoleon.",
+        "effect": "disrupt"
+      }
+    ],
+    "Nathan Drake": [
+      {
+        "text": "It's behind you! — Drake's climbing escape.",
+        "effect": "wide"
+      },
+      {
+        "text": "Fortune's favor — lucky deflection.",
+        "effect": "chaos"
+      }
+    ],
+    "Ned Flanders": [
+      {
+        "text": "Okilly dokilly — Ned's sportsmanship overload.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Bible verse calm under press from Ned.",
+        "effect": "boost"
+      }
+    ],
+    "Ned Stark": [
+      {
+        "text": "Winter is coming — slow build.",
+        "effect": "boost"
+      },
+      {
+        "text": "Head on pike — morale hit.",
+        "effect": "disrupt"
+      }
+    ],
+    "Nelson Muntz": [
+      {
+        "text": "Ha-ha! — Nelson's brutal shoulder.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Wedgie distraction off the ball.",
+        "effect": "chaos"
+      }
+    ],
+    "Ness": [
+      {
+        "text": "PK Fire — box trap from Ness.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "SMASH! — overhead clearance.",
+        "effect": "boost"
+      }
+    ],
+    "Neville Longbottom": [
+      {
+        "text": "Neville remembers the feet — textbook tackle!",
+        "effect": "boost"
+      },
+      {
+        "text": "Sudden bravery surge from Neville.",
+        "effect": "momentum_up"
+      }
+    ],
+    "Nibbler": [
+      {
+        "text": "Dark matter dump — Nibbler's speed burst.",
+        "effect": "wide"
+      },
+      {
+        "text": "Cute then cosmic horror from Nibbler.",
+        "effect": "chaos"
+      }
+    ],
+    "Nightwing": [
+      {
+        "text": "Acrobat flair from Nightwing.",
+        "effect": "wide"
+      },
+      {
+        "text": "Better than Batman — ego pass.",
+        "effect": "boost"
+      }
+    ],
+    "Norman Bates": [
+      {
+        "text": "Mother says no — own goal scare.",
+        "effect": "gk_moment"
+      },
+      {
+        "text": "Shower scene scream — chaos.",
+        "effect": "chaos"
+      }
+    ],
+    "Obi-Wan Kenobi": [
+      {
+        "text": "Hello there — Obi-Wan's surprise tackle.",
+        "effect": "boost"
+      },
+      {
+        "text": "High ground — unstoppable cross from Obi-Wan.",
+        "effect": "wide"
+      }
+    ],
+    "Oliver Wood": [
+      {
+        "text": "Obsessive keeper drill — Wood refuses to punt.",
+        "effect": "gk_moment"
+      },
+      {
+        "text": "Wood treats every save like the Quidditch Cup final.",
+        "effect": "boost"
+      }
+    ],
+    "Omar Little": [
+      {
+        "text": "Omar comin' — whistle walk.",
+        "effect": "momentum_up"
+      },
+      {
+        "text": "Lean — shotgun metaphor.",
+        "effect": "disrupt"
+      }
+    ],
+    "Otto Mann": [
+      {
+        "text": "School bus drift onto the pitch from Otto.",
+        "effect": "wide"
+      },
+      {
+        "text": "Spicoli energy — Otto's totally wasted press.",
+        "effect": "disrupt"
+      }
+    ],
+    "Padmé Amidala": [
+      {
+        "text": "Diplomatic immunity claim from Padmé.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Arena battle flashback — Padmé presses.",
+        "effect": "boost"
+      }
+    ],
+    "Parappa the Rapper": [
+      {
+        "text": "Kick punch it's all in the mind!",
+        "effect": "boost"
+      },
+      {
+        "text": "Rap battle — play stops.",
+        "effect": "chaos"
+      }
+    ],
+    "Patrick Star": [
+      {
+        "text": "Is mayonnaise an instrument? — Patrick wonders.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Rock under box — Patrick hides from the ball.",
+        "effect": "disrupt"
+      }
+    ],
+    "Paulie Walnuts": [
+      {
+        "text": "Pine barrens — lost in build-up.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "No joke — Paulie stares.",
+        "effect": "disrupt"
+      }
+    ],
+    "Pegasus": [
+      {
+        "text": "Aerial gallop — offside in the sky.",
+        "effect": "wide"
+      },
+      {
+        "text": "Divine hoof — crack shot.",
+        "effect": "chance"
+      }
+    ],
+    "Pennywise": [
+      {
+        "text": "You'll float too — keeper slips.",
+        "effect": "gk_moment"
+      },
+      {
+        "text": "Red balloon — offside line.",
+        "effect": "chaos"
+      }
+    ],
+    "Peter Griffin": [
+      {
+        "text": "Bird is the word — Peter's dance break.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Freakin' sweet belly flop from Peter.",
+        "effect": "yellow"
+      }
+    ],
+    "Peter Pan": [
+      {
+        "text": "Never grow up — flies offside line.",
+        "effect": "wide"
+      },
+      {
+        "text": "Pixie dust sprint.",
+        "effect": "wide"
+      }
+    ],
+    "Philip J. Fry": [
+      {
+        "text": "Not sure if football... — Fry's wrong-sport legend moment.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Luck of Fry — the ball finds him.",
+        "effect": "boost"
+      }
+    ],
+    "Phoenix": [
+      {
+        "text": "Rebirth — second wind.",
+        "effect": "stamina_opp"
+      },
+      {
+        "text": "Ash trail — blind keeper.",
+        "effect": "gk_moment"
+      }
+    ],
+    "Pikachu": [
+      {
+        "text": "Pika pika — quick feet from Pikachu.",
+        "effect": "wide"
+      },
+      {
+        "text": "Thunderbolt — metal goal frame sparks.",
+        "effect": "chaos"
+      }
+    ],
+    "Pinhead": [
+      {
+        "text": "Pleasure and pain — Pinhead's puzzle trap.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Hellraiser box on the pitch.",
+        "effect": "chaos"
+      }
+    ],
+    "Pinocchio": [
+      {
+        "text": "Lie — nose grows offside.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Wish upon a star shot.",
+        "effect": "chance"
+      }
+    ],
+    "Pippin": [
+      {
+        "text": "Second breakfast energy — Pippin's late run.",
+        "effect": "boost"
+      },
+      {
+        "text": "Pippin knocks over a corner flag for no reason.",
+        "effect": "chaos"
+      }
+    ],
+    "Po": [
+      {
+        "text": "Skadoosh! — belly bounce.",
+        "effect": "chance"
+      },
+      {
+        "text": "Noodle vision — hungry.",
+        "effect": "disrupt"
+      }
+    ],
+    "Poison Ivy": [
+      {
+        "text": "Pheromone distraction from Ivy.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Vine trip foul.",
+        "effect": "yellow"
+      }
+    ],
+    "Predator": [
+      {
+        "text": "Clicking mandibles — hunt mode.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Invisible — offside impossible.",
+        "effect": "chaos"
+      }
+    ],
+    "Prince": [
+      {
+        "text": "Purple rain — slippery pitch.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Guitar solo — play stops.",
+        "effect": "chaos"
+      }
+    ],
+    "Princess Fiona": [
+      {
+        "text": "Ogre roar — surprise.",
+        "effect": "boost"
+      },
+      {
+        "text": "Martial arts princess.",
+        "effect": "boost"
+      }
+    ],
+    "Princess Leia": [
+      {
+        "text": "Choke — Leia's metaphorical press.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Bun buns header from Leia.",
+        "effect": "chance"
+      }
+    ],
+    "Princess Peach": [
+      {
+        "text": "Float jump — hangs forever.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Toad rescue — quick counter.",
+        "effect": "wide"
+      }
+    ],
+    "Princess Zelda": [
+      {
+        "text": "Sheik disguise — surprise pace.",
+        "effect": "wide"
+      },
+      {
+        "text": "Royal decree — time waste.",
+        "effect": "chaos"
+      }
+    ],
+    "Professor Frink": [
+      {
+        "text": "Glavin! — Frink's science shot.",
+        "effect": "chance"
+      },
+      {
+        "text": "Hover Frink — offside by inches.",
+        "effect": "chaos"
+      }
+    ],
+    "Professor Hubert Farnsworth": [
+      {
+        "text": "Good news everyone! — Farnsworth's experimental tactic.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Senile wander — Farnsworth's offside trap fails.",
+        "effect": "disrupt"
+      }
+    ],
+    "Punisher": [
+      {
+        "text": "Lethal clearance from Punisher.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Skull vest intimidation.",
+        "effect": "disrupt"
+      }
+    ],
+    "Puss in Boots": [
+      {
+        "text": "Eyes — cute foul immunity.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Leche — milk break.",
+        "effect": "chaos"
+      }
+    ],
+    "Queen Elizabeth I": [
+      {
+        "text": "Virgin queen regal pivot from Elizabeth.",
+        "effect": "boost"
+      },
+      {
+        "text": "Armada spirit — long range from the Queen.",
+        "effect": "chance"
+      }
+    ],
+    "Qui-Gon Jinn": [
+      {
+        "text": "Living force flow from Qui-Gon.",
+        "effect": "boost"
+      },
+      {
+        "text": "Phantom menace gamble from Qui-Gon.",
+        "effect": "chance"
+      }
+    ],
+    "R2-D2": [
+      {
+        "text": "Beep boop — R2's nutmeg protocol.",
+        "effect": "boost"
+      },
+      {
+        "text": "Oil slick — defender slips.",
+        "effect": "chaos"
+      }
+    ],
+    "Ralph Wiggum": [
+      {
+        "text": "I'm a football! — Ralph chases the wrong object.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Deep thoughts — Ralph's accidental genius pass.",
+        "effect": "boost"
+      }
+    ],
+    "Randy Orton": [
+      {
+        "text": "RKO out of nowhere!",
+        "effect": "chance"
+      },
+      {
+        "text": "Punt to head — banned.",
+        "effect": "yellow"
+      }
+    ],
+    "Ratchet": [
+      {
+        "text": "Wrench throw from Ratchet.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Raritanium upgrade sprint.",
+        "effect": "wide"
+      }
+    ],
+    "Raymond Babbitt (Rain Man)": [
+      {
+        "text": "Definitely definitely — Raymond's count-pass rhythm.",
+        "effect": "boost"
+      },
+      {
+        "text": "Vegas meltdown — chaos from Raymond.",
+        "effect": "chaos"
+      }
+    ],
+    "Razor Ramon": [
+      {
+        "text": "Toothpick flick — disrespect.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Bad guy charm.",
+        "effect": "boost"
+      }
+    ],
+    "Regan MacNeil": [
+      {
+        "text": "Exorcist head spin — unsettles.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Pea soup projectile.",
+        "effect": "yellow"
+      }
+    ],
+    "Remus Lupin": [
+      {
+        "text": "Full moon approaching — edgy press from Lupin.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Defensive professor's reading from Lupin.",
+        "effect": "boost"
+      }
+    ],
+    "Rey": [
+      {
+        "text": "Nobody — Rey's scavenger grit.",
+        "effect": "boost"
+      },
+      {
+        "text": "Force download — instant skill from Rey.",
+        "effect": "boost"
+      }
+    ],
+    "Rey Mysterio": [
+      {
+        "text": "619! — rope assist illegal.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Lucha flip — lands on feet.",
+        "effect": "wide"
+      }
+    ],
+    "Ric Flair": [
+      {
+        "text": "Wooo! — Flair chop.",
+        "effect": "boost"
+      },
+      {
+        "text": "Nature boy strut — time waste.",
+        "effect": "chaos"
+      }
+    ],
+    "Richard Nixon's Head": [
+      {
+        "text": "Aroo! — crookery in midfield from Nixon.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Watergate hold — subtle shirt pull.",
+        "effect": "yellow"
+      }
+    ],
+    "Ridley": [
+      {
+        "text": "Space pirate skewer from Ridley.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Meta Ridley roar.",
+        "effect": "disrupt"
+      }
+    ],
+    "Robin": [
+      {
+        "text": "Holy statline — sidekick run from Robin.",
+        "effect": "wide"
+      },
+      {
+        "text": "Batman said no — Robin does it anyway.",
+        "effect": "chaos"
+      }
+    ],
+    "Robin Hood": [
+      {
+        "text": "Steal from rich — give to striker.",
+        "effect": "boost"
+      },
+      {
+        "text": "Archery — crossbar.",
+        "effect": "chance"
+      }
+    ],
+    "Robot Devil": [
+      {
+        "text": "Your soul for that chance — Robot Devil deals.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Unnecessarily evil foul from the Robot Devil.",
+        "effect": "yellow"
+      }
+    ],
+    "Rocket Raccoon": [
+      {
+        "text": "Ain't no thing like me — Rocket fires.",
+        "effect": "boost"
+      },
+      {
+        "text": "Explosive miscalculation from Rocket.",
+        "effect": "chaos"
+      }
+    ],
+    "Rocky Balboa": [
+      {
+        "text": "Adrian! — Rocky finds mountain stamina.",
+        "effect": "stamina_opp"
+      },
+      {
+        "text": "Meat house training — power shot from Rocky.",
+        "effect": "chance"
+      }
+    ],
+    "Roman Reigns": [
+      {
+        "text": "Acknowledge me.",
+        "effect": "momentum_up"
+      },
+      {
+        "text": "Spear — tribal chief.",
+        "effect": "chance"
+      }
+    ],
+    "Ron Weasley": [
+      {
+        "text": "Chess gambit pass from Ron.",
+        "effect": "boost"
+      },
+      {
+        "text": "Keeper instincts in the outfield — Ron's accidental save.",
+        "effect": "gk_moment"
+      }
+    ],
+    "Ronda Rousey": [
+      {
+        "text": "Armbar attempt on the marker from Rousey.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Judo throw — turnover from Rousey.",
+        "effect": "turnover"
+      }
+    ],
+    "Rubeus Hagrid": [
+      {
+        "text": "You're a wizard, Harry — wrong sport, right power from Hagrid.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Fang chases the ball onto the pitch!",
+        "effect": "chaos"
+      }
+    ],
+    "Rumpelstiltskin": [
+      {
+        "text": "Deal with the devil — trade foul.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Name guess — chaos.",
+        "effect": "chaos"
+      }
+    ],
+    "Ryu": [
+      {
+        "text": "Hadouken! — 35-yard screamer from Ryu.",
+        "effect": "chance"
+      },
+      {
+        "text": "Shoryuken — Ryu lifts the defender.",
+        "effect": "yellow"
+      }
+    ],
+    "Sackboy": [
+      {
+        "text": "Popit stitched through ball from Sackboy.",
+        "effect": "boost"
+      },
+      {
+        "text": "Level editor — illegal pitch shape.",
+        "effect": "chaos"
+      }
+    ],
+    "Sam Bridges": [
+      {
+        "text": "BB cries — morale drops.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Strand connection — perfect link.",
+        "effect": "boost"
+      }
+    ],
+    "Samus Aran": [
+      {
+        "text": "Morph ball — under the defender.",
+        "effect": "wide"
+      },
+      {
+        "text": "Charge beam — keeper cooked.",
+        "effect": "chance"
+      }
+    ],
+    "Samwise Gamgee": [
+      {
+        "text": "Mr. Frodo! — Sam carries the move forward.",
+        "effect": "boost"
+      },
+      {
+        "text": "Potatoes and perseverance — Sam wins the duel.",
+        "effect": "boost"
+      }
+    ],
+    "Saruman": [
+      {
+        "text": "Isengard industrial press from Saruman.",
+        "effect": "boost"
+      },
+      {
+        "text": "Palantir scry — Saruman reads the pass.",
+        "effect": "disrupt"
+      }
+    ],
+    "Saul Goodman": [
+      {
+        "text": "Better call Saul! — legal delay.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Slip and fall — simulation.",
+        "effect": "yellow"
+      }
+    ],
+    "Sauron": [
+      {
+        "text": "Eye of Sauron — the entire pitch freezes.",
+        "effect": "momentum_up"
+      },
+      {
+        "text": "Dark power shot from Sauron — goal or wide only.",
+        "effect": "chance"
+      }
+    ],
+    "Scar": [
+      {
+        "text": "Long live the king — cynical foul.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Be prepared — offside trap.",
+        "effect": "disrupt"
+      }
+    ],
+    "Scarlet Witch": [
+      {
+        "text": "Reality warps — goalmouth chaos from Wanda.",
+        "effect": "chaos"
+      },
+      {
+        "text": "No more mutants — defensive wipe.",
+        "effect": "disrupt"
+      }
+    ],
+    "Scruffy the Janitor": [
+      {
+        "text": "Scruffy's on break. — then he appears.",
+        "effect": "boost"
+      },
+      {
+        "text": "Mop bucket slide tackle from Scruffy.",
+        "effect": "chaos"
+      }
+    ],
+    "Seamus Levine": [
+      {
+        "text": "Everything's on fire! — Seamus keeps playing.",
+        "effect": "boost"
+      },
+      {
+        "text": "Peg leg cannon shot from Seamus.",
+        "effect": "chance"
+      }
+    ],
+    "Severus Snape": [
+      {
+        "text": "Always. — Snape cuts the passing lane.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Potions master spin on the ball from Snape.",
+        "effect": "boost"
+      }
+    ],
+    "Shawn Michaels": [
+      {
+        "text": "Sweet Chin Music!",
+        "effect": "chance"
+      },
+      {
+        "text": "Showstopper — ladder not included.",
+        "effect": "chaos"
+      }
+    ],
+    "Shazam": [
+      {
+        "text": "SHAZAM! — lightning strike shot.",
+        "effect": "chance"
+      },
+      {
+        "text": "Kid in adult body — immature dive.",
+        "effect": "yellow"
+      }
+    ],
+    "Shelob": [
+      {
+        "text": "Web across the channel — Shelob traps the winger.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Night ambush from the shadows.",
+        "effect": "chaos"
+      }
+    ],
+    "Shrek": [
+      {
+        "text": "Get off my swamp — tackle.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Onions have layers — complex pass.",
+        "effect": "boost"
+      }
+    ],
+    "Sideshow Bob": [
+      {
+        "text": "High culture step-over from Sideshow Bob.",
+        "effect": "boost"
+      },
+      {
+        "text": "Rake step — classic trip hazard from Bob.",
+        "effect": "chaos"
+      }
+    ],
+    "Simba": [
+      {
+        "text": "Remember who you are — Simba roars.",
+        "effect": "momentum_up"
+      },
+      {
+        "text": "Hakuna matata — lazy pass.",
+        "effect": "disrupt"
+      }
+    ],
+    "Simple Jack": [
+      {
+        "text": "You never go full retard — wrong tactic works for Simple Jack.",
+        "effect": "boost"
+      },
+      {
+        "text": "Thumbs up forever from Simple Jack.",
+        "effect": "chaos"
+      }
+    ],
+    "Sinbad": [
+      {
+        "text": "Legendary voyage cross.",
+        "effect": "wide"
+      },
+      {
+        "text": "Eris goddess interference.",
+        "effect": "chaos"
+      }
+    ],
+    "Sir Daniel Fortesque": [
+      {
+        "text": "One eye — depth perception fail.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Hero of Gallowmere — accidental legend.",
+        "effect": "boost"
+      }
+    ],
+    "Sirius Black": [
+      {
+        "text": "Padfoot pace burst from Sirius.",
+        "effect": "wide"
+      },
+      {
+        "text": "Azkaban street-fight tackle from Sirius.",
+        "effect": "yellow"
+      }
+    ],
+    "Skipper": [
+      {
+        "text": "Operation — classified pass.",
+        "effect": "boost"
+      },
+      {
+        "text": "Kowalski analysis paralysis.",
+        "effect": "chaos"
+      }
+    ],
+    "Snake Jailbird": [
+      {
+        "text": "Prison break pace from Snake.",
+        "effect": "wide"
+      },
+      {
+        "text": "Stick 'em up — Snake robs possession.",
+        "effect": "boost"
+      }
+    ],
+    "Sphinx": [
+      {
+        "text": "Riddle or forfeit possession.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Guardian block.",
+        "effect": "boost"
+      }
+    ],
+    "Spider-Man": [
+      {
+        "text": "Thwip — web line cross from Spider-Man.",
+        "effect": "wide"
+      },
+      {
+        "text": "Great power — great responsibility pass.",
+        "effect": "boost"
+      }
+    ],
+    "Spirit": [
+      {
+        "text": "Stallion sprint — untamable.",
+        "effect": "wide"
+      },
+      {
+        "text": "Cavalry charge.",
+        "effect": "momentum_up"
+      }
+    ],
+    "Spyro": [
+      {
+        "text": "Flame breath — ref warning for Spyro.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Charge ram from Spyro.",
+        "effect": "yellow"
+      }
+    ],
+    "Stewie Griffin": [
+      {
+        "text": "Victory shall be mine! — Stewie's laser sight on goal.",
+        "effect": "chance"
+      },
+      {
+        "text": "Stewie's diaper dash through midfield.",
+        "effect": "wide"
+      }
+    ],
+    "Stone Cold Steve Austin": [
+      {
+        "text": "Stone Cold Stunner!",
+        "effect": "yellow"
+      },
+      {
+        "text": "Austin 3:16 — middle finger to the ref.",
+        "effect": "yellow"
+      }
+    ],
+    "Stringer Bell": [
+      {
+        "text": "Business class — calculated.",
+        "effect": "boost"
+      },
+      {
+        "text": "Avon would disagree — feud pass.",
+        "effect": "chaos"
+      }
+    ],
+    "Sub-Zero": [
+      {
+        "text": "Ice slide tackle from Sub-Zero.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Fatality — ref plays on.",
+        "effect": "chaos"
+      }
+    ],
+    "Superman": [
+      {
+        "text": "Heat vision — ref issues a warning.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Man of Steel header — unstoppable.",
+        "effect": "chance"
+      }
+    ],
+    "Sweet Tooth": [
+      {
+        "text": "Ice cream truck rampage.",
+        "effect": "wide"
+      },
+      {
+        "text": "Flaming head intimidation.",
+        "effect": "disrupt"
+      }
+    ],
+    "Sybill Trelawney": [
+      {
+        "text": "Prophecy of a goal... eventually, says Trelawney.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Crystal ball distraction on the touchline.",
+        "effect": "disrupt"
+      }
+    ],
+    "Tai Lung": [
+      {
+        "text": "Escape rage — unstoppable.",
+        "effect": "boost"
+      },
+      {
+        "text": "Wuxi finger hold — illegal.",
+        "effect": "yellow"
+      }
+    ],
+    "Thanos": [
+      {
+        "text": "Snap — score erased?!",
+        "effect": "chaos"
+      },
+      {
+        "text": "The Mad Titan bullies through midfield.",
+        "effect": "boost"
+      }
+    ],
+    "The Creeper": [
+      {
+        "text": "Eats fear — wins the aerial.",
+        "effect": "boost"
+      },
+      {
+        "text": "Truck horn — pitch invasion.",
+        "effect": "chaos"
+      }
+    ],
+    "The Flash": [
+      {
+        "text": "Speed force — offside from own half.",
+        "effect": "wide"
+      },
+      {
+        "text": "Lightning trail — slippery pitch.",
+        "effect": "chaos"
+      }
+    ],
+    "The Joker": [
+      {
+        "text": "Why so serious? — chaos pass from Joker.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Pencil trick — ball disappears.",
+        "effect": "chaos"
+      }
+    ],
+    "The Mummy": [
+      {
+        "text": "Sandstorm — visibility zero.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Ancient curse — hamstring.",
+        "effect": "stamina_self"
+      }
+    ],
+    "The Notorious B.I.G.": [
+      {
+        "text": "It was all a dream — skill move.",
+        "effect": "boost"
+      },
+      {
+        "text": "Brooklyn hustle from Biggie.",
+        "effect": "boost"
+      }
+    ],
+    "The Riddler": [
+      {
+        "text": "Riddle before the free kick.",
+        "effect": "set_piece"
+      },
+      {
+        "text": "Green question mark run.",
+        "effect": "chaos"
+      }
+    ],
+    "The Thing": [
+      {
+        "text": "Is that really their teammate?",
+        "effect": "chaos"
+      },
+      {
+        "text": "Assimilation — steals skill.",
+        "effect": "boost"
+      }
+    ],
+    "The Undertaker": [
+      {
+        "text": "GONG — entrance delay.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Tombstone — pile driver foul.",
+        "effect": "yellow"
+      }
+    ],
+    "Theoden": [
+      {
+        "text": "Forth Eorlingas! — Theoden's roar lifts the team.",
+        "effect": "momentum_up"
+      },
+      {
+        "text": "Death ride — Theoden's kamikaze run.",
+        "effect": "chaos"
+      }
+    ],
+    "Thor": [
+      {
+        "text": "Another! — Thor's hammer volley.",
+        "effect": "chance"
+      },
+      {
+        "text": "God of thunder — storm delay.",
+        "effect": "chaos"
+      }
+    ],
+    "Tigress": [
+      {
+        "text": "Fury of five — claw.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Serious focus — no jokes.",
+        "effect": "boost"
+      }
+    ],
+    "Tinker Bell": [
+      {
+        "text": "Pixie dust — impossible angle.",
+        "effect": "chance"
+      },
+      {
+        "text": "Jealous spark foul.",
+        "effect": "yellow"
+      }
+    ],
+    "Titan": [
+      {
+        "text": "Olympus throws a mountain.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Titan stomp — seismic.",
+        "effect": "yellow"
+      }
+    ],
+    "Tom Tucker": [
+      {
+        "text": "Live from the pitch! — Tom Tucker reports.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Bird pun — the crowd groans.",
+        "effect": "momentum_up"
+      }
+    ],
+    "Tommy Callahan": [
+      {
+        "text": "Fat guy in a little coat run from Tommy.",
+        "effect": "wide"
+      },
+      {
+        "text": "Salesman pitch to the ref from Tommy.",
+        "effect": "chaos"
+      }
+    ],
+    "Tommy Shelby": [
+      {
+        "text": "By order of the Peaky Blinders.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Razor cap — cut.",
+        "effect": "yellow"
+      }
+    ],
+    "Tony Soprano": [
+      {
+        "text": "Bing bing — decisive from Tony.",
+        "effect": "boost"
+      },
+      {
+        "text": "Therapy panic attack — pause.",
+        "effect": "chaos"
+      }
+    ],
+    "Toothless": [
+      {
+        "text": "Plasma blast — warm ball.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Night fury stealth.",
+        "effect": "disrupt"
+      }
+    ],
+    "Treebeard": [
+      {
+        "text": "Don't be hasty... then Treebeard stomps forward.",
+        "effect": "stamina_opp"
+      },
+      {
+        "text": "Ent mangle — slow but unstoppable from Treebeard.",
+        "effect": "boost"
+      }
+    ],
+    "Triple H": [
+      {
+        "text": "Pedigree!",
+        "effect": "yellow"
+      },
+      {
+        "text": "Water spit — mist.",
+        "effect": "chaos"
+      }
+    ],
+    "Tupac Shakur": [
+      {
+        "text": "West side — hard tackle.",
+        "effect": "yellow"
+      },
+      {
+        "text": "California love — sunshine cross.",
+        "effect": "wide"
+      }
+    ],
+    "Turanga Leela": [
+      {
+        "text": "Cyclops sniper pass from Leela.",
+        "effect": "boost"
+      },
+      {
+        "text": "Captain's charge from Leela.",
+        "effect": "momentum_up"
+      }
+    ],
+    "Two-Face": [
+      {
+        "text": "Coin flip — shoot or pass?",
+        "effect": "chaos"
+      },
+      {
+        "text": "Scarred menace from Two-Face.",
+        "effect": "boost"
+      }
+    ],
+    "Tyrion Lannister": [
+      {
+        "text": "I drink and I know things.",
+        "effect": "boost"
+      },
+      {
+        "text": "Trial by combat request.",
+        "effect": "chaos"
+      }
+    ],
+    "Tyson Fury": [
+      {
+        "text": "Gypsy king get-up — Fury never stays down.",
+        "effect": "momentum_up"
+      },
+      {
+        "text": "Singing walkout — play delayed.",
+        "effect": "chaos"
+      }
+    ],
+    "Ultimate Warrior": [
+      {
+        "text": "Destrucity sprint.",
+        "effect": "wide"
+      },
+      {
+        "text": "Face paint intimidation.",
+        "effect": "disrupt"
+      }
+    ],
+    "Unicorn": [
+      {
+        "text": "Pure magic — ref favors.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Horn impale — horror foul.",
+        "effect": "yellow"
+      }
+    ],
+    "Ursula": [
+      {
+        "text": "Poor unfortunate souls contract.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Tentacle grab foul.",
+        "effect": "yellow"
+      }
+    ],
+    "Vic Mackey": [
+      {
+        "text": "Strike team press — dirty.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Corrupt badge — ref bribed?",
+        "effect": "chaos"
+      }
+    ],
+    "Viktor Krum": [
+      {
+        "text": "Wronski Feint! — Krum leaves defenders diving.",
+        "effect": "wide"
+      },
+      {
+        "text": "Krum's international class on show.",
+        "effect": "chance"
+      }
+    ],
+    "Vision": [
+      {
+        "text": "Vision phases through the press.",
+        "effect": "boost"
+      },
+      {
+        "text": "Mind stone calculation.",
+        "effect": "boost"
+      }
+    ],
+    "Vladimir Putin": [
+      {
+        "text": "Shirtless horse riding aura from Putin.",
+        "effect": "momentum_up"
+      },
+      {
+        "text": "Poison pass — subtle from Putin.",
+        "effect": "disrupt"
+      }
+    ],
+    "Walter White": [
+      {
+        "text": "I am the one who knocks.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Heisenberg hat — alter ego.",
+        "effect": "momentum_up"
+      }
+    ],
+    "Walter White Jr.": [
+      {
+        "text": "Breakfast! — Walter Jr. falls over.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Handicap parking — wrong role.",
+        "effect": "chaos"
+      }
+    ],
+    "Waluigi": [
+      {
+        "text": "Wah! — lanky cheat from Waluigi.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Tennis racket — wrong sport.",
+        "effect": "chaos"
+      }
+    ],
+    "Wander": [
+      {
+        "text": "Colossus climb — slow then lethal from Wander.",
+        "effect": "boost"
+      },
+      {
+        "text": "Horse Agro gallop.",
+        "effect": "wide"
+      }
+    ],
+    "Wario": [
+      {
+        "text": "Wa ha ha! — Wario shoulder barge.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Garlic breath — area denial.",
+        "effect": "chaos"
+      }
+    ],
+    "Waylon Smithers": [
+      {
+        "text": "Burnsian loyalty block from Smithers.",
+        "effect": "boost"
+      },
+      {
+        "text": "Secret dance routine — defender lost.",
+        "effect": "wide"
+      }
+    ],
+    "Wendigo": [
+      {
+        "text": "Hunger — never stops running.",
+        "effect": "stamina_opp"
+      },
+      {
+        "text": "Forest stalk — ambush.",
+        "effect": "disrupt"
+      }
+    ],
+    "Werewolf": [
+      {
+        "text": "Full moon transformation.",
+        "effect": "momentum_up"
+      },
+      {
+        "text": "Howl — night game only.",
+        "effect": "chaos"
+      }
+    ],
+    "Whitney Houston": [
+      {
+        "text": "I will always love— through ball.",
+        "effect": "boost"
+      },
+      {
+        "text": "Vocal power — glass shatter delay.",
+        "effect": "chaos"
+      }
+    ],
+    "Winston Churchill": [
+      {
+        "text": "We shall never surrender — Churchill's last-ditch block.",
+        "effect": "boost"
+      },
+      {
+        "text": "Finest hour speech — tempo rises.",
+        "effect": "momentum_up"
+      }
+    ],
+    "Witch-king": [
+      {
+        "text": "No man can foul him... the ref is unsure.",
+        "effect": "chaos"
+      },
+      {
+        "text": "Screech of terror — the keeper flinches.",
+        "effect": "gk_moment"
+      }
+    ],
+    "Wolverine": [
+      {
+        "text": "Berserker barrage from Wolverine.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Adamantium claws — kit violation.",
+        "effect": "chaos"
+      }
+    ],
+    "Wonder Woman": [
+      {
+        "text": "Lasso of truth — opponent confesses the foul.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Amazonian war cry from Wonder Woman.",
+        "effect": "momentum_up"
+      }
+    ],
+    "Xenomorph": [
+      {
+        "text": "Acid blood — destroys the pitch.",
+        "effect": "chaos"
+      },
+      {
+        "text": "In the walls — ambush.",
+        "effect": "disrupt"
+      }
+    ],
+    "Yoda": [
+      {
+        "text": "Do or do not — Yoda's wisdom pass.",
+        "effect": "boost"
+      },
+      {
+        "text": "900 years of offsides knowledge from Yoda.",
+        "effect": "chaos"
+      }
+    ],
+    "Yokozuna": [
+      {
+        "text": "Banzai drop — belly flop.",
+        "effect": "yellow"
+      },
+      {
+        "text": "Salt throw — blind.",
+        "effect": "chaos"
+      }
+    ],
+    "Yoshi": [
+      {
+        "text": "Flutter jump — eternal hang time.",
+        "effect": "wide"
+      },
+      {
+        "text": "Egg lay — pitch hazard.",
+        "effect": "chaos"
+      }
+    ],
+    "Zapp Brannigan": [
+      {
+        "text": "Sexlexia formation from Zapp.",
+        "effect": "disrupt"
+      },
+      {
+        "text": "Velour uniform distraction.",
+        "effect": "chaos"
+      }
+    ]
+  }
+}

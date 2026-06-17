@@ -1,0 +1,5446 @@
+{
+  "version": 1,
+  "overallFormula": "pace*0.18 + power*0.18 + stamina*0.18 + tackling*0.18 + passing*0.18 + gk*0.10",
+  "universes": [
+    {
+      "id": "lotr",
+      "name": "Lord of the Rings",
+      "accentColor": "#f59e0b",
+      "tagline": "Endurance kings. Wins in the 89th minute.",
+      "players": [
+        {
+          "name": "Gandalf",
+          "stats": {
+            "pace": 58,
+            "power": 72,
+            "stamina": 88,
+            "tackling": 70,
+            "passing": 90,
+            "gk": 92
+          },
+          "ovr": 77.2
+        },
+        {
+          "name": "Aragorn",
+          "stats": {
+            "pace": 78,
+            "power": 82,
+            "stamina": 90,
+            "tackling": 80,
+            "passing": 76,
+            "gk": 55
+          },
+          "ovr": 78.6
+        },
+        {
+          "name": "Legolas",
+          "stats": {
+            "pace": 95,
+            "power": 68,
+            "stamina": 85,
+            "tackling": 72,
+            "passing": 74,
+            "gk": 20
+          },
+          "ovr": 72.9
+        },
+        {
+          "name": "Gimli",
+          "stats": {
+            "pace": 52,
+            "power": 92,
+            "stamina": 88,
+            "tackling": 85,
+            "passing": 58,
+            "gk": 15
+          },
+          "ovr": 69.0
+        },
+        {
+          "name": "Boromir",
+          "stats": {
+            "pace": 72,
+            "power": 80,
+            "stamina": 82,
+            "tackling": 78,
+            "passing": 68,
+            "gk": 25
+          },
+          "ovr": 70.9
+        },
+        {
+          "name": "Faramir",
+          "stats": {
+            "pace": 74,
+            "power": 72,
+            "stamina": 84,
+            "tackling": 76,
+            "passing": 80,
+            "gk": 30
+          },
+          "ovr": 72.5
+        },
+        {
+          "name": "Frodo",
+          "stats": {
+            "pace": 72,
+            "power": 52,
+            "stamina": 74,
+            "tackling": 62,
+            "passing": 76,
+            "gk": 18
+          },
+          "ovr": 62.3
+        },
+        {
+          "name": "Samwise Gamgee",
+          "stats": {
+            "pace": 66,
+            "power": 72,
+            "stamina": 92,
+            "tackling": 80,
+            "passing": 72,
+            "gk": 22
+          },
+          "ovr": 71.0
+        },
+        {
+          "name": "Merry",
+          "stats": {
+            "pace": 74,
+            "power": 62,
+            "stamina": 78,
+            "tackling": 68,
+            "passing": 74,
+            "gk": 15
+          },
+          "ovr": 65.6
+        },
+        {
+          "name": "Pippin",
+          "stats": {
+            "pace": 74,
+            "power": 60,
+            "stamina": 72,
+            "tackling": 62,
+            "passing": 68,
+            "gk": 12
+          },
+          "ovr": 61.7
+        },
+        {
+          "name": "Gollum",
+          "stats": {
+            "pace": 88,
+            "power": 52,
+            "stamina": 82,
+            "tackling": 58,
+            "passing": 45,
+            "gk": 10
+          },
+          "ovr": 59.5
+        },
+        {
+          "name": "Sauron",
+          "stats": {
+            "pace": 65,
+            "power": 98,
+            "stamina": 95,
+            "tackling": 82,
+            "passing": 70,
+            "gk": 35
+          },
+          "ovr": 77.3
+        },
+        {
+          "name": "Witch-king",
+          "stats": {
+            "pace": 78,
+            "power": 90,
+            "stamina": 88,
+            "tackling": 85,
+            "passing": 62,
+            "gk": 28
+          },
+          "ovr": 75.3
+        },
+        {
+          "name": "Elrond",
+          "stats": {
+            "pace": 70,
+            "power": 74,
+            "stamina": 86,
+            "tackling": 72,
+            "passing": 88,
+            "gk": 40
+          },
+          "ovr": 74.2
+        },
+        {
+          "name": "Galadriel",
+          "stats": {
+            "pace": 75,
+            "power": 78,
+            "stamina": 82,
+            "tackling": 68,
+            "passing": 92,
+            "gk": 45
+          },
+          "ovr": 75.6
+        },
+        {
+          "name": "Treebeard",
+          "stats": {
+            "pace": 38,
+            "power": 88,
+            "stamina": 95,
+            "tackling": 82,
+            "passing": 62,
+            "gk": 20
+          },
+          "ovr": 67.7
+        },
+        {
+          "name": "Eomer",
+          "stats": {
+            "pace": 82,
+            "power": 78,
+            "stamina": 80,
+            "tackling": 74,
+            "passing": 68,
+            "gk": 22
+          },
+          "ovr": 71.0
+        },
+        {
+          "name": "Eowyn",
+          "stats": {
+            "pace": 80,
+            "power": 76,
+            "stamina": 78,
+            "tackling": 72,
+            "passing": 70,
+            "gk": 18
+          },
+          "ovr": 69.5
+        },
+        {
+          "name": "Theoden",
+          "stats": {
+            "pace": 68,
+            "power": 74,
+            "stamina": 76,
+            "tackling": 70,
+            "passing": 78,
+            "gk": 25
+          },
+          "ovr": 68.4
+        },
+        {
+          "name": "Saruman",
+          "stats": {
+            "pace": 60,
+            "power": 76,
+            "stamina": 80,
+            "tackling": 68,
+            "passing": 86,
+            "gk": 38
+          },
+          "ovr": 70.4
+        },
+        {
+          "name": "Denethor",
+          "stats": {
+            "pace": 55,
+            "power": 62,
+            "stamina": 65,
+            "tackling": 58,
+            "passing": 70,
+            "gk": 78
+          },
+          "ovr": 63.6
+        },
+        {
+          "name": "Shelob",
+          "stats": {
+            "pace": 70,
+            "power": 85,
+            "stamina": 90,
+            "tackling": 80,
+            "passing": 38,
+            "gk": 15
+          },
+          "ovr": 66.8
+        }
+      ]
+    },
+    {
+      "id": "harry-potter",
+      "name": "Harry Potter",
+      "accentColor": "#b91c1c",
+      "tagline": "Quidditch pace. Wizard passing.",
+      "players": [
+        {
+          "name": "Oliver Wood",
+          "stats": {
+            "pace": 82,
+            "power": 70,
+            "stamina": 88,
+            "tackling": 65,
+            "passing": 72,
+            "gk": 90
+          },
+          "ovr": 76.9
+        },
+        {
+          "name": "Ron Weasley",
+          "stats": {
+            "pace": 70,
+            "power": 65,
+            "stamina": 74,
+            "tackling": 62,
+            "passing": 68,
+            "gk": 75
+          },
+          "ovr": 68.5
+        },
+        {
+          "name": "Harry Potter",
+          "stats": {
+            "pace": 92,
+            "power": 72,
+            "stamina": 85,
+            "tackling": 68,
+            "passing": 78,
+            "gk": 45
+          },
+          "ovr": 75.6
+        },
+        {
+          "name": "Hermione Granger",
+          "stats": {
+            "pace": 74,
+            "power": 58,
+            "stamina": 82,
+            "tackling": 70,
+            "passing": 95,
+            "gk": 30
+          },
+          "ovr": 71.2
+        },
+        {
+          "name": "Draco Malfoy",
+          "stats": {
+            "pace": 78,
+            "power": 65,
+            "stamina": 70,
+            "tackling": 62,
+            "passing": 72,
+            "gk": 25
+          },
+          "ovr": 65.0
+        },
+        {
+          "name": "Neville Longbottom",
+          "stats": {
+            "pace": 64,
+            "power": 75,
+            "stamina": 88,
+            "tackling": 82,
+            "passing": 70,
+            "gk": 35
+          },
+          "ovr": 71.7
+        },
+        {
+          "name": "Dumbledore",
+          "stats": {
+            "pace": 65,
+            "power": 78,
+            "stamina": 80,
+            "tackling": 72,
+            "passing": 95,
+            "gk": 55
+          },
+          "ovr": 75.7
+        },
+        {
+          "name": "Severus Snape",
+          "stats": {
+            "pace": 68,
+            "power": 70,
+            "stamina": 78,
+            "tackling": 80,
+            "passing": 82,
+            "gk": 40
+          },
+          "ovr": 72.0
+        },
+        {
+          "name": "Rubeus Hagrid",
+          "stats": {
+            "pace": 48,
+            "power": 95,
+            "stamina": 90,
+            "tackling": 78,
+            "passing": 55,
+            "gk": 30
+          },
+          "ovr": 68.9
+        },
+        {
+          "name": "Lord Voldemort",
+          "stats": {
+            "pace": 72,
+            "power": 92,
+            "stamina": 88,
+            "tackling": 75,
+            "passing": 85,
+            "gk": 42
+          },
+          "ovr": 78.4
+        },
+        {
+          "name": "Bellatrix Lestrange",
+          "stats": {
+            "pace": 76,
+            "power": 82,
+            "stamina": 80,
+            "tackling": 78,
+            "passing": 68,
+            "gk": 20
+          },
+          "ovr": 71.1
+        },
+        {
+          "name": "Luna Lovegood",
+          "stats": {
+            "pace": 72,
+            "power": 58,
+            "stamina": 75,
+            "tackling": 62,
+            "passing": 80,
+            "gk": 22
+          },
+          "ovr": 64.7
+        },
+        {
+          "name": "Fred Weasley",
+          "stats": {
+            "pace": 80,
+            "power": 68,
+            "stamina": 78,
+            "tackling": 62,
+            "passing": 75,
+            "gk": 18
+          },
+          "ovr": 67.1
+        },
+        {
+          "name": "George Weasley",
+          "stats": {
+            "pace": 80,
+            "power": 68,
+            "stamina": 78,
+            "tackling": 62,
+            "passing": 75,
+            "gk": 18
+          },
+          "ovr": 67.1
+        },
+        {
+          "name": "Cedric Diggory",
+          "stats": {
+            "pace": 85,
+            "power": 72,
+            "stamina": 82,
+            "tackling": 70,
+            "passing": 74,
+            "gk": 28
+          },
+          "ovr": 71.7
+        },
+        {
+          "name": "Viktor Krum",
+          "stats": {
+            "pace": 88,
+            "power": 78,
+            "stamina": 80,
+            "tackling": 72,
+            "passing": 70,
+            "gk": 25
+          },
+          "ovr": 72.3
+        },
+        {
+          "name": "Minerva McGonagall",
+          "stats": {
+            "pace": 72,
+            "power": 74,
+            "stamina": 85,
+            "tackling": 80,
+            "passing": 82,
+            "gk": 38
+          },
+          "ovr": 74.5
+        },
+        {
+          "name": "Remus Lupin",
+          "stats": {
+            "pace": 82,
+            "power": 76,
+            "stamina": 78,
+            "tackling": 75,
+            "passing": 72,
+            "gk": 30
+          },
+          "ovr": 71.9
+        },
+        {
+          "name": "Sirius Black",
+          "stats": {
+            "pace": 86,
+            "power": 78,
+            "stamina": 80,
+            "tackling": 74,
+            "passing": 70,
+            "gk": 28
+          },
+          "ovr": 72.6
+        },
+        {
+          "name": "Dobby",
+          "stats": {
+            "pace": 90,
+            "power": 48,
+            "stamina": 85,
+            "tackling": 58,
+            "passing": 65,
+            "gk": 15
+          },
+          "ovr": 63.8
+        },
+        {
+          "name": "Sybill Trelawney",
+          "stats": {
+            "pace": 58,
+            "power": 48,
+            "stamina": 64,
+            "tackling": 52,
+            "passing": 74,
+            "gk": 72
+          },
+          "ovr": 60.5
+        },
+        {
+          "name": "Crabbe & Goyle",
+          "stats": {
+            "pace": 60,
+            "power": 82,
+            "stamina": 74,
+            "tackling": 76,
+            "passing": 42,
+            "gk": 12
+          },
+          "ovr": 61.3
+        }
+      ]
+    },
+    {
+      "id": "simpsons",
+      "name": "The Simpsons",
+      "accentColor": "#facc15",
+      "tagline": "Chaos ball. Peak Springfield.",
+      "players": [
+        {
+          "name": "Homer Simpson",
+          "stats": {
+            "pace": 54,
+            "power": 88,
+            "stamina": 66,
+            "tackling": 58,
+            "passing": 52,
+            "gk": 40
+          },
+          "ovr": 61.2
+        },
+        {
+          "name": "Bart Simpson",
+          "stats": {
+            "pace": 88,
+            "power": 62,
+            "stamina": 76,
+            "tackling": 56,
+            "passing": 68,
+            "gk": 20
+          },
+          "ovr": 65.0
+        },
+        {
+          "name": "Marge Simpson",
+          "stats": {
+            "pace": 68,
+            "power": 65,
+            "stamina": 86,
+            "tackling": 74,
+            "passing": 78,
+            "gk": 30
+          },
+          "ovr": 69.8
+        },
+        {
+          "name": "Lisa Simpson",
+          "stats": {
+            "pace": 74,
+            "power": 55,
+            "stamina": 80,
+            "tackling": 70,
+            "passing": 92,
+            "gk": 34
+          },
+          "ovr": 70.2
+        },
+        {
+          "name": "Ned Flanders",
+          "stats": {
+            "pace": 70,
+            "power": 68,
+            "stamina": 90,
+            "tackling": 76,
+            "passing": 80,
+            "gk": 50
+          },
+          "ovr": 74.1
+        },
+        {
+          "name": "Mr. Burns",
+          "stats": {
+            "pace": 40,
+            "power": 60,
+            "stamina": 52,
+            "tackling": 58,
+            "passing": 84,
+            "gk": 30
+          },
+          "ovr": 55.9
+        },
+        {
+          "name": "Waylon Smithers",
+          "stats": {
+            "pace": 64,
+            "power": 55,
+            "stamina": 78,
+            "tackling": 62,
+            "passing": 74,
+            "gk": 34
+          },
+          "ovr": 63.3
+        },
+        {
+          "name": "Moe Szyslak",
+          "stats": {
+            "pace": 60,
+            "power": 78,
+            "stamina": 74,
+            "tackling": 76,
+            "passing": 62,
+            "gk": 44
+          },
+          "ovr": 67.4
+        },
+        {
+          "name": "Barney Gumble",
+          "stats": {
+            "pace": 55,
+            "power": 80,
+            "stamina": 55,
+            "tackling": 52,
+            "passing": 48,
+            "gk": 60
+          },
+          "ovr": 58.2
+        },
+        {
+          "name": "Apu Nahasapeemapetilon",
+          "stats": {
+            "pace": 76,
+            "power": 65,
+            "stamina": 92,
+            "tackling": 68,
+            "passing": 76,
+            "gk": 28
+          },
+          "ovr": 70.7
+        },
+        {
+          "name": "Chief Clancy Wiggum",
+          "stats": {
+            "pace": 58,
+            "power": 72,
+            "stamina": 65,
+            "tackling": 62,
+            "passing": 54,
+            "gk": 70
+          },
+          "ovr": 63.0
+        },
+        {
+          "name": "Krusty the Clown",
+          "stats": {
+            "pace": 66,
+            "power": 60,
+            "stamina": 68,
+            "tackling": 55,
+            "passing": 78,
+            "gk": 32
+          },
+          "ovr": 62.1
+        },
+        {
+          "name": "Sideshow Bob",
+          "stats": {
+            "pace": 74,
+            "power": 78,
+            "stamina": 80,
+            "tackling": 82,
+            "passing": 86,
+            "gk": 40
+          },
+          "ovr": 76.0
+        },
+        {
+          "name": "Nelson Muntz",
+          "stats": {
+            "pace": 76,
+            "power": 82,
+            "stamina": 78,
+            "tackling": 74,
+            "passing": 52,
+            "gk": 20
+          },
+          "ovr": 67.2
+        },
+        {
+          "name": "Milhouse Van Houten",
+          "stats": {
+            "pace": 70,
+            "power": 52,
+            "stamina": 68,
+            "tackling": 58,
+            "passing": 64,
+            "gk": 22
+          },
+          "ovr": 58.4
+        },
+        {
+          "name": "Ralph Wiggum",
+          "stats": {
+            "pace": 64,
+            "power": 58,
+            "stamina": 62,
+            "tackling": 52,
+            "passing": 58,
+            "gk": 24
+          },
+          "ovr": 55.3
+        },
+        {
+          "name": "Comic Book Guy",
+          "stats": {
+            "pace": 48,
+            "power": 60,
+            "stamina": 58,
+            "tackling": 52,
+            "passing": 72,
+            "gk": 20
+          },
+          "ovr": 54.2
+        },
+        {
+          "name": "Groundskeeper Willie",
+          "stats": {
+            "pace": 72,
+            "power": 88,
+            "stamina": 90,
+            "tackling": 84,
+            "passing": 55,
+            "gk": 34
+          },
+          "ovr": 73.4
+        },
+        {
+          "name": "Snake Jailbird",
+          "stats": {
+            "pace": 82,
+            "power": 78,
+            "stamina": 72,
+            "tackling": 65,
+            "passing": 54,
+            "gk": 22
+          },
+          "ovr": 65.4
+        },
+        {
+          "name": "Duffman",
+          "stats": {
+            "pace": 80,
+            "power": 74,
+            "stamina": 84,
+            "tackling": 62,
+            "passing": 68,
+            "gk": 24
+          },
+          "ovr": 68.6
+        },
+        {
+          "name": "Otto Mann",
+          "stats": {
+            "pace": 76,
+            "power": 65,
+            "stamina": 62,
+            "tackling": 55,
+            "passing": 62,
+            "gk": 82
+          },
+          "ovr": 65.8
+        },
+        {
+          "name": "Professor Frink",
+          "stats": {
+            "pace": 60,
+            "power": 55,
+            "stamina": 68,
+            "tackling": 58,
+            "passing": 88,
+            "gk": 40
+          },
+          "ovr": 63.2
+        }
+      ]
+    },
+    {
+      "id": "futurama",
+      "name": "Futurama",
+      "accentColor": "#22d3ee",
+      "tagline": "Robot power. 31st-century weirdness.",
+      "players": [
+        {
+          "name": "Bender Bending Rodriguez",
+          "stats": {
+            "pace": 64,
+            "power": 92,
+            "stamina": 95,
+            "tackling": 76,
+            "passing": 62,
+            "gk": 42
+          },
+          "ovr": 74.2
+        },
+        {
+          "name": "Philip J. Fry",
+          "stats": {
+            "pace": 72,
+            "power": 58,
+            "stamina": 62,
+            "tackling": 48,
+            "passing": 52,
+            "gk": 28
+          },
+          "ovr": 55.4
+        },
+        {
+          "name": "Turanga Leela",
+          "stats": {
+            "pace": 88,
+            "power": 78,
+            "stamina": 82,
+            "tackling": 74,
+            "passing": 72,
+            "gk": 48
+          },
+          "ovr": 75.7
+        },
+        {
+          "name": "Professor Hubert Farnsworth",
+          "stats": {
+            "pace": 40,
+            "power": 52,
+            "stamina": 60,
+            "tackling": 50,
+            "passing": 90,
+            "gk": 32
+          },
+          "ovr": 55.8
+        },
+        {
+          "name": "Dr. John Zoidberg",
+          "stats": {
+            "pace": 74,
+            "power": 58,
+            "stamina": 72,
+            "tackling": 52,
+            "passing": 48,
+            "gk": 80
+          },
+          "ovr": 62.7
+        },
+        {
+          "name": "Hermes Conrad",
+          "stats": {
+            "pace": 72,
+            "power": 65,
+            "stamina": 86,
+            "tackling": 70,
+            "passing": 78,
+            "gk": 30
+          },
+          "ovr": 69.8
+        },
+        {
+          "name": "Amy Wong",
+          "stats": {
+            "pace": 84,
+            "power": 62,
+            "stamina": 74,
+            "tackling": 58,
+            "passing": 70,
+            "gk": 25
+          },
+          "ovr": 65.1
+        },
+        {
+          "name": "Nibbler",
+          "stats": {
+            "pace": 78,
+            "power": 88,
+            "stamina": 90,
+            "tackling": 72,
+            "passing": 45,
+            "gk": 18
+          },
+          "ovr": 68.9
+        },
+        {
+          "name": "Lrrr",
+          "stats": {
+            "pace": 70,
+            "power": 90,
+            "stamina": 86,
+            "tackling": 74,
+            "passing": 58,
+            "gk": 28
+          },
+          "ovr": 70.8
+        },
+        {
+          "name": "Morbo",
+          "stats": {
+            "pace": 58,
+            "power": 95,
+            "stamina": 88,
+            "tackling": 80,
+            "passing": 52,
+            "gk": 32
+          },
+          "ovr": 70.3
+        },
+        {
+          "name": "Robot Devil",
+          "stats": {
+            "pace": 74,
+            "power": 82,
+            "stamina": 80,
+            "tackling": 76,
+            "passing": 80,
+            "gk": 38
+          },
+          "ovr": 74.4
+        },
+        {
+          "name": "Calculon",
+          "stats": {
+            "pace": 62,
+            "power": 68,
+            "stamina": 72,
+            "tackling": 58,
+            "passing": 75,
+            "gk": 28
+          },
+          "ovr": 63.1
+        },
+        {
+          "name": "Kif Kroker",
+          "stats": {
+            "pace": 68,
+            "power": 52,
+            "stamina": 74,
+            "tackling": 62,
+            "passing": 66,
+            "gk": 32
+          },
+          "ovr": 61.2
+        },
+        {
+          "name": "Zapp Brannigan",
+          "stats": {
+            "pace": 65,
+            "power": 72,
+            "stamina": 70,
+            "tackling": 55,
+            "passing": 60,
+            "gk": 42
+          },
+          "ovr": 62.2
+        },
+        {
+          "name": "Carol Miller (Mom)",
+          "stats": {
+            "pace": 60,
+            "power": 74,
+            "stamina": 80,
+            "tackling": 70,
+            "passing": 85,
+            "gk": 35
+          },
+          "ovr": 69.9
+        },
+        {
+          "name": "Scruffy the Janitor",
+          "stats": {
+            "pace": 58,
+            "power": 75,
+            "stamina": 90,
+            "tackling": 78,
+            "passing": 52,
+            "gk": 38
+          },
+          "ovr": 67.3
+        },
+        {
+          "name": "Hypnotoad",
+          "stats": {
+            "pace": 42,
+            "power": 72,
+            "stamina": 95,
+            "tackling": 68,
+            "passing": 65,
+            "gk": 48
+          },
+          "ovr": 66.4
+        },
+        {
+          "name": "Richard Nixon's Head",
+          "stats": {
+            "pace": 50,
+            "power": 65,
+            "stamina": 72,
+            "tackling": 60,
+            "passing": 82,
+            "gk": 30
+          },
+          "ovr": 62.2
+        },
+        {
+          "name": "Donbot",
+          "stats": {
+            "pace": 60,
+            "power": 86,
+            "stamina": 82,
+            "tackling": 80,
+            "passing": 55,
+            "gk": 28
+          },
+          "ovr": 68.1
+        },
+        {
+          "name": "Fleming",
+          "stats": {
+            "pace": 80,
+            "power": 68,
+            "stamina": 78,
+            "tackling": 65,
+            "passing": 70,
+            "gk": 25
+          },
+          "ovr": 67.5
+        },
+        {
+          "name": "Cubert Farnsworth",
+          "stats": {
+            "pace": 58,
+            "power": 48,
+            "stamina": 62,
+            "tackling": 52,
+            "passing": 76,
+            "gk": 22
+          },
+          "ovr": 55.5
+        },
+        {
+          "name": "Dr. Zoidberg (Claw Keeper)",
+          "stats": {
+            "pace": 72,
+            "power": 60,
+            "stamina": 70,
+            "tackling": 55,
+            "passing": 48,
+            "gk": 86
+          },
+          "ovr": 63.5
+        }
+      ]
+    },
+    {
+      "id": "family-guy",
+      "name": "Family Guy",
+      "accentColor": "#2563eb",
+      "tagline": "Brawlers, freaks, and one evil baby.",
+      "players": [
+        {
+          "name": "Peter Griffin",
+          "stats": {
+            "pace": 55,
+            "power": 90,
+            "stamina": 62,
+            "tackling": 62,
+            "passing": 52,
+            "gk": 34
+          },
+          "ovr": 61.2
+        },
+        {
+          "name": "Stewie Griffin",
+          "stats": {
+            "pace": 78,
+            "power": 62,
+            "stamina": 74,
+            "tackling": 65,
+            "passing": 92,
+            "gk": 40
+          },
+          "ovr": 70.8
+        },
+        {
+          "name": "Brian Griffin",
+          "stats": {
+            "pace": 80,
+            "power": 65,
+            "stamina": 78,
+            "tackling": 68,
+            "passing": 86,
+            "gk": 32
+          },
+          "ovr": 71.1
+        },
+        {
+          "name": "Lois Griffin",
+          "stats": {
+            "pace": 74,
+            "power": 68,
+            "stamina": 82,
+            "tackling": 70,
+            "passing": 78,
+            "gk": 30
+          },
+          "ovr": 70.0
+        },
+        {
+          "name": "Chris Griffin",
+          "stats": {
+            "pace": 60,
+            "power": 78,
+            "stamina": 70,
+            "tackling": 65,
+            "passing": 55,
+            "gk": 22
+          },
+          "ovr": 61.2
+        },
+        {
+          "name": "Meg Griffin",
+          "stats": {
+            "pace": 68,
+            "power": 62,
+            "stamina": 74,
+            "tackling": 66,
+            "passing": 65,
+            "gk": 24
+          },
+          "ovr": 62.7
+        },
+        {
+          "name": "Glenn Quagmire",
+          "stats": {
+            "pace": 88,
+            "power": 72,
+            "stamina": 80,
+            "tackling": 62,
+            "passing": 68,
+            "gk": 28
+          },
+          "ovr": 69.4
+        },
+        {
+          "name": "Joe Swanson",
+          "stats": {
+            "pace": 76,
+            "power": 88,
+            "stamina": 88,
+            "tackling": 86,
+            "passing": 72,
+            "gk": 40
+          },
+          "ovr": 77.8
+        },
+        {
+          "name": "Cleveland Brown",
+          "stats": {
+            "pace": 70,
+            "power": 74,
+            "stamina": 82,
+            "tackling": 72,
+            "passing": 68,
+            "gk": 32
+          },
+          "ovr": 69.1
+        },
+        {
+          "name": "Carter Pewterschmidt",
+          "stats": {
+            "pace": 58,
+            "power": 65,
+            "stamina": 70,
+            "tackling": 60,
+            "passing": 72,
+            "gk": 35
+          },
+          "ovr": 62.0
+        },
+        {
+          "name": "Consuela",
+          "stats": {
+            "pace": 60,
+            "power": 55,
+            "stamina": 86,
+            "tackling": 65,
+            "passing": 52,
+            "gk": 34
+          },
+          "ovr": 60.6
+        },
+        {
+          "name": "Greased-up Deaf Guy",
+          "stats": {
+            "pace": 95,
+            "power": 58,
+            "stamina": 68,
+            "tackling": 45,
+            "passing": 48,
+            "gk": 18
+          },
+          "ovr": 58.3
+        },
+        {
+          "name": "Ernie the Giant Chicken",
+          "stats": {
+            "pace": 74,
+            "power": 92,
+            "stamina": 84,
+            "tackling": 80,
+            "passing": 45,
+            "gk": 24
+          },
+          "ovr": 69.9
+        },
+        {
+          "name": "Tom Tucker",
+          "stats": {
+            "pace": 72,
+            "power": 64,
+            "stamina": 76,
+            "tackling": 62,
+            "passing": 82,
+            "gk": 30
+          },
+          "ovr": 67.1
+        },
+        {
+          "name": "Mayor Adam West",
+          "stats": {
+            "pace": 56,
+            "power": 52,
+            "stamina": 64,
+            "tackling": 54,
+            "passing": 68,
+            "gk": 76
+          },
+          "ovr": 60.5
+        },
+        {
+          "name": "Death",
+          "stats": {
+            "pace": 82,
+            "power": 88,
+            "stamina": 92,
+            "tackling": 84,
+            "passing": 70,
+            "gk": 50
+          },
+          "ovr": 79.9
+        },
+        {
+          "name": "Bruce",
+          "stats": {
+            "pace": 64,
+            "power": 52,
+            "stamina": 70,
+            "tackling": 55,
+            "passing": 62,
+            "gk": 28
+          },
+          "ovr": 57.3
+        },
+        {
+          "name": "Mort Goldman",
+          "stats": {
+            "pace": 55,
+            "power": 48,
+            "stamina": 62,
+            "tackling": 52,
+            "passing": 58,
+            "gk": 72
+          },
+          "ovr": 56.7
+        },
+        {
+          "name": "Seamus Levine",
+          "stats": {
+            "pace": 60,
+            "power": 70,
+            "stamina": 74,
+            "tackling": 68,
+            "passing": 55,
+            "gk": 34
+          },
+          "ovr": 62.3
+        },
+        {
+          "name": "Evil Monkey",
+          "stats": {
+            "pace": 86,
+            "power": 76,
+            "stamina": 80,
+            "tackling": 72,
+            "passing": 52,
+            "gk": 20
+          },
+          "ovr": 67.9
+        },
+        {
+          "name": "Herbert the Pervert",
+          "stats": {
+            "pace": 50,
+            "power": 45,
+            "stamina": 60,
+            "tackling": 52,
+            "passing": 58,
+            "gk": 28
+          },
+          "ovr": 50.5
+        },
+        {
+          "name": "Jasper T. Jaspers",
+          "stats": {
+            "pace": 58,
+            "power": 58,
+            "stamina": 68,
+            "tackling": 55,
+            "passing": 54,
+            "gk": 30
+          },
+          "ovr": 55.7
+        }
+      ]
+    },
+    {
+      "id": "famous-retards",
+      "name": "Famous Retards",
+      "accentColor": "#a855f7",
+      "tagline": "Low IQ. High heart. Route one football.",
+      "players": [
+        {
+          "name": "Forrest Gump",
+          "stats": {
+            "pace": 86,
+            "power": 78,
+            "stamina": 95,
+            "tackling": 65,
+            "passing": 58,
+            "gk": 28
+          },
+          "ovr": 71.6
+        },
+        {
+          "name": "Lennie Small",
+          "stats": {
+            "pace": 55,
+            "power": 92,
+            "stamina": 76,
+            "tackling": 72,
+            "passing": 48,
+            "gk": 22
+          },
+          "ovr": 63.9
+        },
+        {
+          "name": "Karl Childers",
+          "stats": {
+            "pace": 58,
+            "power": 82,
+            "stamina": 88,
+            "tackling": 78,
+            "passing": 52,
+            "gk": 30
+          },
+          "ovr": 67.4
+        },
+        {
+          "name": "Raymond Babbitt (Rain Man)",
+          "stats": {
+            "pace": 62,
+            "power": 52,
+            "stamina": 74,
+            "tackling": 56,
+            "passing": 82,
+            "gk": 38
+          },
+          "ovr": 62.5
+        },
+        {
+          "name": "Simple Jack",
+          "stats": {
+            "pace": 68,
+            "power": 65,
+            "stamina": 70,
+            "tackling": 58,
+            "passing": 52,
+            "gk": 25
+          },
+          "ovr": 58.8
+        },
+        {
+          "name": "Brick Tamland",
+          "stats": {
+            "pace": 65,
+            "power": 62,
+            "stamina": 66,
+            "tackling": 52,
+            "passing": 50,
+            "gk": 25
+          },
+          "ovr": 55.6
+        },
+        {
+          "name": "Napoleon Dynamite",
+          "stats": {
+            "pace": 70,
+            "power": 55,
+            "stamina": 78,
+            "tackling": 60,
+            "passing": 62,
+            "gk": 22
+          },
+          "ovr": 60.7
+        },
+        {
+          "name": "Lloyd Christmas",
+          "stats": {
+            "pace": 72,
+            "power": 58,
+            "stamina": 68,
+            "tackling": 52,
+            "passing": 52,
+            "gk": 24
+          },
+          "ovr": 56.8
+        },
+        {
+          "name": "Harry Dunne",
+          "stats": {
+            "pace": 68,
+            "power": 58,
+            "stamina": 65,
+            "tackling": 50,
+            "passing": 48,
+            "gk": 22
+          },
+          "ovr": 54.2
+        },
+        {
+          "name": "Johnny Knoxville",
+          "stats": {
+            "pace": 78,
+            "power": 82,
+            "stamina": 75,
+            "tackling": 62,
+            "passing": 55,
+            "gk": 25
+          },
+          "ovr": 65.9
+        },
+        {
+          "name": "Andy Stitzer",
+          "stats": {
+            "pace": 65,
+            "power": 62,
+            "stamina": 70,
+            "tackling": 56,
+            "passing": 62,
+            "gk": 28
+          },
+          "ovr": 59.5
+        },
+        {
+          "name": "Borat Sagdiyev",
+          "stats": {
+            "pace": 74,
+            "power": 72,
+            "stamina": 80,
+            "tackling": 65,
+            "passing": 55,
+            "gk": 24
+          },
+          "ovr": 64.7
+        },
+        {
+          "name": "Mr. Bean",
+          "stats": {
+            "pace": 80,
+            "power": 55,
+            "stamina": 74,
+            "tackling": 60,
+            "passing": 54,
+            "gk": 86
+          },
+          "ovr": 66.7
+        },
+        {
+          "name": "Derek Zoolander",
+          "stats": {
+            "pace": 72,
+            "power": 55,
+            "stamina": 64,
+            "tackling": 48,
+            "passing": 42,
+            "gk": 20
+          },
+          "ovr": 52.6
+        },
+        {
+          "name": "Gilligan",
+          "stats": {
+            "pace": 58,
+            "power": 52,
+            "stamina": 72,
+            "tackling": 50,
+            "passing": 48,
+            "gk": 24
+          },
+          "ovr": 52.8
+        },
+        {
+          "name": "Johnny Bravo",
+          "stats": {
+            "pace": 82,
+            "power": 86,
+            "stamina": 70,
+            "tackling": 56,
+            "passing": 52,
+            "gk": 24
+          },
+          "ovr": 64.7
+        },
+        {
+          "name": "Patrick Star",
+          "stats": {
+            "pace": 62,
+            "power": 78,
+            "stamina": 84,
+            "tackling": 55,
+            "passing": 50,
+            "gk": 26
+          },
+          "ovr": 61.8
+        },
+        {
+          "name": "Ed (Ed, Edd n Eddy)",
+          "stats": {
+            "pace": 74,
+            "power": 72,
+            "stamina": 78,
+            "tackling": 62,
+            "passing": 52,
+            "gk": 22
+          },
+          "ovr": 63.0
+        },
+        {
+          "name": "Mongo",
+          "stats": {
+            "pace": 58,
+            "power": 95,
+            "stamina": 80,
+            "tackling": 75,
+            "passing": 40,
+            "gk": 18
+          },
+          "ovr": 64.4
+        },
+        {
+          "name": "Tommy Callahan",
+          "stats": {
+            "pace": 65,
+            "power": 68,
+            "stamina": 74,
+            "tackling": 58,
+            "passing": 62,
+            "gk": 32
+          },
+          "ovr": 62.1
+        },
+        {
+          "name": "Ace Ventura",
+          "stats": {
+            "pace": 92,
+            "power": 65,
+            "stamina": 82,
+            "tackling": 58,
+            "passing": 68,
+            "gk": 32
+          },
+          "ovr": 68.9
+        },
+        {
+          "name": "Cosmo Kramer",
+          "stats": {
+            "pace": 80,
+            "power": 62,
+            "stamina": 72,
+            "tackling": 56,
+            "passing": 66,
+            "gk": 28
+          },
+          "ovr": 63.3
+        }
+      ]
+    },
+    {
+      "id": "world-leaders",
+      "name": "World Leaders",
+      "accentColor": "#64748b",
+      "tagline": "Tactical masters. Control the tempo.",
+      "players": [
+        {
+          "name": "Winston Churchill",
+          "stats": {
+            "pace": 54,
+            "power": 78,
+            "stamina": 92,
+            "tackling": 70,
+            "passing": 88,
+            "gk": 38
+          },
+          "ovr": 72.6
+        },
+        {
+          "name": "Napoleon Bonaparte",
+          "stats": {
+            "pace": 74,
+            "power": 76,
+            "stamina": 84,
+            "tackling": 72,
+            "passing": 86,
+            "gk": 42
+          },
+          "ovr": 74.8
+        },
+        {
+          "name": "Julius Caesar",
+          "stats": {
+            "pace": 76,
+            "power": 82,
+            "stamina": 86,
+            "tackling": 78,
+            "passing": 82,
+            "gk": 40
+          },
+          "ovr": 76.7
+        },
+        {
+          "name": "Cleopatra",
+          "stats": {
+            "pace": 80,
+            "power": 70,
+            "stamina": 76,
+            "tackling": 64,
+            "passing": 88,
+            "gk": 32
+          },
+          "ovr": 71.2
+        },
+        {
+          "name": "Genghis Khan",
+          "stats": {
+            "pace": 84,
+            "power": 90,
+            "stamina": 88,
+            "tackling": 80,
+            "passing": 68,
+            "gk": 35
+          },
+          "ovr": 77.3
+        },
+        {
+          "name": "Alexander the Great",
+          "stats": {
+            "pace": 86,
+            "power": 86,
+            "stamina": 88,
+            "tackling": 78,
+            "passing": 84,
+            "gk": 38
+          },
+          "ovr": 79.8
+        },
+        {
+          "name": "Queen Elizabeth I",
+          "stats": {
+            "pace": 66,
+            "power": 72,
+            "stamina": 84,
+            "tackling": 74,
+            "passing": 90,
+            "gk": 45
+          },
+          "ovr": 74.0
+        },
+        {
+          "name": "Abraham Lincoln",
+          "stats": {
+            "pace": 70,
+            "power": 78,
+            "stamina": 82,
+            "tackling": 74,
+            "passing": 86,
+            "gk": 40
+          },
+          "ovr": 74.2
+        },
+        {
+          "name": "Mahatma Gandhi",
+          "stats": {
+            "pace": 60,
+            "power": 45,
+            "stamina": 95,
+            "tackling": 58,
+            "passing": 84,
+            "gk": 28
+          },
+          "ovr": 64.4
+        },
+        {
+          "name": "Adolf Hitler",
+          "stats": {
+            "pace": 64,
+            "power": 72,
+            "stamina": 72,
+            "tackling": 68,
+            "passing": 78,
+            "gk": 32
+          },
+          "ovr": 66.9
+        },
+        {
+          "name": "Joseph Stalin",
+          "stats": {
+            "pace": 62,
+            "power": 86,
+            "stamina": 84,
+            "tackling": 82,
+            "passing": 74,
+            "gk": 38
+          },
+          "ovr": 73.6
+        },
+        {
+          "name": "Mao Zedong",
+          "stats": {
+            "pace": 66,
+            "power": 78,
+            "stamina": 88,
+            "tackling": 74,
+            "passing": 82,
+            "gk": 35
+          },
+          "ovr": 73.3
+        },
+        {
+          "name": "Franklin D. Roosevelt",
+          "stats": {
+            "pace": 56,
+            "power": 70,
+            "stamina": 78,
+            "tackling": 68,
+            "passing": 88,
+            "gk": 42
+          },
+          "ovr": 69.0
+        },
+        {
+          "name": "John F. Kennedy",
+          "stats": {
+            "pace": 82,
+            "power": 74,
+            "stamina": 80,
+            "tackling": 68,
+            "passing": 84,
+            "gk": 38
+          },
+          "ovr": 73.6
+        },
+        {
+          "name": "Margaret Thatcher",
+          "stats": {
+            "pace": 70,
+            "power": 76,
+            "stamina": 86,
+            "tackling": 80,
+            "passing": 86,
+            "gk": 40
+          },
+          "ovr": 75.6
+        },
+        {
+          "name": "Vladimir Putin",
+          "stats": {
+            "pace": 74,
+            "power": 82,
+            "stamina": 86,
+            "tackling": 80,
+            "passing": 72,
+            "gk": 48
+          },
+          "ovr": 75.7
+        },
+        {
+          "name": "Donald Trump",
+          "stats": {
+            "pace": 60,
+            "power": 70,
+            "stamina": 68,
+            "tackling": 58,
+            "passing": 74,
+            "gk": 30
+          },
+          "ovr": 62.4
+        },
+        {
+          "name": "Barack Obama",
+          "stats": {
+            "pace": 80,
+            "power": 70,
+            "stamina": 84,
+            "tackling": 70,
+            "passing": 88,
+            "gk": 38
+          },
+          "ovr": 74.4
+        },
+        {
+          "name": "Angela Merkel",
+          "stats": {
+            "pace": 66,
+            "power": 70,
+            "stamina": 88,
+            "tackling": 76,
+            "passing": 86,
+            "gk": 40
+          },
+          "ovr": 73.5
+        },
+        {
+          "name": "Kim Jong-un",
+          "stats": {
+            "pace": 58,
+            "power": 74,
+            "stamina": 72,
+            "tackling": 64,
+            "passing": 58,
+            "gk": 90
+          },
+          "ovr": 67.7
+        },
+        {
+          "name": "Emmanuel Macron",
+          "stats": {
+            "pace": 76,
+            "power": 64,
+            "stamina": 80,
+            "tackling": 68,
+            "passing": 82,
+            "gk": 35
+          },
+          "ovr": 70.1
+        },
+        {
+          "name": "Boris Johnson",
+          "stats": {
+            "pace": 70,
+            "power": 68,
+            "stamina": 74,
+            "tackling": 60,
+            "passing": 78,
+            "gk": 78
+          },
+          "ovr": 70.8
+        }
+      ]
+    },
+    {
+      "id": "fighting-legends",
+      "name": "Fighting Legends",
+      "accentColor": "#dc2626",
+      "tagline": "Pure violence. Press and punish.",
+      "players": [
+        {
+          "name": "Muhammad Ali",
+          "stats": {
+            "pace": 90,
+            "power": 88,
+            "stamina": 85,
+            "tackling": 72,
+            "passing": 68,
+            "gk": 30
+          },
+          "ovr": 75.5
+        },
+        {
+          "name": "Mike Tyson",
+          "stats": {
+            "pace": 82,
+            "power": 98,
+            "stamina": 78,
+            "tackling": 75,
+            "passing": 45,
+            "gk": 22
+          },
+          "ovr": 70.2
+        },
+        {
+          "name": "Bruce Lee",
+          "stats": {
+            "pace": 95,
+            "power": 82,
+            "stamina": 88,
+            "tackling": 78,
+            "passing": 70,
+            "gk": 35
+          },
+          "ovr": 77.8
+        },
+        {
+          "name": "Rocky Balboa",
+          "stats": {
+            "pace": 72,
+            "power": 88,
+            "stamina": 95,
+            "tackling": 75,
+            "passing": 55,
+            "gk": 28
+          },
+          "ovr": 72.1
+        },
+        {
+          "name": "Ronda Rousey",
+          "stats": {
+            "pace": 80,
+            "power": 85,
+            "stamina": 82,
+            "tackling": 88,
+            "passing": 58,
+            "gk": 25
+          },
+          "ovr": 73.2
+        },
+        {
+          "name": "Conor McGregor",
+          "stats": {
+            "pace": 85,
+            "power": 82,
+            "stamina": 75,
+            "tackling": 70,
+            "passing": 62,
+            "gk": 28
+          },
+          "ovr": 70.1
+        },
+        {
+          "name": "Anderson Silva",
+          "stats": {
+            "pace": 82,
+            "power": 85,
+            "stamina": 80,
+            "tackling": 75,
+            "passing": 68,
+            "gk": 30
+          },
+          "ovr": 73.2
+        },
+        {
+          "name": "Fedor Emelianenko",
+          "stats": {
+            "pace": 75,
+            "power": 92,
+            "stamina": 88,
+            "tackling": 82,
+            "passing": 55,
+            "gk": 32
+          },
+          "ovr": 73.8
+        },
+        {
+          "name": "Jon Jones",
+          "stats": {
+            "pace": 88,
+            "power": 85,
+            "stamina": 82,
+            "tackling": 80,
+            "passing": 62,
+            "gk": 28
+          },
+          "ovr": 74.3
+        },
+        {
+          "name": "Georges St-Pierre",
+          "stats": {
+            "pace": 82,
+            "power": 80,
+            "stamina": 90,
+            "tackling": 85,
+            "passing": 72,
+            "gk": 35
+          },
+          "ovr": 77.1
+        },
+        {
+          "name": "Khabib Nurmagomedov",
+          "stats": {
+            "pace": 78,
+            "power": 85,
+            "stamina": 92,
+            "tackling": 92,
+            "passing": 58,
+            "gk": 30
+          },
+          "ovr": 75.9
+        },
+        {
+          "name": "Ip Man",
+          "stats": {
+            "pace": 85,
+            "power": 78,
+            "stamina": 85,
+            "tackling": 80,
+            "passing": 72,
+            "gk": 32
+          },
+          "ovr": 75.2
+        },
+        {
+          "name": "Chuck Norris",
+          "stats": {
+            "pace": 88,
+            "power": 95,
+            "stamina": 92,
+            "tackling": 85,
+            "passing": 70,
+            "gk": 40
+          },
+          "ovr": 81.4
+        },
+        {
+          "name": "Jean-Claude Van Damme",
+          "stats": {
+            "pace": 90,
+            "power": 82,
+            "stamina": 80,
+            "tackling": 72,
+            "passing": 58,
+            "gk": 25
+          },
+          "ovr": 71.3
+        },
+        {
+          "name": "Manny Pacquiao",
+          "stats": {
+            "pace": 92,
+            "power": 85,
+            "stamina": 85,
+            "tackling": 68,
+            "passing": 62,
+            "gk": 22
+          },
+          "ovr": 72.8
+        },
+        {
+          "name": "Tyson Fury",
+          "stats": {
+            "pace": 72,
+            "power": 90,
+            "stamina": 88,
+            "tackling": 75,
+            "passing": 55,
+            "gk": 35
+          },
+          "ovr": 71.9
+        },
+        {
+          "name": "Canelo Alvarez",
+          "stats": {
+            "pace": 80,
+            "power": 88,
+            "stamina": 82,
+            "tackling": 72,
+            "passing": 58,
+            "gk": 28
+          },
+          "ovr": 71.2
+        },
+        {
+          "name": "Hulk Hogan",
+          "stats": {
+            "pace": 65,
+            "power": 92,
+            "stamina": 78,
+            "tackling": 72,
+            "passing": 48,
+            "gk": 25
+          },
+          "ovr": 66.4
+        },
+        {
+          "name": "Dwayne 'The Rock' Johnson",
+          "stats": {
+            "pace": 78,
+            "power": 95,
+            "stamina": 85,
+            "tackling": 78,
+            "passing": 62,
+            "gk": 30
+          },
+          "ovr": 74.6
+        },
+        {
+          "name": "John Cena",
+          "stats": {
+            "pace": 75,
+            "power": 90,
+            "stamina": 88,
+            "tackling": 80,
+            "passing": 55,
+            "gk": 32
+          },
+          "ovr": 73.0
+        },
+        {
+          "name": "Ryu",
+          "stats": {
+            "pace": 88,
+            "power": 85,
+            "stamina": 82,
+            "tackling": 75,
+            "passing": 60,
+            "gk": 28
+          },
+          "ovr": 73.0
+        },
+        {
+          "name": "Sub-Zero",
+          "stats": {
+            "pace": 82,
+            "power": 88,
+            "stamina": 80,
+            "tackling": 82,
+            "passing": 55,
+            "gk": 85
+          },
+          "ovr": 78.2
+        }
+      ]
+    },
+    {
+      "id": "star-wars",
+      "name": "Star Wars",
+      "accentColor": "#fbbf24",
+      "tagline": "The Force. Galactic pace. Death Star power.",
+      "players": [
+        {
+          "name": "Luke Skywalker",
+          "stats": {
+            "pace": 82,
+            "power": 76,
+            "stamina": 84,
+            "tackling": 70,
+            "passing": 78,
+            "gk": 38
+          },
+          "ovr": 74.0
+        },
+        {
+          "name": "Darth Vader",
+          "stats": {
+            "pace": 72,
+            "power": 95,
+            "stamina": 92,
+            "tackling": 88,
+            "passing": 72,
+            "gk": 42
+          },
+          "ovr": 79.6
+        },
+        {
+          "name": "Han Solo",
+          "stats": {
+            "pace": 86,
+            "power": 74,
+            "stamina": 78,
+            "tackling": 68,
+            "passing": 76,
+            "gk": 32
+          },
+          "ovr": 72.0
+        },
+        {
+          "name": "Chewbacca",
+          "stats": {
+            "pace": 68,
+            "power": 90,
+            "stamina": 88,
+            "tackling": 82,
+            "passing": 55,
+            "gk": 28
+          },
+          "ovr": 71.7
+        },
+        {
+          "name": "Yoda",
+          "stats": {
+            "pace": 62,
+            "power": 78,
+            "stamina": 95,
+            "tackling": 85,
+            "passing": 92,
+            "gk": 45
+          },
+          "ovr": 78.7
+        },
+        {
+          "name": "Obi-Wan Kenobi",
+          "stats": {
+            "pace": 78,
+            "power": 80,
+            "stamina": 88,
+            "tackling": 82,
+            "passing": 84,
+            "gk": 40
+          },
+          "ovr": 78.2
+        },
+        {
+          "name": "Emperor Palpatine",
+          "stats": {
+            "pace": 58,
+            "power": 82,
+            "stamina": 86,
+            "tackling": 76,
+            "passing": 90,
+            "gk": 38
+          },
+          "ovr": 74.4
+        },
+        {
+          "name": "Anakin Skywalker",
+          "stats": {
+            "pace": 88,
+            "power": 88,
+            "stamina": 82,
+            "tackling": 78,
+            "passing": 72,
+            "gk": 35
+          },
+          "ovr": 76.9
+        },
+        {
+          "name": "Mace Windu",
+          "stats": {
+            "pace": 84,
+            "power": 82,
+            "stamina": 84,
+            "tackling": 80,
+            "passing": 76,
+            "gk": 32
+          },
+          "ovr": 76.3
+        },
+        {
+          "name": "Princess Leia",
+          "stats": {
+            "pace": 76,
+            "power": 68,
+            "stamina": 82,
+            "tackling": 72,
+            "passing": 86,
+            "gk": 30
+          },
+          "ovr": 72.1
+        },
+        {
+          "name": "R2-D2",
+          "stats": {
+            "pace": 55,
+            "power": 48,
+            "stamina": 92,
+            "tackling": 52,
+            "passing": 82,
+            "gk": 28
+          },
+          "ovr": 62.0
+        },
+        {
+          "name": "C-3PO",
+          "stats": {
+            "pace": 42,
+            "power": 38,
+            "stamina": 70,
+            "tackling": 40,
+            "passing": 88,
+            "gk": 22
+          },
+          "ovr": 52.2
+        },
+        {
+          "name": "Boba Fett",
+          "stats": {
+            "pace": 82,
+            "power": 80,
+            "stamina": 84,
+            "tackling": 78,
+            "passing": 62,
+            "gk": 35
+          },
+          "ovr": 73.0
+        },
+        {
+          "name": "Darth Maul",
+          "stats": {
+            "pace": 92,
+            "power": 82,
+            "stamina": 80,
+            "tackling": 76,
+            "passing": 58,
+            "gk": 28
+          },
+          "ovr": 72.6
+        },
+        {
+          "name": "General Grievous",
+          "stats": {
+            "pace": 86,
+            "power": 84,
+            "stamina": 82,
+            "tackling": 80,
+            "passing": 55,
+            "gk": 30
+          },
+          "ovr": 72.7
+        },
+        {
+          "name": "Qui-Gon Jinn",
+          "stats": {
+            "pace": 80,
+            "power": 78,
+            "stamina": 86,
+            "tackling": 76,
+            "passing": 82,
+            "gk": 38
+          },
+          "ovr": 76.2
+        },
+        {
+          "name": "Padm\u00e9 Amidala",
+          "stats": {
+            "pace": 78,
+            "power": 62,
+            "stamina": 80,
+            "tackling": 68,
+            "passing": 82,
+            "gk": 28
+          },
+          "ovr": 69.4
+        },
+        {
+          "name": "Lando Calrissian",
+          "stats": {
+            "pace": 80,
+            "power": 70,
+            "stamina": 78,
+            "tackling": 66,
+            "passing": 84,
+            "gk": 34
+          },
+          "ovr": 71.4
+        },
+        {
+          "name": "Rey",
+          "stats": {
+            "pace": 84,
+            "power": 74,
+            "stamina": 82,
+            "tackling": 72,
+            "passing": 70,
+            "gk": 32
+          },
+          "ovr": 72.0
+        },
+        {
+          "name": "Kylo Ren",
+          "stats": {
+            "pace": 78,
+            "power": 86,
+            "stamina": 80,
+            "tackling": 76,
+            "passing": 62,
+            "gk": 30
+          },
+          "ovr": 71.8
+        },
+        {
+          "name": "Clone Trooper",
+          "stats": {
+            "pace": 76,
+            "power": 72,
+            "stamina": 82,
+            "tackling": 74,
+            "passing": 68,
+            "gk": 40
+          },
+          "ovr": 71.0
+        },
+        {
+          "name": "Jar Jar Binks",
+          "stats": {
+            "pace": 88,
+            "power": 42,
+            "stamina": 68,
+            "tackling": 38,
+            "passing": 52,
+            "gk": 18
+          },
+          "ovr": 53.6
+        }
+      ]
+    },
+    {
+      "id": "marvel",
+      "name": "Marvel",
+      "accentColor": "#dc2626",
+      "tagline": "Superhuman athletes. Avengers press.",
+      "players": [
+        {
+          "name": "Captain America",
+          "stats": {
+            "pace": 82,
+            "power": 84,
+            "stamina": 92,
+            "tackling": 86,
+            "passing": 78,
+            "gk": 38
+          },
+          "ovr": 79.8
+        },
+        {
+          "name": "Iron Man",
+          "stats": {
+            "pace": 78,
+            "power": 88,
+            "stamina": 80,
+            "tackling": 72,
+            "passing": 90,
+            "gk": 42
+          },
+          "ovr": 77.6
+        },
+        {
+          "name": "Thor",
+          "stats": {
+            "pace": 80,
+            "power": 96,
+            "stamina": 88,
+            "tackling": 82,
+            "passing": 72,
+            "gk": 40
+          },
+          "ovr": 79.2
+        },
+        {
+          "name": "Hulk",
+          "stats": {
+            "pace": 62,
+            "power": 99,
+            "stamina": 90,
+            "tackling": 85,
+            "passing": 48,
+            "gk": 28
+          },
+          "ovr": 71.9
+        },
+        {
+          "name": "Black Widow",
+          "stats": {
+            "pace": 90,
+            "power": 72,
+            "stamina": 84,
+            "tackling": 80,
+            "passing": 74,
+            "gk": 32
+          },
+          "ovr": 75.2
+        },
+        {
+          "name": "Spider-Man",
+          "stats": {
+            "pace": 95,
+            "power": 78,
+            "stamina": 82,
+            "tackling": 74,
+            "passing": 76,
+            "gk": 35
+          },
+          "ovr": 76.4
+        },
+        {
+          "name": "Wolverine",
+          "stats": {
+            "pace": 84,
+            "power": 88,
+            "stamina": 92,
+            "tackling": 82,
+            "passing": 58,
+            "gk": 30
+          },
+          "ovr": 75.7
+        },
+        {
+          "name": "Doctor Strange",
+          "stats": {
+            "pace": 68,
+            "power": 76,
+            "stamina": 80,
+            "tackling": 68,
+            "passing": 92,
+            "gk": 38
+          },
+          "ovr": 72.9
+        },
+        {
+          "name": "Black Panther",
+          "stats": {
+            "pace": 92,
+            "power": 82,
+            "stamina": 86,
+            "tackling": 80,
+            "passing": 74,
+            "gk": 35
+          },
+          "ovr": 78.0
+        },
+        {
+          "name": "Captain Marvel",
+          "stats": {
+            "pace": 94,
+            "power": 90,
+            "stamina": 88,
+            "tackling": 78,
+            "passing": 72,
+            "gk": 38
+          },
+          "ovr": 79.8
+        },
+        {
+          "name": "Hawkeye",
+          "stats": {
+            "pace": 82,
+            "power": 72,
+            "stamina": 80,
+            "tackling": 70,
+            "passing": 78,
+            "gk": 32
+          },
+          "ovr": 72.0
+        },
+        {
+          "name": "Ant-Man",
+          "stats": {
+            "pace": 78,
+            "power": 68,
+            "stamina": 76,
+            "tackling": 66,
+            "passing": 72,
+            "gk": 28
+          },
+          "ovr": 67.6
+        },
+        {
+          "name": "Deadpool",
+          "stats": {
+            "pace": 88,
+            "power": 82,
+            "stamina": 90,
+            "tackling": 72,
+            "passing": 76,
+            "gk": 34
+          },
+          "ovr": 76.8
+        },
+        {
+          "name": "Loki",
+          "stats": {
+            "pace": 80,
+            "power": 72,
+            "stamina": 78,
+            "tackling": 68,
+            "passing": 86,
+            "gk": 32
+          },
+          "ovr": 72.3
+        },
+        {
+          "name": "Thanos",
+          "stats": {
+            "pace": 70,
+            "power": 98,
+            "stamina": 92,
+            "tackling": 88,
+            "passing": 70,
+            "gk": 40
+          },
+          "ovr": 79.2
+        },
+        {
+          "name": "Vision",
+          "stats": {
+            "pace": 78,
+            "power": 86,
+            "stamina": 84,
+            "tackling": 76,
+            "passing": 82,
+            "gk": 38
+          },
+          "ovr": 76.9
+        },
+        {
+          "name": "Falcon",
+          "stats": {
+            "pace": 88,
+            "power": 74,
+            "stamina": 82,
+            "tackling": 72,
+            "passing": 70,
+            "gk": 30
+          },
+          "ovr": 72.5
+        },
+        {
+          "name": "Scarlet Witch",
+          "stats": {
+            "pace": 76,
+            "power": 88,
+            "stamina": 80,
+            "tackling": 68,
+            "passing": 86,
+            "gk": 32
+          },
+          "ovr": 74.8
+        },
+        {
+          "name": "Daredevil",
+          "stats": {
+            "pace": 86,
+            "power": 78,
+            "stamina": 84,
+            "tackling": 80,
+            "passing": 68,
+            "gk": 35
+          },
+          "ovr": 74.8
+        },
+        {
+          "name": "Punisher",
+          "stats": {
+            "pace": 78,
+            "power": 86,
+            "stamina": 82,
+            "tackling": 80,
+            "passing": 62,
+            "gk": 38
+          },
+          "ovr": 73.6
+        },
+        {
+          "name": "Groot",
+          "stats": {
+            "pace": 48,
+            "power": 92,
+            "stamina": 95,
+            "tackling": 78,
+            "passing": 52,
+            "gk": 22
+          },
+          "ovr": 67.9
+        },
+        {
+          "name": "Rocket Raccoon",
+          "stats": {
+            "pace": 82,
+            "power": 72,
+            "stamina": 78,
+            "tackling": 68,
+            "passing": 76,
+            "gk": 28
+          },
+          "ovr": 70.5
+        }
+      ]
+    },
+    {
+      "id": "dc",
+      "name": "DC",
+      "accentColor": "#2563eb",
+      "tagline": "Gotham grit. Metropolis muscle.",
+      "players": [
+        {
+          "name": "Batman",
+          "stats": {
+            "pace": 82,
+            "power": 84,
+            "stamina": 88,
+            "tackling": 90,
+            "passing": 82,
+            "gk": 42
+          },
+          "ovr": 80.9
+        },
+        {
+          "name": "Superman",
+          "stats": {
+            "pace": 92,
+            "power": 98,
+            "stamina": 92,
+            "tackling": 82,
+            "passing": 78,
+            "gk": 48
+          },
+          "ovr": 84.4
+        },
+        {
+          "name": "Wonder Woman",
+          "stats": {
+            "pace": 88,
+            "power": 90,
+            "stamina": 88,
+            "tackling": 84,
+            "passing": 76,
+            "gk": 38
+          },
+          "ovr": 80.5
+        },
+        {
+          "name": "The Flash",
+          "stats": {
+            "pace": 99,
+            "power": 72,
+            "stamina": 82,
+            "tackling": 68,
+            "passing": 74,
+            "gk": 32
+          },
+          "ovr": 74.3
+        },
+        {
+          "name": "Aquaman",
+          "stats": {
+            "pace": 80,
+            "power": 88,
+            "stamina": 86,
+            "tackling": 78,
+            "passing": 68,
+            "gk": 38
+          },
+          "ovr": 75.8
+        },
+        {
+          "name": "Green Lantern",
+          "stats": {
+            "pace": 84,
+            "power": 82,
+            "stamina": 80,
+            "tackling": 72,
+            "passing": 76,
+            "gk": 35
+          },
+          "ovr": 74.4
+        },
+        {
+          "name": "The Joker",
+          "stats": {
+            "pace": 78,
+            "power": 68,
+            "stamina": 82,
+            "tackling": 62,
+            "passing": 88,
+            "gk": 28
+          },
+          "ovr": 70.8
+        },
+        {
+          "name": "Harley Quinn",
+          "stats": {
+            "pace": 86,
+            "power": 72,
+            "stamina": 80,
+            "tackling": 66,
+            "passing": 74,
+            "gk": 25
+          },
+          "ovr": 70.5
+        },
+        {
+          "name": "Lex Luthor",
+          "stats": {
+            "pace": 58,
+            "power": 72,
+            "stamina": 76,
+            "tackling": 68,
+            "passing": 90,
+            "gk": 35
+          },
+          "ovr": 69.0
+        },
+        {
+          "name": "Catwoman",
+          "stats": {
+            "pace": 92,
+            "power": 68,
+            "stamina": 80,
+            "tackling": 72,
+            "passing": 70,
+            "gk": 30
+          },
+          "ovr": 71.8
+        },
+        {
+          "name": "Cyborg",
+          "stats": {
+            "pace": 76,
+            "power": 90,
+            "stamina": 84,
+            "tackling": 78,
+            "passing": 72,
+            "gk": 38
+          },
+          "ovr": 75.8
+        },
+        {
+          "name": "Nightwing",
+          "stats": {
+            "pace": 90,
+            "power": 78,
+            "stamina": 84,
+            "tackling": 80,
+            "passing": 74,
+            "gk": 32
+          },
+          "ovr": 76.3
+        },
+        {
+          "name": "Robin",
+          "stats": {
+            "pace": 88,
+            "power": 68,
+            "stamina": 78,
+            "tackling": 74,
+            "passing": 72,
+            "gk": 28
+          },
+          "ovr": 71.2
+        },
+        {
+          "name": "Bane",
+          "stats": {
+            "pace": 68,
+            "power": 94,
+            "stamina": 86,
+            "tackling": 82,
+            "passing": 58,
+            "gk": 30
+          },
+          "ovr": 72.8
+        },
+        {
+          "name": "Doomsday",
+          "stats": {
+            "pace": 65,
+            "power": 98,
+            "stamina": 90,
+            "tackling": 85,
+            "passing": 45,
+            "gk": 28
+          },
+          "ovr": 71.7
+        },
+        {
+          "name": "Darkseid",
+          "stats": {
+            "pace": 68,
+            "power": 96,
+            "stamina": 92,
+            "tackling": 86,
+            "passing": 72,
+            "gk": 42
+          },
+          "ovr": 78.7
+        },
+        {
+          "name": "Shazam",
+          "stats": {
+            "pace": 86,
+            "power": 90,
+            "stamina": 82,
+            "tackling": 76,
+            "passing": 68,
+            "gk": 35
+          },
+          "ovr": 75.9
+        },
+        {
+          "name": "Green Arrow",
+          "stats": {
+            "pace": 84,
+            "power": 74,
+            "stamina": 80,
+            "tackling": 72,
+            "passing": 78,
+            "gk": 32
+          },
+          "ovr": 73.0
+        },
+        {
+          "name": "Poison Ivy",
+          "stats": {
+            "pace": 74,
+            "power": 68,
+            "stamina": 78,
+            "tackling": 66,
+            "passing": 80,
+            "gk": 25
+          },
+          "ovr": 68.4
+        },
+        {
+          "name": "The Riddler",
+          "stats": {
+            "pace": 72,
+            "power": 58,
+            "stamina": 74,
+            "tackling": 62,
+            "passing": 88,
+            "gk": 28
+          },
+          "ovr": 66.5
+        },
+        {
+          "name": "Two-Face",
+          "stats": {
+            "pace": 70,
+            "power": 76,
+            "stamina": 76,
+            "tackling": 72,
+            "passing": 68,
+            "gk": 32
+          },
+          "ovr": 68.4
+        },
+        {
+          "name": "Alfred Pennyworth",
+          "stats": {
+            "pace": 58,
+            "power": 55,
+            "stamina": 82,
+            "tackling": 68,
+            "passing": 86,
+            "gk": 78
+          },
+          "ovr": 70.6
+        }
+      ]
+    },
+    {
+      "id": "sony",
+      "name": "Sony",
+      "accentColor": "#003791",
+      "tagline": "PlayStation pace. Exclusive finishers.",
+      "players": [
+        {
+          "name": "Kratos",
+          "stats": {
+            "pace": 78,
+            "power": 96,
+            "stamina": 90,
+            "tackling": 86,
+            "passing": 62,
+            "gk": 35
+          },
+          "ovr": 77.7
+        },
+        {
+          "name": "Atreus",
+          "stats": {
+            "pace": 80,
+            "power": 68,
+            "stamina": 78,
+            "tackling": 66,
+            "passing": 72,
+            "gk": 28
+          },
+          "ovr": 68.3
+        },
+        {
+          "name": "Nathan Drake",
+          "stats": {
+            "pace": 86,
+            "power": 74,
+            "stamina": 82,
+            "tackling": 70,
+            "passing": 76,
+            "gk": 32
+          },
+          "ovr": 73.0
+        },
+        {
+          "name": "Ellie",
+          "stats": {
+            "pace": 84,
+            "power": 72,
+            "stamina": 80,
+            "tackling": 74,
+            "passing": 76,
+            "gk": 30
+          },
+          "ovr": 72.5
+        },
+        {
+          "name": "Joel",
+          "stats": {
+            "pace": 72,
+            "power": 82,
+            "stamina": 84,
+            "tackling": 80,
+            "passing": 68,
+            "gk": 35
+          },
+          "ovr": 73.0
+        },
+        {
+          "name": "Aloy",
+          "stats": {
+            "pace": 88,
+            "power": 78,
+            "stamina": 84,
+            "tackling": 76,
+            "passing": 72,
+            "gk": 32
+          },
+          "ovr": 74.8
+        },
+        {
+          "name": "Jin Sakai",
+          "stats": {
+            "pace": 86,
+            "power": 82,
+            "stamina": 86,
+            "tackling": 80,
+            "passing": 70,
+            "gk": 34
+          },
+          "ovr": 76.1
+        },
+        {
+          "name": "Ratchet",
+          "stats": {
+            "pace": 88,
+            "power": 72,
+            "stamina": 78,
+            "tackling": 68,
+            "passing": 74,
+            "gk": 28
+          },
+          "ovr": 71.2
+        },
+        {
+          "name": "Clank",
+          "stats": {
+            "pace": 62,
+            "power": 68,
+            "stamina": 85,
+            "tackling": 62,
+            "passing": 82,
+            "gk": 38
+          },
+          "ovr": 68.4
+        },
+        {
+          "name": "Spyro",
+          "stats": {
+            "pace": 86,
+            "power": 74,
+            "stamina": 80,
+            "tackling": 66,
+            "passing": 68,
+            "gk": 25
+          },
+          "ovr": 69.8
+        },
+        {
+          "name": "Crash Bandicoot",
+          "stats": {
+            "pace": 92,
+            "power": 76,
+            "stamina": 82,
+            "tackling": 68,
+            "passing": 62,
+            "gk": 22
+          },
+          "ovr": 70.6
+        },
+        {
+          "name": "Sackboy",
+          "stats": {
+            "pace": 78,
+            "power": 58,
+            "stamina": 76,
+            "tackling": 62,
+            "passing": 70,
+            "gk": 24
+          },
+          "ovr": 64.3
+        },
+        {
+          "name": "Cole MacGrath",
+          "stats": {
+            "pace": 82,
+            "power": 86,
+            "stamina": 80,
+            "tackling": 72,
+            "passing": 68,
+            "gk": 32
+          },
+          "ovr": 73.0
+        },
+        {
+          "name": "Wander",
+          "stats": {
+            "pace": 74,
+            "power": 72,
+            "stamina": 88,
+            "tackling": 68,
+            "passing": 58,
+            "gk": 28
+          },
+          "ovr": 67.6
+        },
+        {
+          "name": "Sir Daniel Fortesque",
+          "stats": {
+            "pace": 70,
+            "power": 78,
+            "stamina": 76,
+            "tackling": 74,
+            "passing": 62,
+            "gk": 30
+          },
+          "ovr": 67.8
+        },
+        {
+          "name": "Sweet Tooth",
+          "stats": {
+            "pace": 72,
+            "power": 88,
+            "stamina": 74,
+            "tackling": 76,
+            "passing": 52,
+            "gk": 28
+          },
+          "ovr": 68.0
+        },
+        {
+          "name": "Abby Anderson",
+          "stats": {
+            "pace": 80,
+            "power": 84,
+            "stamina": 82,
+            "tackling": 78,
+            "passing": 62,
+            "gk": 30
+          },
+          "ovr": 72.5
+        },
+        {
+          "name": "Deacon St. John",
+          "stats": {
+            "pace": 82,
+            "power": 78,
+            "stamina": 80,
+            "tackling": 74,
+            "passing": 66,
+            "gk": 35
+          },
+          "ovr": 71.9
+        },
+        {
+          "name": "Astro Bot",
+          "stats": {
+            "pace": 86,
+            "power": 62,
+            "stamina": 78,
+            "tackling": 64,
+            "passing": 72,
+            "gk": 26
+          },
+          "ovr": 67.8
+        },
+        {
+          "name": "Delsin Rowe",
+          "stats": {
+            "pace": 88,
+            "power": 80,
+            "stamina": 78,
+            "tackling": 70,
+            "passing": 68,
+            "gk": 30
+          },
+          "ovr": 72.1
+        },
+        {
+          "name": "Parappa the Rapper",
+          "stats": {
+            "pace": 84,
+            "power": 58,
+            "stamina": 76,
+            "tackling": 58,
+            "passing": 82,
+            "gk": 24
+          },
+          "ovr": 66.8
+        },
+        {
+          "name": "Sam Bridges",
+          "stats": {
+            "pace": 78,
+            "power": 68,
+            "stamina": 92,
+            "tackling": 70,
+            "passing": 72,
+            "gk": 32
+          },
+          "ovr": 71.6
+        }
+      ]
+    },
+    {
+      "id": "nintendo",
+      "name": "Nintendo",
+      "accentColor": "#e60012",
+      "tagline": "Platformer pace. Power-up football.",
+      "players": [
+        {
+          "name": "Mario",
+          "stats": {
+            "pace": 82,
+            "power": 78,
+            "stamina": 84,
+            "tackling": 72,
+            "passing": 80,
+            "gk": 42
+          },
+          "ovr": 75.5
+        },
+        {
+          "name": "Luigi",
+          "stats": {
+            "pace": 80,
+            "power": 72,
+            "stamina": 82,
+            "tackling": 70,
+            "passing": 76,
+            "gk": 48
+          },
+          "ovr": 73.2
+        },
+        {
+          "name": "Link",
+          "stats": {
+            "pace": 84,
+            "power": 80,
+            "stamina": 86,
+            "tackling": 78,
+            "passing": 72,
+            "gk": 35
+          },
+          "ovr": 75.5
+        },
+        {
+          "name": "Princess Zelda",
+          "stats": {
+            "pace": 74,
+            "power": 68,
+            "stamina": 80,
+            "tackling": 70,
+            "passing": 88,
+            "gk": 32
+          },
+          "ovr": 71.6
+        },
+        {
+          "name": "Samus Aran",
+          "stats": {
+            "pace": 86,
+            "power": 84,
+            "stamina": 86,
+            "tackling": 78,
+            "passing": 72,
+            "gk": 38
+          },
+          "ovr": 76.9
+        },
+        {
+          "name": "Kirby",
+          "stats": {
+            "pace": 78,
+            "power": 88,
+            "stamina": 90,
+            "tackling": 68,
+            "passing": 62,
+            "gk": 28
+          },
+          "ovr": 72.3
+        },
+        {
+          "name": "Donkey Kong",
+          "stats": {
+            "pace": 68,
+            "power": 94,
+            "stamina": 88,
+            "tackling": 82,
+            "passing": 55,
+            "gk": 25
+          },
+          "ovr": 72.2
+        },
+        {
+          "name": "Bowser",
+          "stats": {
+            "pace": 62,
+            "power": 96,
+            "stamina": 90,
+            "tackling": 85,
+            "passing": 58,
+            "gk": 32
+          },
+          "ovr": 73.6
+        },
+        {
+          "name": "Princess Peach",
+          "stats": {
+            "pace": 76,
+            "power": 62,
+            "stamina": 80,
+            "tackling": 66,
+            "passing": 84,
+            "gk": 30
+          },
+          "ovr": 69.2
+        },
+        {
+          "name": "Yoshi",
+          "stats": {
+            "pace": 86,
+            "power": 74,
+            "stamina": 84,
+            "tackling": 68,
+            "passing": 70,
+            "gk": 28
+          },
+          "ovr": 71.6
+        },
+        {
+          "name": "Fox McCloud",
+          "stats": {
+            "pace": 92,
+            "power": 72,
+            "stamina": 80,
+            "tackling": 68,
+            "passing": 74,
+            "gk": 35
+          },
+          "ovr": 73.0
+        },
+        {
+          "name": "Captain Falcon",
+          "stats": {
+            "pace": 94,
+            "power": 82,
+            "stamina": 82,
+            "tackling": 74,
+            "passing": 68,
+            "gk": 32
+          },
+          "ovr": 75.2
+        },
+        {
+          "name": "Pikachu",
+          "stats": {
+            "pace": 90,
+            "power": 68,
+            "stamina": 78,
+            "tackling": 62,
+            "passing": 72,
+            "gk": 25
+          },
+          "ovr": 69.1
+        },
+        {
+          "name": "Ness",
+          "stats": {
+            "pace": 74,
+            "power": 72,
+            "stamina": 76,
+            "tackling": 66,
+            "passing": 82,
+            "gk": 28
+          },
+          "ovr": 69.4
+        },
+        {
+          "name": "Ganondorf",
+          "stats": {
+            "pace": 70,
+            "power": 92,
+            "stamina": 88,
+            "tackling": 84,
+            "passing": 68,
+            "gk": 38
+          },
+          "ovr": 76.2
+        },
+        {
+          "name": "Wario",
+          "stats": {
+            "pace": 72,
+            "power": 86,
+            "stamina": 78,
+            "tackling": 74,
+            "passing": 62,
+            "gk": 30
+          },
+          "ovr": 70.0
+        },
+        {
+          "name": "Waluigi",
+          "stats": {
+            "pace": 84,
+            "power": 68,
+            "stamina": 76,
+            "tackling": 66,
+            "passing": 58,
+            "gk": 22
+          },
+          "ovr": 65.6
+        },
+        {
+          "name": "Diddy Kong",
+          "stats": {
+            "pace": 92,
+            "power": 68,
+            "stamina": 80,
+            "tackling": 66,
+            "passing": 70,
+            "gk": 24
+          },
+          "ovr": 70.1
+        },
+        {
+          "name": "King K. Rool",
+          "stats": {
+            "pace": 58,
+            "power": 92,
+            "stamina": 86,
+            "tackling": 82,
+            "passing": 52,
+            "gk": 28
+          },
+          "ovr": 69.4
+        },
+        {
+          "name": "Inkling",
+          "stats": {
+            "pace": 88,
+            "power": 68,
+            "stamina": 78,
+            "tackling": 64,
+            "passing": 72,
+            "gk": 26
+          },
+          "ovr": 69.2
+        },
+        {
+          "name": "Ridley",
+          "stats": {
+            "pace": 78,
+            "power": 90,
+            "stamina": 86,
+            "tackling": 80,
+            "passing": 55,
+            "gk": 30
+          },
+          "ovr": 73.0
+        },
+        {
+          "name": "Meta Knight",
+          "stats": {
+            "pace": 90,
+            "power": 80,
+            "stamina": 84,
+            "tackling": 78,
+            "passing": 68,
+            "gk": 35
+          },
+          "ovr": 75.5
+        }
+      ]
+    },
+    {
+      "id": "horror-icons",
+      "name": "Horror Icons",
+      "accentColor": "#7f1d1d",
+      "tagline": "Nightmare pace. Slasher pressing.",
+      "players": [
+        {
+          "name": "Freddy Krueger",
+          "stats": {
+            "pace": 78,
+            "power": 82,
+            "stamina": 88,
+            "tackling": 72,
+            "passing": 68,
+            "gk": 32
+          },
+          "ovr": 73.0
+        },
+        {
+          "name": "Jason Voorhees",
+          "stats": {
+            "pace": 68,
+            "power": 94,
+            "stamina": 90,
+            "tackling": 85,
+            "passing": 42,
+            "gk": 28
+          },
+          "ovr": 71.0
+        },
+        {
+          "name": "Michael Myers",
+          "stats": {
+            "pace": 72,
+            "power": 90,
+            "stamina": 92,
+            "tackling": 82,
+            "passing": 38,
+            "gk": 30
+          },
+          "ovr": 70.3
+        },
+        {
+          "name": "Leatherface",
+          "stats": {
+            "pace": 65,
+            "power": 92,
+            "stamina": 82,
+            "tackling": 78,
+            "passing": 40,
+            "gk": 25
+          },
+          "ovr": 66.8
+        },
+        {
+          "name": "Pinhead",
+          "stats": {
+            "pace": 58,
+            "power": 84,
+            "stamina": 86,
+            "tackling": 76,
+            "passing": 72,
+            "gk": 35
+          },
+          "ovr": 71.2
+        },
+        {
+          "name": "Chucky",
+          "stats": {
+            "pace": 76,
+            "power": 62,
+            "stamina": 78,
+            "tackling": 58,
+            "passing": 68,
+            "gk": 22
+          },
+          "ovr": 63.8
+        },
+        {
+          "name": "Pennywise",
+          "stats": {
+            "pace": 80,
+            "power": 82,
+            "stamina": 88,
+            "tackling": 70,
+            "passing": 76,
+            "gk": 38
+          },
+          "ovr": 75.1
+        },
+        {
+          "name": "Ghostface",
+          "stats": {
+            "pace": 86,
+            "power": 68,
+            "stamina": 78,
+            "tackling": 66,
+            "passing": 62,
+            "gk": 28
+          },
+          "ovr": 67.6
+        },
+        {
+          "name": "Count Dracula",
+          "stats": {
+            "pace": 82,
+            "power": 84,
+            "stamina": 88,
+            "tackling": 76,
+            "passing": 72,
+            "gk": 40
+          },
+          "ovr": 76.4
+        },
+        {
+          "name": "Frankenstein's Monster",
+          "stats": {
+            "pace": 55,
+            "power": 96,
+            "stamina": 88,
+            "tackling": 80,
+            "passing": 48,
+            "gk": 30
+          },
+          "ovr": 69.1
+        },
+        {
+          "name": "The Mummy",
+          "stats": {
+            "pace": 62,
+            "power": 86,
+            "stamina": 90,
+            "tackling": 78,
+            "passing": 58,
+            "gk": 35
+          },
+          "ovr": 70.8
+        },
+        {
+          "name": "Hannibal Lecter",
+          "stats": {
+            "pace": 72,
+            "power": 68,
+            "stamina": 82,
+            "tackling": 70,
+            "passing": 90,
+            "gk": 38
+          },
+          "ovr": 72.6
+        },
+        {
+          "name": "Norman Bates",
+          "stats": {
+            "pace": 70,
+            "power": 72,
+            "stamina": 76,
+            "tackling": 68,
+            "passing": 74,
+            "gk": 42
+          },
+          "ovr": 69.0
+        },
+        {
+          "name": "Jigsaw",
+          "stats": {
+            "pace": 58,
+            "power": 62,
+            "stamina": 80,
+            "tackling": 68,
+            "passing": 86,
+            "gk": 32
+          },
+          "ovr": 66.9
+        },
+        {
+          "name": "Xenomorph",
+          "stats": {
+            "pace": 88,
+            "power": 90,
+            "stamina": 92,
+            "tackling": 82,
+            "passing": 42,
+            "gk": 28
+          },
+          "ovr": 73.7
+        },
+        {
+          "name": "Predator",
+          "stats": {
+            "pace": 84,
+            "power": 92,
+            "stamina": 88,
+            "tackling": 86,
+            "passing": 55,
+            "gk": 38
+          },
+          "ovr": 76.7
+        },
+        {
+          "name": "Candyman",
+          "stats": {
+            "pace": 76,
+            "power": 80,
+            "stamina": 84,
+            "tackling": 72,
+            "passing": 68,
+            "gk": 35
+          },
+          "ovr": 71.9
+        },
+        {
+          "name": "Beetlejuice",
+          "stats": {
+            "pace": 86,
+            "power": 72,
+            "stamina": 80,
+            "tackling": 62,
+            "passing": 78,
+            "gk": 28
+          },
+          "ovr": 70.8
+        },
+        {
+          "name": "The Creeper",
+          "stats": {
+            "pace": 90,
+            "power": 88,
+            "stamina": 84,
+            "tackling": 76,
+            "passing": 48,
+            "gk": 30
+          },
+          "ovr": 72.5
+        },
+        {
+          "name": "Regan MacNeil",
+          "stats": {
+            "pace": 68,
+            "power": 78,
+            "stamina": 76,
+            "tackling": 62,
+            "passing": 72,
+            "gk": 25
+          },
+          "ovr": 66.6
+        },
+        {
+          "name": "The Thing",
+          "stats": {
+            "pace": 70,
+            "power": 88,
+            "stamina": 90,
+            "tackling": 78,
+            "passing": 52,
+            "gk": 32
+          },
+          "ovr": 71.2
+        },
+        {
+          "name": "Annabelle",
+          "stats": {
+            "pace": 62,
+            "power": 58,
+            "stamina": 72,
+            "tackling": 55,
+            "passing": 65,
+            "gk": 20
+          },
+          "ovr": 58.2
+        }
+      ]
+    },
+    {
+      "id": "disney-animated",
+      "name": "Disney Animated",
+      "accentColor": "#1d4ed8",
+      "tagline": "Classic magic. Fairy-tale football.",
+      "players": [
+        {
+          "name": "Mickey Mouse",
+          "stats": {
+            "pace": 80,
+            "power": 68,
+            "stamina": 84,
+            "tackling": 70,
+            "passing": 82,
+            "gk": 38
+          },
+          "ovr": 72.9
+        },
+        {
+          "name": "Donald Duck",
+          "stats": {
+            "pace": 74,
+            "power": 78,
+            "stamina": 76,
+            "tackling": 68,
+            "passing": 62,
+            "gk": 42
+          },
+          "ovr": 68.6
+        },
+        {
+          "name": "Goofy",
+          "stats": {
+            "pace": 72,
+            "power": 72,
+            "stamina": 80,
+            "tackling": 65,
+            "passing": 68,
+            "gk": 48
+          },
+          "ovr": 69.1
+        },
+        {
+          "name": "Peter Pan",
+          "stats": {
+            "pace": 92,
+            "power": 62,
+            "stamina": 78,
+            "tackling": 58,
+            "passing": 72,
+            "gk": 28
+          },
+          "ovr": 68.0
+        },
+        {
+          "name": "Captain Hook",
+          "stats": {
+            "pace": 68,
+            "power": 78,
+            "stamina": 76,
+            "tackling": 74,
+            "passing": 70,
+            "gk": 35
+          },
+          "ovr": 69.4
+        },
+        {
+          "name": "Simba",
+          "stats": {
+            "pace": 86,
+            "power": 82,
+            "stamina": 84,
+            "tackling": 74,
+            "passing": 68,
+            "gk": 32
+          },
+          "ovr": 74.1
+        },
+        {
+          "name": "Scar",
+          "stats": {
+            "pace": 72,
+            "power": 80,
+            "stamina": 82,
+            "tackling": 76,
+            "passing": 78,
+            "gk": 30
+          },
+          "ovr": 72.8
+        },
+        {
+          "name": "Mulan",
+          "stats": {
+            "pace": 88,
+            "power": 76,
+            "stamina": 86,
+            "tackling": 78,
+            "passing": 74,
+            "gk": 32
+          },
+          "ovr": 75.6
+        },
+        {
+          "name": "Ariel",
+          "stats": {
+            "pace": 84,
+            "power": 62,
+            "stamina": 80,
+            "tackling": 62,
+            "passing": 76,
+            "gk": 28
+          },
+          "ovr": 68.3
+        },
+        {
+          "name": "Ursula",
+          "stats": {
+            "pace": 58,
+            "power": 86,
+            "stamina": 84,
+            "tackling": 76,
+            "passing": 72,
+            "gk": 38
+          },
+          "ovr": 71.5
+        },
+        {
+          "name": "Beast",
+          "stats": {
+            "pace": 62,
+            "power": 92,
+            "stamina": 88,
+            "tackling": 82,
+            "passing": 58,
+            "gk": 32
+          },
+          "ovr": 72.0
+        },
+        {
+          "name": "Gaston",
+          "stats": {
+            "pace": 78,
+            "power": 88,
+            "stamina": 80,
+            "tackling": 72,
+            "passing": 62,
+            "gk": 30
+          },
+          "ovr": 71.4
+        },
+        {
+          "name": "Aladdin",
+          "stats": {
+            "pace": 90,
+            "power": 72,
+            "stamina": 80,
+            "tackling": 68,
+            "passing": 74,
+            "gk": 28
+          },
+          "ovr": 71.9
+        },
+        {
+          "name": "Jafar",
+          "stats": {
+            "pace": 68,
+            "power": 78,
+            "stamina": 80,
+            "tackling": 72,
+            "passing": 86,
+            "gk": 40
+          },
+          "ovr": 73.1
+        },
+        {
+          "name": "Genie",
+          "stats": {
+            "pace": 82,
+            "power": 88,
+            "stamina": 86,
+            "tackling": 68,
+            "passing": 92,
+            "gk": 42
+          },
+          "ovr": 79.1
+        },
+        {
+          "name": "Pinocchio",
+          "stats": {
+            "pace": 76,
+            "power": 58,
+            "stamina": 74,
+            "tackling": 60,
+            "passing": 70,
+            "gk": 25
+          },
+          "ovr": 63.3
+        },
+        {
+          "name": "Dumbo",
+          "stats": {
+            "pace": 70,
+            "power": 62,
+            "stamina": 76,
+            "tackling": 58,
+            "passing": 68,
+            "gk": 22
+          },
+          "ovr": 62.3
+        },
+        {
+          "name": "Bambi",
+          "stats": {
+            "pace": 88,
+            "power": 52,
+            "stamina": 78,
+            "tackling": 55,
+            "passing": 66,
+            "gk": 20
+          },
+          "ovr": 63.0
+        },
+        {
+          "name": "Cinderella",
+          "stats": {
+            "pace": 78,
+            "power": 58,
+            "stamina": 80,
+            "tackling": 64,
+            "passing": 76,
+            "gk": 28
+          },
+          "ovr": 66.9
+        },
+        {
+          "name": "Maleficent",
+          "stats": {
+            "pace": 72,
+            "power": 86,
+            "stamina": 84,
+            "tackling": 78,
+            "passing": 82,
+            "gk": 38
+          },
+          "ovr": 76.2
+        },
+        {
+          "name": "Tinker Bell",
+          "stats": {
+            "pace": 94,
+            "power": 58,
+            "stamina": 76,
+            "tackling": 55,
+            "passing": 72,
+            "gk": 22
+          },
+          "ovr": 66.1
+        },
+        {
+          "name": "Robin Hood",
+          "stats": {
+            "pace": 90,
+            "power": 68,
+            "stamina": 82,
+            "tackling": 70,
+            "passing": 78,
+            "gk": 30
+          },
+          "ovr": 72.8
+        }
+      ]
+    },
+    {
+      "id": "music-legends",
+      "name": "Music Legends",
+      "accentColor": "#9333ea",
+      "tagline": "Rhythm and run. Stadium anthems.",
+      "players": [
+        {
+          "name": "Elvis Presley",
+          "stats": {
+            "pace": 78,
+            "power": 76,
+            "stamina": 80,
+            "tackling": 66,
+            "passing": 82,
+            "gk": 32
+          },
+          "ovr": 72.0
+        },
+        {
+          "name": "Freddie Mercury",
+          "stats": {
+            "pace": 82,
+            "power": 84,
+            "stamina": 88,
+            "tackling": 68,
+            "passing": 92,
+            "gk": 38
+          },
+          "ovr": 78.3
+        },
+        {
+          "name": "Michael Jackson",
+          "stats": {
+            "pace": 92,
+            "power": 72,
+            "stamina": 84,
+            "tackling": 68,
+            "passing": 86,
+            "gk": 35
+          },
+          "ovr": 75.9
+        },
+        {
+          "name": "Prince",
+          "stats": {
+            "pace": 86,
+            "power": 74,
+            "stamina": 82,
+            "tackling": 66,
+            "passing": 88,
+            "gk": 32
+          },
+          "ovr": 74.5
+        },
+        {
+          "name": "Madonna",
+          "stats": {
+            "pace": 84,
+            "power": 68,
+            "stamina": 86,
+            "tackling": 64,
+            "passing": 80,
+            "gk": 28
+          },
+          "ovr": 71.6
+        },
+        {
+          "name": "Beyonc\u00e9",
+          "stats": {
+            "pace": 88,
+            "power": 76,
+            "stamina": 86,
+            "tackling": 68,
+            "passing": 82,
+            "gk": 32
+          },
+          "ovr": 75.2
+        },
+        {
+          "name": "David Bowie",
+          "stats": {
+            "pace": 80,
+            "power": 72,
+            "stamina": 82,
+            "tackling": 66,
+            "passing": 90,
+            "gk": 35
+          },
+          "ovr": 73.7
+        },
+        {
+          "name": "Whitney Houston",
+          "stats": {
+            "pace": 76,
+            "power": 82,
+            "stamina": 84,
+            "tackling": 62,
+            "passing": 92,
+            "gk": 38
+          },
+          "ovr": 75.1
+        },
+        {
+          "name": "Bob Marley",
+          "stats": {
+            "pace": 74,
+            "power": 68,
+            "stamina": 88,
+            "tackling": 64,
+            "passing": 84,
+            "gk": 30
+          },
+          "ovr": 71.0
+        },
+        {
+          "name": "Tupac Shakur",
+          "stats": {
+            "pace": 82,
+            "power": 78,
+            "stamina": 80,
+            "tackling": 70,
+            "passing": 76,
+            "gk": 28
+          },
+          "ovr": 72.3
+        },
+        {
+          "name": "The Notorious B.I.G.",
+          "stats": {
+            "pace": 68,
+            "power": 82,
+            "stamina": 76,
+            "tackling": 68,
+            "passing": 74,
+            "gk": 30
+          },
+          "ovr": 69.2
+        },
+        {
+          "name": "Eminem",
+          "stats": {
+            "pace": 86,
+            "power": 72,
+            "stamina": 82,
+            "tackling": 66,
+            "passing": 88,
+            "gk": 32
+          },
+          "ovr": 74.1
+        },
+        {
+          "name": "Bob Dylan",
+          "stats": {
+            "pace": 68,
+            "power": 62,
+            "stamina": 86,
+            "tackling": 60,
+            "passing": 92,
+            "gk": 35
+          },
+          "ovr": 69.7
+        },
+        {
+          "name": "Mick Jagger",
+          "stats": {
+            "pace": 84,
+            "power": 70,
+            "stamina": 86,
+            "tackling": 62,
+            "passing": 78,
+            "gk": 28
+          },
+          "ovr": 71.2
+        },
+        {
+          "name": "Adele",
+          "stats": {
+            "pace": 72,
+            "power": 78,
+            "stamina": 82,
+            "tackling": 60,
+            "passing": 90,
+            "gk": 35
+          },
+          "ovr": 72.3
+        },
+        {
+          "name": "Bruce Springsteen",
+          "stats": {
+            "pace": 76,
+            "power": 76,
+            "stamina": 90,
+            "tackling": 68,
+            "passing": 80,
+            "gk": 32
+          },
+          "ovr": 73.4
+        },
+        {
+          "name": "Johnny Cash",
+          "stats": {
+            "pace": 68,
+            "power": 78,
+            "stamina": 88,
+            "tackling": 72,
+            "passing": 76,
+            "gk": 38
+          },
+          "ovr": 72.6
+        },
+        {
+          "name": "Kurt Cobain",
+          "stats": {
+            "pace": 78,
+            "power": 74,
+            "stamina": 76,
+            "tackling": 62,
+            "passing": 82,
+            "gk": 28
+          },
+          "ovr": 69.8
+        },
+        {
+          "name": "Jimi Hendrix",
+          "stats": {
+            "pace": 82,
+            "power": 80,
+            "stamina": 78,
+            "tackling": 64,
+            "passing": 90,
+            "gk": 32
+          },
+          "ovr": 74.1
+        },
+        {
+          "name": "Lady Gaga",
+          "stats": {
+            "pace": 86,
+            "power": 72,
+            "stamina": 84,
+            "tackling": 64,
+            "passing": 86,
+            "gk": 30
+          },
+          "ovr": 73.6
+        },
+        {
+          "name": "Drake",
+          "stats": {
+            "pace": 80,
+            "power": 68,
+            "stamina": 80,
+            "tackling": 62,
+            "passing": 78,
+            "gk": 28
+          },
+          "ovr": 69.0
+        },
+        {
+          "name": "John Lennon",
+          "stats": {
+            "pace": 74,
+            "power": 68,
+            "stamina": 82,
+            "tackling": 62,
+            "passing": 88,
+            "gk": 35
+          },
+          "ovr": 70.8
+        }
+      ]
+    },
+    {
+      "id": "wwe-legends",
+      "name": "WWE Legends",
+      "accentColor": "#ca8a04",
+      "tagline": "Suplex soccer. Attitude era chaos.",
+      "players": [
+        {
+          "name": "Stone Cold Steve Austin",
+          "stats": {
+            "pace": 78,
+            "power": 92,
+            "stamina": 88,
+            "tackling": 82,
+            "passing": 62,
+            "gk": 35
+          },
+          "ovr": 75.9
+        },
+        {
+          "name": "The Undertaker",
+          "stats": {
+            "pace": 72,
+            "power": 92,
+            "stamina": 92,
+            "tackling": 84,
+            "passing": 58,
+            "gk": 42
+          },
+          "ovr": 75.8
+        },
+        {
+          "name": "Ric Flair",
+          "stats": {
+            "pace": 76,
+            "power": 80,
+            "stamina": 86,
+            "tackling": 72,
+            "passing": 84,
+            "gk": 38
+          },
+          "ovr": 75.4
+        },
+        {
+          "name": "Shawn Michaels",
+          "stats": {
+            "pace": 88,
+            "power": 82,
+            "stamina": 84,
+            "tackling": 76,
+            "passing": 72,
+            "gk": 32
+          },
+          "ovr": 75.6
+        },
+        {
+          "name": "Bret Hart",
+          "stats": {
+            "pace": 82,
+            "power": 84,
+            "stamina": 86,
+            "tackling": 82,
+            "passing": 74,
+            "gk": 35
+          },
+          "ovr": 76.9
+        },
+        {
+          "name": "Triple H",
+          "stats": {
+            "pace": 76,
+            "power": 88,
+            "stamina": 86,
+            "tackling": 80,
+            "passing": 72,
+            "gk": 38
+          },
+          "ovr": 76.2
+        },
+        {
+          "name": "Mick Foley",
+          "stats": {
+            "pace": 68,
+            "power": 90,
+            "stamina": 92,
+            "tackling": 82,
+            "passing": 62,
+            "gk": 35
+          },
+          "ovr": 74.4
+        },
+        {
+          "name": "Edge",
+          "stats": {
+            "pace": 86,
+            "power": 80,
+            "stamina": 84,
+            "tackling": 74,
+            "passing": 70,
+            "gk": 32
+          },
+          "ovr": 74.1
+        },
+        {
+          "name": "Goldberg",
+          "stats": {
+            "pace": 82,
+            "power": 96,
+            "stamina": 82,
+            "tackling": 78,
+            "passing": 52,
+            "gk": 30
+          },
+          "ovr": 73.2
+        },
+        {
+          "name": "Kane",
+          "stats": {
+            "pace": 70,
+            "power": 94,
+            "stamina": 86,
+            "tackling": 82,
+            "passing": 55,
+            "gk": 38
+          },
+          "ovr": 73.5
+        },
+        {
+          "name": "Rey Mysterio",
+          "stats": {
+            "pace": 95,
+            "power": 72,
+            "stamina": 82,
+            "tackling": 68,
+            "passing": 74,
+            "gk": 28
+          },
+          "ovr": 73.2
+        },
+        {
+          "name": "Roman Reigns",
+          "stats": {
+            "pace": 78,
+            "power": 92,
+            "stamina": 86,
+            "tackling": 80,
+            "passing": 66,
+            "gk": 35
+          },
+          "ovr": 75.9
+        },
+        {
+          "name": "Andr\u00e9 the Giant",
+          "stats": {
+            "pace": 52,
+            "power": 98,
+            "stamina": 82,
+            "tackling": 80,
+            "passing": 48,
+            "gk": 32
+          },
+          "ovr": 68.0
+        },
+        {
+          "name": "Macho Man Randy Savage",
+          "stats": {
+            "pace": 84,
+            "power": 86,
+            "stamina": 84,
+            "tackling": 76,
+            "passing": 78,
+            "gk": 32
+          },
+          "ovr": 76.6
+        },
+        {
+          "name": "Ultimate Warrior",
+          "stats": {
+            "pace": 88,
+            "power": 90,
+            "stamina": 82,
+            "tackling": 74,
+            "passing": 62,
+            "gk": 30
+          },
+          "ovr": 74.3
+        },
+        {
+          "name": "Jake 'The Snake' Roberts",
+          "stats": {
+            "pace": 74,
+            "power": 78,
+            "stamina": 80,
+            "tackling": 72,
+            "passing": 76,
+            "gk": 35
+          },
+          "ovr": 71.9
+        },
+        {
+          "name": "Yokozuna",
+          "stats": {
+            "pace": 58,
+            "power": 94,
+            "stamina": 80,
+            "tackling": 78,
+            "passing": 52,
+            "gk": 32
+          },
+          "ovr": 68.4
+        },
+        {
+          "name": "Mr. Perfect",
+          "stats": {
+            "pace": 82,
+            "power": 84,
+            "stamina": 84,
+            "tackling": 78,
+            "passing": 72,
+            "gk": 35
+          },
+          "ovr": 75.5
+        },
+        {
+          "name": "Razor Ramon",
+          "stats": {
+            "pace": 80,
+            "power": 82,
+            "stamina": 82,
+            "tackling": 74,
+            "passing": 70,
+            "gk": 32
+          },
+          "ovr": 73.0
+        },
+        {
+          "name": "Dusty Rhodes",
+          "stats": {
+            "pace": 68,
+            "power": 86,
+            "stamina": 88,
+            "tackling": 76,
+            "passing": 80,
+            "gk": 38
+          },
+          "ovr": 75.4
+        },
+        {
+          "name": "Hulk Hogan",
+          "stats": {
+            "pace": 65,
+            "power": 92,
+            "stamina": 78,
+            "tackling": 72,
+            "passing": 68,
+            "gk": 35
+          },
+          "ovr": 71.0
+        },
+        {
+          "name": "Randy Orton",
+          "stats": {
+            "pace": 80,
+            "power": 86,
+            "stamina": 84,
+            "tackling": 78,
+            "passing": 66,
+            "gk": 38
+          },
+          "ovr": 74.7
+        }
+      ]
+    },
+    {
+      "id": "tv-legends",
+      "name": "TV Legends",
+      "accentColor": "#0f766e",
+      "tagline": "Prestige drama. Cold-blooded build-up.",
+      "players": [
+        {
+          "name": "Tony Soprano",
+          "stats": {
+            "pace": 68,
+            "power": 88,
+            "stamina": 82,
+            "tackling": 78,
+            "passing": 72,
+            "gk": 38
+          },
+          "ovr": 73.6
+        },
+        {
+          "name": "Walter White",
+          "stats": {
+            "pace": 62,
+            "power": 78,
+            "stamina": 80,
+            "tackling": 72,
+            "passing": 92,
+            "gk": 35
+          },
+          "ovr": 72.6
+        },
+        {
+          "name": "Jesse Pinkman",
+          "stats": {
+            "pace": 84,
+            "power": 68,
+            "stamina": 76,
+            "tackling": 62,
+            "passing": 70,
+            "gk": 28
+          },
+          "ovr": 67.6
+        },
+        {
+          "name": "Saul Goodman",
+          "stats": {
+            "pace": 76,
+            "power": 58,
+            "stamina": 78,
+            "tackling": 58,
+            "passing": 92,
+            "gk": 32
+          },
+          "ovr": 68.4
+        },
+        {
+          "name": "Don Draper",
+          "stats": {
+            "pace": 78,
+            "power": 68,
+            "stamina": 80,
+            "tackling": 62,
+            "passing": 88,
+            "gk": 35
+          },
+          "ovr": 71.2
+        },
+        {
+          "name": "Dexter Morgan",
+          "stats": {
+            "pace": 82,
+            "power": 78,
+            "stamina": 84,
+            "tackling": 76,
+            "passing": 68,
+            "gk": 38
+          },
+          "ovr": 73.6
+        },
+        {
+          "name": "Omar Little",
+          "stats": {
+            "pace": 88,
+            "power": 74,
+            "stamina": 82,
+            "tackling": 72,
+            "passing": 68,
+            "gk": 32
+          },
+          "ovr": 72.3
+        },
+        {
+          "name": "Stringer Bell",
+          "stats": {
+            "pace": 74,
+            "power": 72,
+            "stamina": 80,
+            "tackling": 70,
+            "passing": 86,
+            "gk": 35
+          },
+          "ovr": 72.3
+        },
+        {
+          "name": "Tyrion Lannister",
+          "stats": {
+            "pace": 68,
+            "power": 62,
+            "stamina": 78,
+            "tackling": 64,
+            "passing": 92,
+            "gk": 32
+          },
+          "ovr": 68.7
+        },
+        {
+          "name": "Jack Bauer",
+          "stats": {
+            "pace": 86,
+            "power": 84,
+            "stamina": 88,
+            "tackling": 80,
+            "passing": 72,
+            "gk": 40
+          },
+          "ovr": 77.8
+        },
+        {
+          "name": "Vic Mackey",
+          "stats": {
+            "pace": 78,
+            "power": 86,
+            "stamina": 82,
+            "tackling": 80,
+            "passing": 68,
+            "gk": 38
+          },
+          "ovr": 74.7
+        },
+        {
+          "name": "Christopher Moltisanti",
+          "stats": {
+            "pace": 80,
+            "power": 76,
+            "stamina": 74,
+            "tackling": 68,
+            "passing": 66,
+            "gk": 28
+          },
+          "ovr": 68.3
+        },
+        {
+          "name": "Paulie Walnuts",
+          "stats": {
+            "pace": 72,
+            "power": 82,
+            "stamina": 78,
+            "tackling": 76,
+            "passing": 62,
+            "gk": 32
+          },
+          "ovr": 69.8
+        },
+        {
+          "name": "Jimmy McGill",
+          "stats": {
+            "pace": 76,
+            "power": 58,
+            "stamina": 80,
+            "tackling": 58,
+            "passing": 90,
+            "gk": 30
+          },
+          "ovr": 68.2
+        },
+        {
+          "name": "Gus Fring",
+          "stats": {
+            "pace": 72,
+            "power": 72,
+            "stamina": 86,
+            "tackling": 74,
+            "passing": 84,
+            "gk": 38
+          },
+          "ovr": 73.6
+        },
+        {
+          "name": "Mike Ehrmantraut",
+          "stats": {
+            "pace": 70,
+            "power": 82,
+            "stamina": 88,
+            "tackling": 84,
+            "passing": 68,
+            "gk": 42
+          },
+          "ovr": 74.8
+        },
+        {
+          "name": "Cersei Lannister",
+          "stats": {
+            "pace": 70,
+            "power": 68,
+            "stamina": 78,
+            "tackling": 66,
+            "passing": 86,
+            "gk": 32
+          },
+          "ovr": 69.4
+        },
+        {
+          "name": "Ned Stark",
+          "stats": {
+            "pace": 72,
+            "power": 80,
+            "stamina": 86,
+            "tackling": 82,
+            "passing": 74,
+            "gk": 38
+          },
+          "ovr": 74.7
+        },
+        {
+          "name": "Jimmy McNulty",
+          "stats": {
+            "pace": 82,
+            "power": 72,
+            "stamina": 80,
+            "tackling": 68,
+            "passing": 74,
+            "gk": 35
+          },
+          "ovr": 71.2
+        },
+        {
+          "name": "Tommy Shelby",
+          "stats": {
+            "pace": 80,
+            "power": 82,
+            "stamina": 84,
+            "tackling": 76,
+            "passing": 72,
+            "gk": 38
+          },
+          "ovr": 74.7
+        },
+        {
+          "name": "Al Swearengen",
+          "stats": {
+            "pace": 68,
+            "power": 78,
+            "stamina": 80,
+            "tackling": 74,
+            "passing": 84,
+            "gk": 40
+          },
+          "ovr": 73.1
+        },
+        {
+          "name": "Walter White Jr.",
+          "stats": {
+            "pace": 62,
+            "power": 58,
+            "stamina": 68,
+            "tackling": 55,
+            "passing": 62,
+            "gk": 22
+          },
+          "ovr": 57.1
+        }
+      ]
+    },
+    {
+      "id": "dreamworks",
+      "name": "Dreamworks",
+      "accentColor": "#16a34a",
+      "tagline": "Ogre power. Animated chaos.",
+      "players": [
+        {
+          "name": "Shrek",
+          "stats": {
+            "pace": 62,
+            "power": 92,
+            "stamina": 88,
+            "tackling": 80,
+            "passing": 58,
+            "gk": 35
+          },
+          "ovr": 71.9
+        },
+        {
+          "name": "Donkey",
+          "stats": {
+            "pace": 88,
+            "power": 62,
+            "stamina": 84,
+            "tackling": 58,
+            "passing": 72,
+            "gk": 28
+          },
+          "ovr": 68.3
+        },
+        {
+          "name": "Princess Fiona",
+          "stats": {
+            "pace": 80,
+            "power": 78,
+            "stamina": 84,
+            "tackling": 74,
+            "passing": 70,
+            "gk": 32
+          },
+          "ovr": 72.7
+        },
+        {
+          "name": "Puss in Boots",
+          "stats": {
+            "pace": 92,
+            "power": 76,
+            "stamina": 82,
+            "tackling": 72,
+            "passing": 68,
+            "gk": 35
+          },
+          "ovr": 73.7
+        },
+        {
+          "name": "Po",
+          "stats": {
+            "pace": 78,
+            "power": 88,
+            "stamina": 86,
+            "tackling": 80,
+            "passing": 62,
+            "gk": 32
+          },
+          "ovr": 74.1
+        },
+        {
+          "name": "Tigress",
+          "stats": {
+            "pace": 90,
+            "power": 84,
+            "stamina": 86,
+            "tackling": 82,
+            "passing": 68,
+            "gk": 32
+          },
+          "ovr": 77.0
+        },
+        {
+          "name": "Lord Shen",
+          "stats": {
+            "pace": 84,
+            "power": 78,
+            "stamina": 80,
+            "tackling": 74,
+            "passing": 76,
+            "gk": 38
+          },
+          "ovr": 74.4
+        },
+        {
+          "name": "Tai Lung",
+          "stats": {
+            "pace": 90,
+            "power": 88,
+            "stamina": 84,
+            "tackling": 80,
+            "passing": 58,
+            "gk": 32
+          },
+          "ovr": 75.2
+        },
+        {
+          "name": "Hiccup",
+          "stats": {
+            "pace": 78,
+            "power": 62,
+            "stamina": 80,
+            "tackling": 66,
+            "passing": 82,
+            "gk": 28
+          },
+          "ovr": 69.0
+        },
+        {
+          "name": "Toothless",
+          "stats": {
+            "pace": 88,
+            "power": 86,
+            "stamina": 84,
+            "tackling": 72,
+            "passing": 55,
+            "gk": 30
+          },
+          "ovr": 72.3
+        },
+        {
+          "name": "Alex the Lion",
+          "stats": {
+            "pace": 80,
+            "power": 82,
+            "stamina": 80,
+            "tackling": 72,
+            "passing": 68,
+            "gk": 32
+          },
+          "ovr": 72.0
+        },
+        {
+          "name": "Marty the Zebra",
+          "stats": {
+            "pace": 90,
+            "power": 68,
+            "stamina": 82,
+            "tackling": 62,
+            "passing": 66,
+            "gk": 25
+          },
+          "ovr": 68.7
+        },
+        {
+          "name": "Gloria the Hippo",
+          "stats": {
+            "pace": 58,
+            "power": 90,
+            "stamina": 84,
+            "tackling": 78,
+            "passing": 58,
+            "gk": 28
+          },
+          "ovr": 69.0
+        },
+        {
+          "name": "Skipper",
+          "stats": {
+            "pace": 82,
+            "power": 72,
+            "stamina": 84,
+            "tackling": 74,
+            "passing": 78,
+            "gk": 38
+          },
+          "ovr": 74.0
+        },
+        {
+          "name": "Megamind",
+          "stats": {
+            "pace": 72,
+            "power": 78,
+            "stamina": 76,
+            "tackling": 66,
+            "passing": 86,
+            "gk": 35
+          },
+          "ovr": 71.5
+        },
+        {
+          "name": "Metro Man",
+          "stats": {
+            "pace": 88,
+            "power": 90,
+            "stamina": 84,
+            "tackling": 76,
+            "passing": 68,
+            "gk": 40
+          },
+          "ovr": 77.1
+        },
+        {
+          "name": "Spirit",
+          "stats": {
+            "pace": 94,
+            "power": 72,
+            "stamina": 88,
+            "tackling": 66,
+            "passing": 62,
+            "gk": 28
+          },
+          "ovr": 71.6
+        },
+        {
+          "name": "Moses",
+          "stats": {
+            "pace": 74,
+            "power": 78,
+            "stamina": 86,
+            "tackling": 72,
+            "passing": 84,
+            "gk": 38
+          },
+          "ovr": 74.7
+        },
+        {
+          "name": "Rumpelstiltskin",
+          "stats": {
+            "pace": 76,
+            "power": 68,
+            "stamina": 78,
+            "tackling": 64,
+            "passing": 82,
+            "gk": 32
+          },
+          "ovr": 69.4
+        },
+        {
+          "name": "Sinbad",
+          "stats": {
+            "pace": 86,
+            "power": 78,
+            "stamina": 82,
+            "tackling": 70,
+            "passing": 72,
+            "gk": 35
+          },
+          "ovr": 73.3
+        },
+        {
+          "name": "B.O.B.",
+          "stats": {
+            "pace": 68,
+            "power": 82,
+            "stamina": 90,
+            "tackling": 62,
+            "passing": 52,
+            "gk": 22
+          },
+          "ovr": 65.9
+        },
+        {
+          "name": "King Julian",
+          "stats": {
+            "pace": 92,
+            "power": 52,
+            "stamina": 76,
+            "tackling": 48,
+            "passing": 74,
+            "gk": 24
+          },
+          "ovr": 64.0
+        }
+      ]
+    },
+    {
+      "id": "mythical-creatures",
+      "name": "Mythical Creatures",
+      "accentColor": "#8b5cf6",
+      "tagline": "Legends of old. Monster matchups.",
+      "players": [
+        {
+          "name": "Great Dragon",
+          "stats": {
+            "pace": 78,
+            "power": 96,
+            "stamina": 92,
+            "tackling": 82,
+            "passing": 58,
+            "gk": 38
+          },
+          "ovr": 76.9
+        },
+        {
+          "name": "Phoenix",
+          "stats": {
+            "pace": 88,
+            "power": 84,
+            "stamina": 90,
+            "tackling": 68,
+            "passing": 72,
+            "gk": 35
+          },
+          "ovr": 75.9
+        },
+        {
+          "name": "Griffin",
+          "stats": {
+            "pace": 86,
+            "power": 86,
+            "stamina": 86,
+            "tackling": 78,
+            "passing": 62,
+            "gk": 32
+          },
+          "ovr": 74.8
+        },
+        {
+          "name": "Centaur",
+          "stats": {
+            "pace": 84,
+            "power": 82,
+            "stamina": 86,
+            "tackling": 76,
+            "passing": 68,
+            "gk": 30
+          },
+          "ovr": 74.3
+        },
+        {
+          "name": "Minotaur",
+          "stats": {
+            "pace": 72,
+            "power": 94,
+            "stamina": 88,
+            "tackling": 84,
+            "passing": 48,
+            "gk": 28
+          },
+          "ovr": 72.3
+        },
+        {
+          "name": "Cyclops",
+          "stats": {
+            "pace": 65,
+            "power": 96,
+            "stamina": 86,
+            "tackling": 80,
+            "passing": 42,
+            "gk": 32
+          },
+          "ovr": 69.6
+        },
+        {
+          "name": "Medusa",
+          "stats": {
+            "pace": 76,
+            "power": 82,
+            "stamina": 84,
+            "tackling": 72,
+            "passing": 68,
+            "gk": 38
+          },
+          "ovr": 72.6
+        },
+        {
+          "name": "Kraken",
+          "stats": {
+            "pace": 58,
+            "power": 98,
+            "stamina": 92,
+            "tackling": 85,
+            "passing": 45,
+            "gk": 42
+          },
+          "ovr": 72.2
+        },
+        {
+          "name": "Hydra",
+          "stats": {
+            "pace": 70,
+            "power": 94,
+            "stamina": 94,
+            "tackling": 82,
+            "passing": 52,
+            "gk": 35
+          },
+          "ovr": 74.1
+        },
+        {
+          "name": "Pegasus",
+          "stats": {
+            "pace": 96,
+            "power": 72,
+            "stamina": 84,
+            "tackling": 66,
+            "passing": 68,
+            "gk": 28
+          },
+          "ovr": 72.3
+        },
+        {
+          "name": "Unicorn",
+          "stats": {
+            "pace": 90,
+            "power": 68,
+            "stamina": 82,
+            "tackling": 64,
+            "passing": 74,
+            "gk": 30
+          },
+          "ovr": 71.0
+        },
+        {
+          "name": "Werewolf",
+          "stats": {
+            "pace": 88,
+            "power": 90,
+            "stamina": 86,
+            "tackling": 80,
+            "passing": 48,
+            "gk": 32
+          },
+          "ovr": 73.8
+        },
+        {
+          "name": "Banshee",
+          "stats": {
+            "pace": 82,
+            "power": 76,
+            "stamina": 84,
+            "tackling": 62,
+            "passing": 72,
+            "gk": 35
+          },
+          "ovr": 71.2
+        },
+        {
+          "name": "Sphinx",
+          "stats": {
+            "pace": 68,
+            "power": 80,
+            "stamina": 88,
+            "tackling": 74,
+            "passing": 86,
+            "gk": 40
+          },
+          "ovr": 75.3
+        },
+        {
+          "name": "Chimera",
+          "stats": {
+            "pace": 80,
+            "power": 92,
+            "stamina": 88,
+            "tackling": 78,
+            "passing": 52,
+            "gk": 32
+          },
+          "ovr": 73.4
+        },
+        {
+          "name": "Leviathan",
+          "stats": {
+            "pace": 62,
+            "power": 96,
+            "stamina": 94,
+            "tackling": 84,
+            "passing": 48,
+            "gk": 45
+          },
+          "ovr": 73.6
+        },
+        {
+          "name": "Wendigo",
+          "stats": {
+            "pace": 86,
+            "power": 88,
+            "stamina": 86,
+            "tackling": 76,
+            "passing": 45,
+            "gk": 30
+          },
+          "ovr": 71.6
+        },
+        {
+          "name": "Golem",
+          "stats": {
+            "pace": 48,
+            "power": 96,
+            "stamina": 95,
+            "tackling": 88,
+            "passing": 42,
+            "gk": 35
+          },
+          "ovr": 69.9
+        },
+        {
+          "name": "Titan",
+          "stats": {
+            "pace": 60,
+            "power": 98,
+            "stamina": 94,
+            "tackling": 86,
+            "passing": 55,
+            "gk": 40
+          },
+          "ovr": 74.7
+        },
+        {
+          "name": "Kitsune",
+          "stats": {
+            "pace": 90,
+            "power": 72,
+            "stamina": 82,
+            "tackling": 66,
+            "passing": 78,
+            "gk": 32
+          },
+          "ovr": 73.0
+        },
+        {
+          "name": "Cerberus",
+          "stats": {
+            "pace": 76,
+            "power": 92,
+            "stamina": 90,
+            "tackling": 84,
+            "passing": 48,
+            "gk": 38
+          },
+          "ovr": 74.0
+        },
+        {
+          "name": "Basilisk",
+          "stats": {
+            "pace": 82,
+            "power": 86,
+            "stamina": 88,
+            "tackling": 78,
+            "passing": 55,
+            "gk": 35
+          },
+          "ovr": 73.5
+        }
+      ]
+    }
+  ]
+}
