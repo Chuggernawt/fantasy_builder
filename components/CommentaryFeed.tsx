@@ -19,6 +19,8 @@ const TYPE_COLORS: Record<CommentaryEvent["type"], string> = {
   header: "text-violet-300",
   offside: "text-rose-300",
   yellowcard: "text-yellow-400 font-semibold",
+  redcard: "text-red-500 font-bold",
+  penalty: "text-yellow-300 font-semibold",
   longball: "text-slate-300",
   stamina: "text-amber-500",
   special: "text-fuchsia-300",

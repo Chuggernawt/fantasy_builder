@@ -565,7 +565,7 @@ function runAttackPhase(ctx: AttackContext): CommentaryEvent[] {
   if (foulRoll && Math.random() < foulProb) {
     defStats.foulsCommitted++;
     const gk = defLineup.find((p) => p.role === "GK") ?? defLineup[0];
-    const penaltyInBox = channel === "ST" && Math.random() < 0.38;
+    const penaltyInBox = striker.role === "ST" && Math.random() < 0.38;
     events.push({
       id: commentaryId(),
       minute: 0,

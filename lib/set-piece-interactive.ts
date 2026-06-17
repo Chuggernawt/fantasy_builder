@@ -24,7 +24,7 @@ export function setPieceDefendOptions(kind: "corner" | "penalty"): readonly stri
 function playerAbility(universeId: string, name: string, kind: "outfield" | "gk"): number {
   const p = getPlayer(universeId, name);
   if (!p) return 50;
-  if (kind === "gk") return roleRating(p, "GK");
+  if (kind === "gk") return roleRating(p.stats, "GK");
   return (p.stats.pace + p.stats.power + p.stats.passing) / 3;
 }
 

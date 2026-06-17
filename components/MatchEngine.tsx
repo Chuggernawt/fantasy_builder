@@ -294,7 +294,9 @@ export function MatchEngine() {
   }
 
   async function handleSetPiecePick(choice: number) {
-    const piece = matchState.interactiveSetPiece;
+    const state = matchState;
+    if (!state) return;
+    const piece = state.interactiveSetPiece;
     if (!piece || piece.phase !== "choose" || mySetPiecePick !== null) return;
     const isAttacker = mySide === piece.attacking;
     setMySetPiecePick(choice);
@@ -308,7 +310,7 @@ export function MatchEngine() {
       return;
     }
 
-    const next = mergeSetPiecePick(matchState, isAttacker, choice);
+    const next = mergeSetPiecePick(state, isAttacker, choice);
     setMatchState(next);
     if (isMpHost) void pushSnapshot();
   }
