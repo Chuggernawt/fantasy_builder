@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabase-client";
 import {
   createRoom,
   getMyProfile,
+  ensureHostInRoom,
   joinPublicQueue,
   joinRoomByCode,
   listFriends,
@@ -16,14 +17,17 @@ import {
   listOpenPublicRooms,
   respondToFriendRequest,
   respondToInvite,
+  restoreProfile,
   sendFriendRequest,
   signInAnonymouslyWithUsername,
+  signOut,
 } from "@/lib/multiplayer";
+import { clearMultiplayerSession } from "@/lib/multiplayer-session";
 import { createTournamentRoom } from "@/lib/multiplayer-tournament";
 import type { PenaltyMode, TournamentFormat } from "@/lib/tournament-types";
 import { tournamentFormatLabel } from "@/lib/tournament-types";
 import type { MultiplayerRoom } from "@/lib/multiplayer-types";
-import { createSnapshotFromStore } from "@/lib/multiplayer-snapshot";
+import { createLobbyPrefillSnapshot } from "@/lib/multiplayer-snapshot";
 import { setMultiplayerSession } from "@/lib/multiplayer-session";
 
 export default function MultiplayerPage() {
@@ -45,6 +49,10 @@ export default function MultiplayerPage() {
   const [tourPlayers, setTourPlayers] = useState(4);
   const [tourPens, setTourPens] = useState<PenaltyMode>("interactive");
   const [showTourCreate, setShowTourCreate] = useState(false);
+  const [creatingPrivate, setCreatingPrivate] = useState(false);
+  const [creatingTournament, setCreatingTournament] = useState(false);
+  const [profileReady, setProfileReady] = useState<boolean | null>(null);
+  const [restoreUsername, setRestoreUsername] = useState("");
 
   const signedIn = !!sessionUserId;
   const LOBBY_POLL_MS = 2500;
@@ -65,6 +73,39 @@ export default function MultiplayerPage() {
       subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    if (!signedIn) {
+      setProfileReady(null);
+      setRestoreUsername("");
+      return;
+    }
+
+    let active = true;
+    supabase.auth.getUser().then(({ data }) => {
+      if (!active) return;
+      const metaName =
+        typeof data.user?.user_metadata?.username === "string"
+          ? data.user.user_metadata.username
+          : "";
+      if (metaName) setRestoreUsername(metaName);
+    });
+
+    getMyProfile()
+      .then((profile) => {
+        if (!active) return;
+        setProfileReady(!!profile);
+        if (profile?.username) setRestoreUsername(profile.username);
+      })
+      .catch(() => {
+        if (!active) return;
+        setProfileReady(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [signedIn, sessionUserId]);
 
   async function refreshLobbyData() {
     try {
@@ -91,15 +132,16 @@ export default function MultiplayerPage() {
   }
 
   useEffect(() => {
-    if (!signedIn) return;
+    if (!signedIn || profileReady !== true) return;
     refreshLobbyData();
     const timer = setInterval(() => {
       void refreshLobbyData();
     }, LOBBY_POLL_MS);
     return () => clearInterval(timer);
-  }, [signedIn]);
+  }, [signedIn, profileReady]);
 
   const canAuth = useMemo(() => username.trim().length >= 3, [username]);
+  const canRestore = useMemo(() => restoreUsername.trim().length >= 3, [restoreUsername]);
 
   return (
     <>
@@ -129,6 +171,7 @@ export default function MultiplayerPage() {
                   onClick={async () => {
                     try {
                       await signInAnonymouslyWithUsername(username);
+                      setProfileReady(true);
                       setStatus("Signed in.");
                     } catch (err) {
                       setStatus(err instanceof Error ? err.message : "Sign in failed.");
@@ -139,9 +182,67 @@ export default function MultiplayerPage() {
                 </button>
               </div>
               <p className="mt-3 text-xs text-slate-500">
-                No email or password needed. Your username is used for friends, invites, and in-room identity.
+                No email or password needed. Usernames are case-insensitive. If your profile was reset,
+                sign out and pick your username again.
               </p>
             </div>
+          </section>
+        ) : profileReady === false ? (
+          <section className="mx-auto max-w-xl">
+            <div className="glass-panel p-4">
+              <p className="broadcast-label mb-2">Restore your profile</p>
+              <p className="mb-3 text-xs text-slate-400">
+                You are signed in but your profile was removed. Choose a username to continue, or sign out
+                and sign in again with a different name.
+              </p>
+              <div className="space-y-2">
+                <input
+                  value={restoreUsername}
+                  onChange={(e) => setRestoreUsername(e.target.value)}
+                  placeholder="Username"
+                  className="w-full border border-broadcast-border bg-black/70 px-2 py-1.5 text-sm"
+                />
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    disabled={!canRestore}
+                    className="btn-broadcast-solid text-xs"
+                    onClick={async () => {
+                      try {
+                        await restoreProfile(restoreUsername);
+                        setProfileReady(true);
+                        setStatus("Profile restored.");
+                      } catch (err) {
+                        setStatus(err instanceof Error ? err.message : "Could not restore profile.");
+                      }
+                    }}
+                  >
+                    Restore profile
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-broadcast text-xs"
+                    onClick={async () => {
+                      try {
+                        clearMultiplayerSession();
+                        await signOut();
+                        setSessionUserId(null);
+                        setProfileReady(null);
+                        setStatus("Signed out.");
+                      } catch (err) {
+                        setStatus(err instanceof Error ? err.message : "Sign out failed.");
+                      }
+                    }}
+                  >
+                    Sign out
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        ) : profileReady === null ? (
+          <section className="mx-auto max-w-xl">
+            <div className="glass-panel p-4 text-sm text-slate-400">Loading account…</div>
           </section>
         ) : (
           <section className="space-y-5">
@@ -149,17 +250,22 @@ export default function MultiplayerPage() {
               <button
                 type="button"
                 className="btn-broadcast-solid text-xs"
+                disabled={creatingPrivate}
                 onClick={async () => {
+                  setCreatingPrivate(true);
+                  setStatus("Creating room…");
                   try {
-                    const room = await createRoom("private", createSnapshotFromStore());
+                    const room = await createRoom("private", createLobbyPrefillSnapshot());
                     setMultiplayerSession(room.id, "host");
                     router.push(`/multiplayer/room?id=${room.id}`);
                   } catch (err) {
                     setStatus(err instanceof Error ? err.message : "Failed to create room.");
+                  } finally {
+                    setCreatingPrivate(false);
                   }
                 }}
               >
-                Create private room
+                {creatingPrivate ? "Creating room…" : "Create private room"}
               </button>
               <button
                 type="button"
@@ -200,6 +306,25 @@ export default function MultiplayerPage() {
               <Link href="/universes" className="btn-broadcast text-xs">
                 Single-player
               </Link>
+              <button
+                type="button"
+                className="btn-broadcast text-xs"
+                onClick={async () => {
+                  const confirmed = window.confirm("Sign out and return to the login screen?");
+                  if (!confirmed) return;
+                  try {
+                    clearMultiplayerSession();
+                    await signOut();
+                    setSessionUserId(null);
+                    setProfileReady(null);
+                    setStatus("Signed out.");
+                  } catch (err) {
+                    setStatus(err instanceof Error ? err.message : "Sign out failed.");
+                  }
+                }}
+              >
+                Sign out
+              </button>
             </div>
 
             {showTourCreate ? (
@@ -250,7 +375,10 @@ export default function MultiplayerPage() {
                 <button
                   type="button"
                   className="btn-broadcast-solid mt-3 text-xs"
+                  disabled={creatingTournament}
                   onClick={async () => {
+                    setCreatingTournament(true);
+                    setStatus("Creating tournament…");
                     try {
                       const profile = await getMyProfile();
                       const room = await createTournamentRoom({
@@ -264,10 +392,12 @@ export default function MultiplayerPage() {
                       router.push(`/multiplayer/room?id=${room.id}`);
                     } catch (err) {
                       setStatus(err instanceof Error ? err.message : "Tournament create failed.");
+                    } finally {
+                      setCreatingTournament(false);
                     }
                   }}
                 >
-                  Create tournament room
+                  {creatingTournament ? "Creating tournament…" : "Create tournament room"}
                 </button>
               </div>
             ) : null}
@@ -409,12 +539,21 @@ export default function MultiplayerPage() {
                         <button
                           type="button"
                           className="btn-broadcast text-xs"
-                          onClick={() => {
-                            setMultiplayerSession(
-                              r.id,
-                              r.host_user_id === sessionUserId ? "host" : "spectator"
-                            );
-                            router.push(`/multiplayer/room?id=${r.id}`);
+                          onClick={async () => {
+                            try {
+                              if (r.host_user_id !== sessionUserId) {
+                                await joinRoomByCode(r.code);
+                              } else {
+                                await ensureHostInRoom(r.id);
+                              }
+                              setMultiplayerSession(
+                                r.id,
+                                r.host_user_id === sessionUserId ? "host" : "away"
+                              );
+                              router.push(`/multiplayer/room?id=${r.id}`);
+                            } catch (err) {
+                              setStatus(err instanceof Error ? err.message : "Unable to open room.");
+                            }
                           }}
                         >
                           Open

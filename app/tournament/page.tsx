@@ -57,6 +57,27 @@ export default function OfflineTournamentPage() {
           activeFixture.awayEntrantId === localEntrant.id)
       : false;
 
+  const takenUniverseId = useMemo(() => {
+    if (!tournament || !localEntrant || !activeFixture) return null;
+    if (tournament.phase === "lobby") {
+      const other = tournament.entrants.find(
+        (e) => e.id !== localEntrant.id && e.lobby.universeId
+      );
+      return other?.lobby.universeId ?? null;
+    }
+    const oppId =
+      activeFixture.homeEntrantId === localEntrant.id
+        ? activeFixture.awayEntrantId
+        : activeFixture.homeEntrantId;
+    return getEntrant(tournament, oppId)?.lobby.universeId ?? null;
+  }, [tournament, localEntrant, activeFixture]);
+
+  const showBuilder =
+    !!tournament &&
+    !!localEntrant &&
+    !localEntrant.eliminated &&
+    (tournament.phase === "lobby" || (inActiveFixture && tournament.phase === "between_rounds"));
+
   useEffect(() => {
     if (!localEntrant || lobbyLoaded.current) return;
     setMyLobby(normalizeLobby(localEntrant.lobby));
@@ -183,26 +204,6 @@ export default function OfflineTournamentPage() {
       </>
     );
   }
-
-  const showBuilder =
-    localEntrant &&
-    !localEntrant.eliminated &&
-    (tournament.phase === "lobby" || (inActiveFixture && tournament.phase === "between_rounds"));
-
-  const takenUniverseId = useMemo(() => {
-    if (!tournament || !localEntrant || !activeFixture) return null;
-    if (tournament.phase === "lobby") {
-      const other = tournament.entrants.find(
-        (e) => e.id !== localEntrant.id && e.lobby.universeId
-      );
-      return other?.lobby.universeId ?? null;
-    }
-    const oppId =
-      activeFixture.homeEntrantId === localEntrant.id
-        ? activeFixture.awayEntrantId
-        : activeFixture.homeEntrantId;
-    return getEntrant(tournament, oppId)?.lobby.universeId ?? null;
-  }, [tournament, localEntrant, activeFixture]);
 
   return (
     <>

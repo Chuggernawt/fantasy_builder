@@ -9,7 +9,7 @@ export function AccountBar() {
   const router = useRouter();
   const { signedIn, username, loading } = useAccount();
 
-  if (loading || !signedIn || !username) return null;
+  if (loading || !signedIn) return null;
 
   async function handleSignOut() {
     const confirmed = window.confirm(
@@ -29,7 +29,7 @@ export function AccountBar() {
   return (
     <div className="flex items-center gap-2 border border-broadcast-border/60 bg-black/40 px-2 py-1">
       <span className="max-w-[10rem] truncate font-display text-[10px] font-semibold uppercase tracking-wide text-broadcast-highlight md:max-w-[14rem] md:text-xs">
-        {username}
+        {username ?? "No profile"}
       </span>
       <button
         type="button"

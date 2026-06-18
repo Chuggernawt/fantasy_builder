@@ -20,6 +20,25 @@ export function createSnapshotFromStore(): MultiplayerSnapshot {
   };
 }
 
+/** Lightweight snapshot for new rooms — avoids uploading full match commentary/state. */
+export function createLobbyPrefillSnapshot(): MultiplayerSnapshot | null {
+  const s = useGameStore.getState();
+  if (!s.selectedUniverseId) return null;
+  return {
+    selectedUniverseId: s.selectedUniverseId,
+    formationId: s.formationId,
+    lineup: s.lineup,
+    matchBench: s.matchBench,
+    opponentUniverseId: null,
+    opponentFormationId: s.formationId,
+    opponentLineup: [],
+    opponentBench: [],
+    matchState: null,
+    mp: defaultMpMatchMeta(),
+    updatedAt: new Date().toISOString(),
+  };
+}
+
 export function applySnapshotToStore(snapshot: MultiplayerSnapshot): void {
   const prev = useGameStore.getState();
   const keepLocalReveal =

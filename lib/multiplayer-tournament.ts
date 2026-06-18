@@ -1,6 +1,6 @@
 import { buildMatchSnapshotFromLobbies, normalizeLobby } from "./multiplayer-lobby";
 import { defaultMpMatchMeta } from "./multiplayer-match-flow";
-import { getRoom } from "./multiplayer";
+import { ensureTournamentHostMember, getRoom, prepareMultiplayerUser } from "./multiplayer";
 import { supabase } from "./supabase-client";
 import type { MultiplayerRoom, MultiplayerSnapshot, PlayerLobbyState } from "./multiplayer-types";
 import {
@@ -33,6 +33,67 @@ function roomCode(): string {
   return Math.random().toString(36).slice(2, 8).toUpperCase();
 }
 
+/** Ensure the room host is linked to tournament slot 0 (or claims an open slot). */
+export function linkUserToTournament(
+  tournament: TournamentState,
+  userId: string,
+  displayName: string,
+  isHost: boolean
+): TournamentState | null {
+  if (tournament.entrants.some((e) => e.userId === userId)) return null;
+
+  if (isHost) {
+    const slot0Idx = tournament.entrants.findIndex((e) => e.slot === 0);
+    if (slot0Idx < 0) return null;
+    const slot0 = tournament.entrants[slot0Idx];
+    if (slot0.userId && slot0.userId !== userId) {
+      const claimed = claimNextOpenSlot(tournament, userId, displayName);
+      return claimed === tournament ? null : claimed;
+    }
+    const entrants = [...tournament.entrants];
+    entrants[slot0Idx] = {
+      ...slot0,
+      userId,
+      displayName: displayName || slot0.displayName,
+    };
+    return { ...tournament, entrants };
+  }
+
+  const claimed = claimNextOpenSlot(tournament, userId, displayName);
+  return claimed === tournament ? null : claimed;
+}
+
+export async function syncTournamentEntrantOnEnter(
+  room: MultiplayerRoom,
+  userId: string,
+  displayName: string
+): Promise<TournamentState | null> {
+  if (room.room_mode !== "tournament" || !room.tournament) return null;
+  const isHost = room.host_user_id === userId;
+  const memberRole = isHost ? "host" : "player";
+  const next = linkUserToTournament(room.tournament, userId, displayName, isHost);
+  if (!next) return null;
+
+  const { error } = await supabase
+    .from("mp_rooms")
+    .update({ tournament: next })
+    .eq("id", room.id);
+  if (error) throw error;
+
+  if (!isHost) {
+    await supabase.from("mp_room_members").upsert(
+      {
+        room_id: room.id,
+        user_id: userId,
+        role: memberRole,
+      },
+      { onConflict: "room_id,user_id" }
+    );
+  }
+
+  return next;
+}
+
 export async function createTournamentRoom(opts: {
   visibility: "public" | "private";
   format: TournamentFormat;
@@ -40,7 +101,7 @@ export async function createTournamentRoom(opts: {
   penaltyMode: PenaltyMode;
   hostName: string;
 }): Promise<MultiplayerRoom> {
-  const hostId = await currentUserId();
+  const hostId = await prepareMultiplayerUser();
   const code = roomCode();
   const tournament = createTournament(opts.format, {
     penaltyMode: opts.penaltyMode,
@@ -64,13 +125,7 @@ export async function createTournamentRoom(opts: {
     .single();
   if (error) throw error;
 
-  const { error: memberError } = await supabase.from("mp_room_members").insert({
-    room_id: data.id,
-    user_id: hostId,
-    role: "host",
-    tournament_slot: 0,
-  });
-  if (memberError) throw memberError;
+  await ensureTournamentHostMember(data.id, hostId);
 
   return data as MultiplayerRoom;
 }

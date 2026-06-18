@@ -11,6 +11,7 @@ import { supabase } from "@/lib/supabase-client";
 import {
   getRoom,
   inviteFriendToRoom,
+  ensureHostInRoom,
   leaveRoom,
   listFriends,
   listRoomMembers,
@@ -19,6 +20,7 @@ import {
   startRoomMatch,
   updateMyLobby,
 } from "@/lib/multiplayer";
+import { syncTournamentEntrantOnEnter } from "@/lib/multiplayer-tournament";
 import type { MultiplayerRoom, PlayerLobbyState } from "@/lib/multiplayer-types";
 import {
   createEmptyLobby,
@@ -112,9 +114,32 @@ function MultiplayerRoomInner() {
       ]);
       const uid = auth.user?.id ?? null;
       setUserId(uid);
-      setRoom(roomData);
+
+      let roomDataResolved = roomData;
+      let memberRowsResolved = memberRows;
+
+      const hostMissing =
+        !!uid && roomData.host_user_id === uid && !memberRows.some((m) => m.user_id === uid);
+      if (hostMissing) {
+        await ensureHostInRoom(roomId);
+        memberRowsResolved = await listRoomMembers(roomId);
+      }
+
+      if (uid && roomData.room_mode === "tournament" && roomData.tournament) {
+        const myMemberRow = memberRowsResolved.find((m) => m.user_id === uid);
+        const linked = await syncTournamentEntrantOnEnter(
+          roomData,
+          uid,
+          myMemberRow?.profile?.username ?? "Player"
+        );
+        if (linked) {
+          roomDataResolved = { ...roomData, tournament: linked };
+        }
+      }
+
+      setRoom(roomDataResolved);
       setMembers(
-        memberRows.map((m) => ({
+        memberRowsResolved.map((m) => ({
           user_id: m.user_id,
           role: m.role,
           profile: m.profile ? { username: m.profile.username } : null,
@@ -123,9 +148,15 @@ function MultiplayerRoomInner() {
       );
       setMessages(msgRows.map((m) => ({ id: m.id, username: m.username, text: m.text })));
 
-      const myMember = memberRows.find((m) => m.user_id === uid);
+      const myMember = memberRowsResolved.find((m) => m.user_id === uid);
       if (myMember?.role && roomId) {
-        setMultiplayerSession(roomId, myMember.role);
+        const simHost =
+          roomDataResolved.room_mode === "tournament"
+            ? roomDataResolved.host_user_id === uid
+            : myMember.role === "host";
+        setMultiplayerSession(roomId, myMember.role, {
+          simHost,
+        });
       }
       if (myMember && !lobbyLoaded.current) {
         const loaded = normalizeLobby(myMember.lobby);
@@ -138,8 +169,8 @@ function MultiplayerRoomInner() {
         }
       }
 
-      if (roomData.status === "live" && roomData.state && roomData.room_mode !== "tournament") {
-        applySnapshotToStore(roomData.state);
+      if (roomDataResolved.status === "live" && roomDataResolved.state && roomDataResolved.room_mode !== "tournament") {
+        applySnapshotToStore(roomDataResolved.state);
         router.replace("/match");
       }
     } catch (err) {

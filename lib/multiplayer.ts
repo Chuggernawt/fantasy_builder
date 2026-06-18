@@ -22,18 +22,169 @@ function roomCode(): string {
   return Math.random().toString(36).slice(2, 8).toUpperCase();
 }
 
+let profileVerified = false;
+
+export function markMultiplayerProfileReady(): void {
+  profileVerified = true;
+}
+
 async function currentUserId(): Promise<string> {
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) throw new Error("You must be signed in.");
   return data.user.id;
 }
 
+async function ensureAuthenticatedProfile(): Promise<void> {
+  if (profileVerified) return;
+  const existing = await getMyProfile();
+  if (existing) {
+    profileVerified = true;
+    return;
+  }
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) throw new Error("You must be signed in.");
+  const username = String(data.user.user_metadata?.username ?? "").trim();
+  if (!username) {
+    throw new Error("Profile missing. Choose a username below or sign out and sign in again.");
+  }
+  await restoreProfile(username);
+}
+
+function lobbyFromSnapshot(snapshot: MultiplayerSnapshot | null | undefined): PlayerLobbyState | null {
+  if (!snapshot?.selectedUniverseId) return null;
+  return normalizeLobby({
+    universeId: snapshot.selectedUniverseId,
+    formationId: snapshot.formationId,
+    lineup: snapshot.lineup,
+    matchBench: snapshot.matchBench,
+    ready: false,
+    updatedAt: new Date().toISOString(),
+  });
+}
+
+async function upsertRoomMember(
+  roomId: string,
+  userId: string,
+  role: MemberRole,
+  lobby?: PlayerLobbyState | null,
+  tournamentSlot?: number
+): Promise<void> {
+  const row: Record<string, unknown> = {
+    room_id: roomId,
+    user_id: userId,
+    role,
+    lobby: lobby ?? null,
+  };
+  if (tournamentSlot !== undefined) {
+    row.tournament_slot = tournamentSlot;
+  }
+  const { error } = await supabase.from("mp_room_members").upsert(row, {
+    onConflict: "room_id,user_id",
+  });
+  if (error) throw error;
+}
+
+async function ensureRoomMember(
+  roomId: string,
+  userId: string,
+  role: MemberRole,
+  lobby?: PlayerLobbyState | null
+): Promise<void> {
+  await upsertRoomMember(roomId, userId, role, lobby);
+}
+
+export async function prepareMultiplayerUser(): Promise<string> {
+  await ensureAuthenticatedProfile();
+  return currentUserId();
+}
+
+function normalizeUsername(raw: string): string {
+  return raw.trim().toLowerCase();
+}
+
+export async function isUsernameAvailable(
+  username: string,
+  exceptUserId?: string | null
+): Promise<boolean> {
+  const checkName = normalizeUsername(username);
+  if (checkName.length < 3) return false;
+
+  const { data, error } = await supabase.rpc("is_username_available", {
+    check_name: checkName,
+    except_user_id: exceptUserId ?? null,
+  });
+
+  if (error) {
+    const msg = error.message.toLowerCase();
+    if (msg.includes("is_username_available") || msg.includes("function")) {
+      throw new Error(
+        "Username check is not configured. Run supabase/profile_auth_migration.sql in Supabase."
+      );
+    }
+    throw error;
+  }
+
+  return data === true;
+}
+
+export async function signOut(): Promise<void> {
+  const { error } = await supabase.auth.signOut();
+  if (error) throw error;
+  profileVerified = false;
+}
+
+function profileErrorMessage(err: unknown): string {
+  if (err instanceof Error && err.message.toLowerCase().includes("duplicate key value")) {
+    return "That username is already taken.";
+  }
+  return err instanceof Error ? err.message : "Profile error.";
+}
+
+export async function ensureProfile(username: string): Promise<void> {
+  const userId = await currentUserId();
+  const cleanUsername = normalizeUsername(username);
+  if (cleanUsername.length < 3) throw new Error("Username must be at least 3 characters.");
+
+  const available = await isUsernameAvailable(cleanUsername, userId);
+  if (!available) {
+    throw new Error("That username is already taken.");
+  }
+
+  const { error } = await supabase.from("profiles").upsert(
+    {
+      user_id: userId,
+      username: cleanUsername,
+    },
+    { onConflict: "user_id" }
+  );
+  if (error) throw new Error(profileErrorMessage(error));
+}
+
+/** Signed-in session but profile row missing (e.g. admin deleted profiles). */
+export async function restoreProfile(username: string): Promise<void> {
+  const cleanUsername = normalizeUsername(username);
+  if (cleanUsername.length < 3) {
+    throw new Error("Username must be at least 3 characters.");
+  }
+
+  await ensureProfile(cleanUsername);
+  await supabase.auth.updateUser({ data: { username: cleanUsername } });
+  markMultiplayerProfileReady();
+}
+
 export async function signInAnonymouslyWithUsername(username: string): Promise<void> {
-  const cleanUsername = username.trim();
+  const cleanUsername = normalizeUsername(username);
   if (!cleanUsername) throw new Error("Username is required.");
   if (cleanUsername.length < 3) {
     throw new Error("Username must be at least 3 characters.");
   }
+
+  if (!(await isUsernameAvailable(cleanUsername))) {
+    throw new Error("That username is already taken.");
+  }
+
+  await signOut();
+
   const { error } = await supabase.auth.signInAnonymously({
     options: {
       data: { username: cleanUsername },
@@ -48,34 +199,15 @@ export async function signInAnonymouslyWithUsername(username: string): Promise<v
     }
     throw error;
   }
+
   try {
     await ensureProfile(cleanUsername);
+    markMultiplayerProfileReady();
   } catch (err) {
     await supabase.auth.signOut();
-    if (err instanceof Error && err.message.toLowerCase().includes("duplicate key value")) {
-      throw new Error("That username is already taken.");
-    }
-    throw err;
+    profileVerified = false;
+    throw new Error(profileErrorMessage(err));
   }
-}
-
-export async function signOut(): Promise<void> {
-  const { error } = await supabase.auth.signOut();
-  if (error) throw error;
-}
-
-export async function ensureProfile(username: string): Promise<void> {
-  const userId = await currentUserId();
-  const cleanUsername = username.trim();
-  if (!cleanUsername) throw new Error("Username is required.");
-  const { error } = await supabase.from("profiles").upsert(
-    {
-      user_id: userId,
-      username: cleanUsername,
-    },
-    { onConflict: "user_id" }
-  );
-  if (error) throw error;
 }
 
 export async function getMyProfile(): Promise<MultiplayerProfile | null> {
@@ -93,8 +225,9 @@ export async function createRoom(
   visibility: RoomVisibility,
   snapshot?: MultiplayerSnapshot | null
 ): Promise<MultiplayerRoom> {
-  const hostId = await currentUserId();
+  const hostId = await prepareMultiplayerUser();
   const code = roomCode();
+  const hostLobby = lobbyFromSnapshot(snapshot);
   const { data, error } = await supabase
     .from("mp_rooms")
     .insert({
@@ -110,12 +243,7 @@ export async function createRoom(
     .single();
   if (error) throw error;
 
-  const { error: memberError } = await supabase.from("mp_room_members").insert({
-    room_id: data.id,
-    user_id: hostId,
-    role: "host",
-  });
-  if (memberError) throw memberError;
+  await ensureRoomMember(data.id, hostId, "host", hostLobby);
 
   return data as MultiplayerRoom;
 }
@@ -199,7 +327,40 @@ export async function listOpenPublicRooms(): Promise<MultiplayerRoom[]> {
     .in("status", ["waiting", "draft", "live"])
     .order("created_at", { ascending: false });
   if (error) throw error;
-  return (data ?? []) as MultiplayerRoom[];
+  return ((data ?? []) as MultiplayerRoom[]).filter(
+    (r) => r.visibility === "public" && (r.room_mode ?? "friendly") !== "tournament"
+  );
+}
+
+export async function ensureHostInRoom(roomId: string): Promise<boolean> {
+  const userId = await currentUserId();
+  const { data: room, error: roomErr } = await supabase
+    .from("mp_rooms")
+    .select("host_user_id, state")
+    .eq("id", roomId)
+    .single();
+  if (roomErr) throw roomErr;
+  if (room.host_user_id !== userId) return false;
+
+  const { data: existing } = await supabase
+    .from("mp_room_members")
+    .select("user_id")
+    .eq("room_id", roomId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (existing) return false;
+
+  await upsertRoomMember(
+    roomId,
+    userId,
+    "host",
+    lobbyFromSnapshot(room.state as MultiplayerSnapshot | null)
+  );
+  return true;
+}
+
+export async function ensureTournamentHostMember(roomId: string, hostId: string): Promise<void> {
+  await upsertRoomMember(roomId, hostId, "host", null, 0);
 }
 
 export async function getRoom(roomId: string): Promise<MultiplayerRoom> {

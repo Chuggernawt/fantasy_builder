@@ -84,10 +84,10 @@ export function TournamentRoomContent({
   }, [tournament, myEntrant, activeFixture]);
 
   useEffect(() => {
-    if (!myEntrant || lobbyLoaded.current) return;
+    if (!myEntrant) return;
     setMyLobby(normalizeLobby(myEntrant.lobby));
     lobbyLoaded.current = true;
-  }, [myEntrant]);
+  }, [myEntrant?.id, myEntrant?.lobby.updatedAt]);
 
   const persistLobby = useCallback(
     async (lobby: PlayerLobbyState) => {
@@ -131,7 +131,12 @@ export function TournamentRoomContent({
   }, [room.status, room.state, tournament, userId, roomId, room.host_user_id, router]);
 
   if (!tournament) {
-    return <p className="text-sm text-slate-500">Tournament data missing.</p>;
+    return (
+      <p className="text-sm text-slate-500">
+        Tournament data missing — run <code className="text-xs">supabase/tournament_migration.sql</code> on
+        your Supabase project, then create a new room.
+      </p>
+    );
   }
 
   async function handleReady() {
@@ -270,7 +275,11 @@ export function TournamentRoomContent({
         <p className="text-sm text-slate-400">You are eliminated — follow the bracket above.</p>
       ) : null}
 
-      {!myEntrant && userId ? (
+      {!myEntrant && userId && isRoomHost ? (
+        <p className="text-sm text-amber-400">Setting up your tournament slot…</p>
+      ) : null}
+
+      {!myEntrant && userId && !isRoomHost ? (
         <p className="text-sm text-slate-400">You are spectating this tournament.</p>
       ) : null}
 
