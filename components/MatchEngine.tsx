@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CommentaryFeed } from "@/components/CommentaryFeed";
 import { BroadcastHeader } from "@/components/BroadcastHeader";
@@ -16,12 +16,14 @@ import { getUniverse } from "@/lib/squads";
 import { processTick, TICK_MS } from "@/lib/simulation";
 import { MAX_MATCH_SUBS } from "@/lib/constants";
 import { getMultiplayerSession } from "@/lib/multiplayer-session";
-import { getMyTeamView, myMatchSide } from "@/lib/multiplayer-perspective";
+import { getTournamentReturnRoom } from "@/lib/tournament-match-session";
+import { getMyTeamView } from "@/lib/multiplayer-perspective";
+import { resolveMyMatchSide, getDisplayLineups } from "@/lib/player-side";
 import { SetPiecePanel } from "@/components/SetPiecePanel";
+import { PenaltyShootoutBoard } from "@/components/PenaltyShootoutBoard";
 import { ExtraTimePanel } from "@/components/ExtraTimePanel";
 import { updateMyMpAction } from "@/lib/multiplayer";
 import { formatMatchClock } from "@/lib/stoppage-time";
-import { resolveMyMatchSide } from "@/lib/player-side";
 import {
   cpuSetPieceChoice,
   finalizeSetPieceReveal,
@@ -32,6 +34,7 @@ import {
 import {
   confirmMultiplayerHalftimePause,
   confirmMultiplayerSubsPause,
+  confirmMultiplayerExtraTimePause,
   hostForceResumePause,
   requestMultiplayerSubs,
   signalMultiplayerCaptain,
@@ -42,26 +45,38 @@ export function MatchEngine() {
   const router = useRouter();
   const mpSession = getMultiplayerSession();
   const isMp = !!mpSession;
-  const mySide = myMatchSide() ?? "home";
+  const mpMatchMeta = useGameStore((s) => s.mpMatchMeta);
+  const localTournamentCpu = !!mpMatchMeta?.tournamentFixture?.localCpuMatch;
+  const sharedMp = isMp && !localTournamentCpu;
+  const mySide = isMp
+    ? (getMultiplayerSession()?.matchSide ??
+      (getMultiplayerSession()?.role === "away" ? "away" : "home"))
+    : resolveMyMatchSide();
   const myTeam = getMyTeamView();
+  const { homeLineup: displayHomeLineup, awayLineup: displayAwayLineup } = getDisplayLineups();
 
-  const { isClient: isMpClient, isHost: isMpHost, pushSnapshot } = useMultiplayerSync({
-    enabled: !!mpSession,
+  const {
+    roomId: syncRoomId,
+    isClient: isMpClientRaw,
+    isHost: isMpHostRaw,
+    pushSnapshot,
+  } = useMultiplayerSync({
+    enabled: sharedMp,
   });
+  const isMpClient = sharedMp && isMpClientRaw;
+  const isMpHost = sharedMp && isMpHostRaw;
 
   useMultiplayerHostLoop({
-    roomId: mpSession?.roomId ?? null,
-    enabled: isMpHost,
+    roomId: syncRoomId,
+    enabled: isMpHost && sharedMp,
     pushSnapshot,
     onRematchReset: () => {
-      if (mpSession) router.replace(`/multiplayer/room?id=${mpSession.roomId}`);
+      const hubId = mpMatchMeta?.parentTournamentRoomId ?? mpSession?.roomId;
+      if (hubId) router.replace(`/multiplayer/room?id=${hubId}`);
     },
   });
 
   const matchState = useGameStore((s) => s.matchState);
-  const mpMatchMeta = useGameStore((s) => s.mpMatchMeta);
-  const lineup = useGameStore((s) => s.lineup);
-  const opponentLineup = useGameStore((s) => s.opponentLineup);
   const setMatchState = useGameStore((s) => s.setMatchState);
   const confirmHalftime = useGameStore((s) => s.confirmHalftime);
   const confirmExtraTime = useGameStore((s) => s.confirmExtraTime);
@@ -75,26 +90,70 @@ export function MatchEngine() {
   const prevScore = useRef({ home: 0, away: 0 });
   const didStartWhistle = useRef(false);
   const prevStatus = useRef(matchState?.status);
+  const prevHalf = useRef<number | null>(null);
+  const prevInStoppage = useRef(false);
 
   const home = getUniverse(matchState?.homeUniverseId ?? "");
   const away = getUniverse(matchState?.awayUniverseId ?? "");
 
-  useEffect(() => {
-    if (!matchState) return;
-    if (!didStartWhistle.current && matchState.status === "running" && matchState.tick <= 1) {
-      didStartWhistle.current = true;
-      window.dispatchEvent(new CustomEvent("fb:sfx", { detail: { kind: "whistle_start" } }));
+  const goalScorers = useMemo(() => {
+    if (!matchState) {
+      return { home: [] as { minute: number; name: string }[], away: [] };
     }
-    if (prevStatus.current !== "finished" && matchState.status === "finished") {
-      window.dispatchEvent(new CustomEvent("fb:sfx", { detail: { kind: "whistle_end" } }));
+    const homeGoals: { minute: number; name: string }[] = [];
+    const awayGoals: { minute: number; name: string }[] = [];
+    for (const e of matchState.commentary) {
+      if (e.type !== "goal") continue;
+      const entry = { minute: e.minute, name: e.playerName ?? "?" };
+      if (e.team === "home") homeGoals.push(entry);
+      else if (e.team === "away") awayGoals.push(entry);
     }
-    prevStatus.current = matchState.status;
+    return { home: homeGoals, away: awayGoals };
   }, [matchState]);
 
   useEffect(() => {
-    if (matchState?.status === "finished") {
-      router.replace("/post-match");
+    if (!matchState) {
+      didStartWhistle.current = false;
+      prevStatus.current = undefined;
+      prevHalf.current = null;
+      prevInStoppage.current = false;
+      return;
     }
+
+    const { status, half, tick, inStoppageTime: inStoppage } = matchState;
+
+    if (!didStartWhistle.current && status === "running" && half === 1 && tick <= 1) {
+      didStartWhistle.current = true;
+      window.dispatchEvent(new CustomEvent("fb:sfx", { detail: { kind: "whistle_start" } }));
+    } else if (prevHalf.current === 1 && half === 2 && status === "running" && tick <= 1) {
+      window.dispatchEvent(new CustomEvent("fb:sfx", { detail: { kind: "whistle_start" } }));
+    } else if (!prevInStoppage.current && inStoppage && status === "running") {
+      window.dispatchEvent(new CustomEvent("fb:sfx", { detail: { kind: "whistle_start" } }));
+    }
+
+    if (prevStatus.current !== "halftime" && status === "halftime") {
+      window.dispatchEvent(new CustomEvent("fb:sfx", { detail: { kind: "whistle_end" } }));
+    } else if (prevStatus.current !== "extra_time_choice" && status === "extra_time_choice") {
+      window.dispatchEvent(new CustomEvent("fb:sfx", { detail: { kind: "whistle_end" } }));
+    } else if (prevStatus.current !== "finished" && status === "finished") {
+      window.dispatchEvent(new CustomEvent("fb:sfx", { detail: { kind: "whistle_end" } }));
+    } else if (
+      prevInStoppage.current &&
+      !inStoppage &&
+      status === "set_piece_pause" &&
+      matchState.interactiveSetPiece?.shootoutDecider
+    ) {
+      window.dispatchEvent(new CustomEvent("fb:sfx", { detail: { kind: "whistle_end" } }));
+    }
+
+    prevStatus.current = status;
+    prevHalf.current = half;
+    prevInStoppage.current = !!inStoppage;
+  }, [matchState]);
+
+  useEffect(() => {
+    if (matchState?.status !== "finished") return;
+    router.replace("/post-match");
   }, [matchState?.status, router]);
 
   useEffect(() => {
@@ -103,6 +162,7 @@ export function MatchEngine() {
     const prev = prevScore.current.home + prevScore.current.away;
     if (total > prev) {
       setGoalFlash(true);
+      window.dispatchEvent(new CustomEvent("fb:sfx", { detail: { kind: "goal" } }));
       const t = setTimeout(() => setGoalFlash(false), 800);
       prevScore.current = { ...matchState.score };
       return () => clearTimeout(t);
@@ -113,12 +173,23 @@ export function MatchEngine() {
   useEffect(() => {
     if (matchState?.status !== "set_piece_pause") {
       setMySetPiecePick(null);
+      return;
     }
-  }, [matchState?.status, matchState?.interactiveSetPiece?.chooseEndsAt]);
+    const piece = matchState.interactiveSetPiece;
+    if (!piece || piece.phase !== "choose") {
+      setMySetPiecePick(null);
+    }
+  }, [
+    matchState?.status,
+    matchState?.interactiveSetPiece?.phase,
+    matchState?.interactiveSetPiece?.chooseEndsAt,
+    matchState?.interactiveSetPiece?.attackerPick,
+    matchState?.interactiveSetPiece?.defenderPick,
+  ]);
 
   useEffect(() => {
     if (!matchState || matchState.status !== "set_piece_pause") return;
-    if (isMp && !isMpHost) return;
+    if (sharedMp && !isMpHost) return;
     const piece = matchState.interactiveSetPiece;
     if (!piece) return;
 
@@ -135,7 +206,7 @@ export function MatchEngine() {
         const needAtk = !p.attackerPick;
         const needDef = !p.defenderPick;
 
-        if (isMp) {
+        if (sharedMp) {
           if (setPieceChooseExpired(p)) {
             if (!next.interactiveSetPiece?.attackerPick) {
               next = mergeSetPiecePick(next, true, cpuSetPieceChoice());
@@ -156,7 +227,7 @@ export function MatchEngine() {
           }
         }
 
-        if (!isMp && setPieceChooseExpired(p)) {
+        if (!sharedMp && setPieceChooseExpired(p)) {
           if (!next.interactiveSetPiece?.attackerPick) {
             next = mergeSetPiecePick(next, true, cpuSetPieceChoice());
           }
@@ -184,7 +255,7 @@ export function MatchEngine() {
     matchState?.status,
     matchState?.interactiveSetPiece,
     isMpHost,
-    isMp,
+    sharedMp,
     setMatchState,
     pushSnapshot,
   ]);
@@ -218,7 +289,15 @@ export function MatchEngine() {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [matchState?.status, matchState?.half, setMatchState, isMpClient, isMpHost, pushSnapshot]);
+  }, [matchState?.status, matchState?.half, setMatchState, isMpClient, isMpHost, pushSnapshot, sharedMp]);
+
+  const tournamentReturnRoomId = getTournamentReturnRoom();
+  const matchBackHref = tournamentReturnRoomId
+    ? `/multiplayer/room?id=${tournamentReturnRoomId}`
+    : mpSession
+      ? `/multiplayer/room?id=${mpSession.roomId}`
+      : "/draft";
+  const matchBackLabel = tournamentReturnRoomId || mpSession ? "Tournament" : "Draft";
 
   if (!matchState || !home || !away || !myTeam) {
     return (
@@ -245,9 +324,11 @@ export function MatchEngine() {
         : matchState.status === "sub_window"
           ? "SUB WINDOW"
           : matchState.status === "set_piece_pause"
-            ? matchState.interactiveSetPiece?.kind === "penalty"
-              ? "PENALTY"
-              : "CORNER"
+            ? matchState.interactiveSetPiece?.shootoutDecider
+              ? "PENALTY SHOOTOUT"
+              : matchState.interactiveSetPiece?.kind === "penalty"
+                ? "PENALTY"
+                : "CORNER"
             : matchState.status === "finished"
               ? "FULL TIME"
               : matchState.inStoppageTime
@@ -260,20 +341,22 @@ export function MatchEngine() {
   const homePossPct = Math.round((hs.possessionPhases / totalPoss) * 100);
   const awayPossPct = 100 - homePossPct;
 
-  const pause = isMp ? mpMatchMeta?.pause : null;
+  const pause = sharedMp ? mpMatchMeta?.pause : null;
+  const roomId = sharedMp ? (syncRoomId ?? "") : "";
   const myReady = pause ? (mySide === "home" ? pause.homeReady : pause.awayReady) : false;
   const opponentReady = pause ? (mySide === "home" ? pause.awayReady : pause.homeReady) : false;
   const mySubsUsed = mySide === "home" ? matchState.homeSubsUsed : matchState.awaySubsUsed;
   const myStamina = mySide === "home" ? matchState.homeStamina : matchState.awayStamina;
-  const myTacticHalf = mySide === "home" ? matchState.homeTacticHalf : matchState.awayTacticHalf;
-  const myTactic = mySide === "home" ? matchState.homeTactic : matchState.awayTactic;
+  const myPlayerStats =
+    (mySide === "home" ? matchState.homePlayerStats : matchState.awayPlayerStats) ?? {};
+  const myGoalsConceded = mySide === "home" ? matchState.score.away : matchState.score.home;
+  const myTeamGoals = mySide === "home" ? matchState.score.home : matchState.score.away;
+  const myTactics = mySide === "home" ? matchState.homeTactics : matchState.awayTactics;
   const myCaptainHalf = mySide === "home" ? matchState.homeCaptainHalf : matchState.awayCaptainHalf;
   const myCaptain = mySide === "home" ? matchState.homeCaptain : matchState.awayCaptain;
 
-  const roomId = mpSession?.roomId ?? "";
-
   async function handleOpenSubs() {
-    if (isMp && roomId) {
+    if (sharedMp && roomId) {
       await requestMultiplayerSubs(roomId, mySide, isMpHost);
       if (isMpHost) void pushSnapshot();
       return;
@@ -282,7 +365,7 @@ export function MatchEngine() {
   }
 
   async function handleSetTactic(tactic: Parameters<typeof setHomeTactic>[0]) {
-    if (isMp && roomId) {
+    if (sharedMp && roomId) {
       await signalMultiplayerTactic(roomId, mySide, isMpHost, tactic);
       if (isMpHost) void pushSnapshot();
       return;
@@ -292,7 +375,7 @@ export function MatchEngine() {
   }
 
   async function handleCallCaptain(name: string) {
-    if (isMp && roomId) {
+    if (sharedMp && roomId) {
       await signalMultiplayerCaptain(roomId, mySide, isMpHost, name);
       if (isMpHost) void pushSnapshot();
       return;
@@ -309,7 +392,7 @@ export function MatchEngine() {
     const isAttacker = mySide === piece.attacking;
     setMySetPiecePick(choice);
 
-    if (isMp && roomId && !isMpHost) {
+    if (sharedMp && roomId && !isMpHost) {
       await updateMyMpAction(roomId, {
         type: "set_piece_pick",
         choice,
@@ -327,8 +410,8 @@ export function MatchEngine() {
     <>
       <BroadcastHeader
         title="Live Match"
-        backHref={mpSession ? `/multiplayer/room?id=${mpSession.roomId}` : "/draft"}
-        backLabel={mpSession ? "Room" : "Draft"}
+        backHref={matchBackHref}
+        backLabel={matchBackLabel}
       />
 
       <main className="mx-auto flex h-[calc(100dvh-3.25rem)] max-w-7xl flex-col overflow-hidden px-2 py-2 md:px-3">
@@ -350,6 +433,15 @@ export function MatchEngine() {
               <p className="truncate font-display text-xs font-semibold uppercase md:text-sm">
                 {home.name}
               </p>
+              {goalScorers.home.length ? (
+                <ul className="mt-1 space-y-0.5 font-mono text-[9px] text-slate-400">
+                  {goalScorers.home.map((g, i) => (
+                    <li key={`h-${g.minute}-${g.name}-${i}`}>
+                      {g.minute}&apos; {g.name}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </div>
             <div className="shrink-0 px-2 text-center">
               <p className="font-display text-3xl font-bold tracking-widest md:text-5xl">
@@ -373,9 +465,33 @@ export function MatchEngine() {
               <p className="truncate font-display text-xs font-semibold uppercase md:text-sm">
                 {away.name}
               </p>
+              {goalScorers.away.length ? (
+                <ul className="mt-1 space-y-0.5 font-mono text-[9px] text-slate-400">
+                  {goalScorers.away.map((g, i) => (
+                    <li key={`a-${g.minute}-${g.name}-${i}`}>
+                      {g.minute}&apos; {g.name}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </div>
           </div>
         </div>
+
+        {matchState.penaltyShootout ? (
+          <PenaltyShootoutBoard
+            shootout={matchState.penaltyShootout}
+            homeLabel={home.name}
+            awayLabel={away.name}
+            homeAccent={home.accentColor}
+            awayAccent={away.accentColor}
+            activeSide={
+              matchState.interactiveSetPiece?.shootoutDecider
+                ? matchState.interactiveSetPiece.attacking
+                : null
+            }
+          />
+        ) : null}
 
         {pause ? (
           <MpPauseBanner
@@ -394,6 +510,12 @@ export function MatchEngine() {
           <SetPiecePanel
             piece={matchState.interactiveSetPiece}
             isAttacker={mySide === matchState.interactiveSetPiece.attacking}
+            attackingLabel={
+              matchState.interactiveSetPiece.attacking === "home" ? home.name : away.name
+            }
+            defendingLabel={
+              matchState.interactiveSetPiece.attacking === "home" ? away.name : home.name
+            }
             myPick={mySetPiecePick}
             onPick={(choice) => {
               void handleSetPiecePick(choice);
@@ -402,14 +524,33 @@ export function MatchEngine() {
         ) : null}
 
         {matchState.status === "extra_time_choice" ? (
-          <ExtraTimePanel
-            accent={myTeam.accent}
-            teamName={myTeam.name}
-            addedMinutes={matchState.stoppageMinutes}
-            onConfirm={(approach) => {
-              confirmExtraTime(approach);
-            }}
-          />
+          <>
+            {sharedMp && pause?.kind === "extra_time" ? (
+              <MpPauseBanner
+                pause={pause}
+                myReady={myReady}
+                opponentReady={opponentReady}
+                isHost={isMpHost}
+              />
+            ) : null}
+            <ExtraTimePanel
+              accent={myTeam.accent}
+              teamName={myTeam.name}
+              addedMinutes={matchState.stoppageMinutes}
+              confirmLabel={sharedMp ? "Lock in approach" : "Start added time"}
+              onConfirm={(approach) => {
+                if (sharedMp && roomId) {
+                  void confirmMultiplayerExtraTimePause(roomId, mySide, isMpHost, approach).then(
+                    () => {
+                      if (isMpHost) void pushSnapshot();
+                    }
+                  );
+                  return;
+                }
+                confirmExtraTime(approach);
+              }}
+            />
+          </>
         ) : matchState.status === "halftime" ? (
           <SubstitutionPanel
             key="halftime"
@@ -419,30 +560,33 @@ export function MatchEngine() {
             lineup={myTeam.lineup}
             matchBench={myTeam.matchBench}
             stamina={myStamina}
+            playerStats={myPlayerStats}
+            teamGoals={myTeamGoals}
+            goalsConceded={myGoalsConceded}
             subsUsed={mySubsUsed}
             maxSubs={MAX_MATCH_SUBS}
             title="Half Time"
             heading={`${myTeam.name} — Team Talk & Subs`}
-            confirmLabel={isMp ? "Ready for second half" : "Start Second Half"}
+            confirmLabel={sharedMp ? "Ready for second half" : "Start Second Half"}
             showSecondHalfInfluence
-            currentTactic={myTacticHalf === 2 ? myTactic : null}
+            currentTactics={myTactics}
             currentCaptain={myCaptainHalf === 2 ? myCaptain : null}
-            onConfirm={(newLineup, subsMade, tactic, captain) => {
-              if (isMp && roomId) {
+            onConfirm={(newLineup, subsMade, tactics, captain) => {
+              if (sharedMp && roomId) {
                 void confirmMultiplayerHalftimePause(
                   roomId,
                   mySide,
                   isMpHost,
                   newLineup,
                   subsMade,
-                  tactic,
+                  tactics,
                   captain
                 ).then(() => {
                   if (isMpHost) void pushSnapshot();
                 });
                 return;
               }
-              confirmHalftime(newLineup, subsMade, tactic, captain);
+              confirmHalftime(newLineup, subsMade, tactics, captain);
             }}
           />
         ) : matchState.status === "sub_window" ? (
@@ -454,13 +598,16 @@ export function MatchEngine() {
             lineup={myTeam.lineup}
             matchBench={myTeam.matchBench}
             stamina={myStamina}
+            playerStats={myPlayerStats}
+            teamGoals={myTeamGoals}
+            goalsConceded={myGoalsConceded}
             subsUsed={mySubsUsed}
             maxSubs={MAX_MATCH_SUBS}
             title="Substitutions"
             heading={`${myTeam.name} — Make Your Changes`}
-            confirmLabel={isMp ? "Confirm & Ready" : "Confirm & Resume"}
+            confirmLabel={sharedMp ? "Confirm & Ready" : "Confirm & Resume"}
             onConfirm={(newLineup, subsMade) => {
-              if (isMp && roomId) {
+              if (sharedMp && roomId) {
                 void confirmMultiplayerSubsPause(roomId, mySide, isMpHost, newLineup, subsMade).then(
                   () => {
                     if (isMpHost) void pushSnapshot();
@@ -489,9 +636,11 @@ export function MatchEngine() {
                 <MatchSquadPanel
                   title={home.name}
                   accent={home.accentColor}
-                  lineup={lineup}
+                  lineup={displayHomeLineup}
                   stamina={matchState.homeStamina}
                   playerStats={matchState.homePlayerStats}
+                  teamGoals={matchState.score.home}
+                  goalsConceded={matchState.score.away}
                   captain={
                     matchState.homeCaptainHalf === matchState.half ? matchState.homeCaptain : null
                   }
@@ -506,9 +655,11 @@ export function MatchEngine() {
                 <MatchSquadPanel
                   title={away.name}
                   accent={away.accentColor}
-                  lineup={opponentLineup}
+                  lineup={displayAwayLineup}
                   stamina={matchState.awayStamina}
                   playerStats={matchState.awayPlayerStats}
+                  teamGoals={matchState.score.away}
+                  goalsConceded={matchState.score.home}
                   captain={
                     matchState.awayCaptainHalf === matchState.half ? matchState.awayCaptain : null
                   }
@@ -521,9 +672,11 @@ export function MatchEngine() {
                 compact
                 title={home.name}
                 accent={home.accentColor}
-                lineup={lineup}
+                lineup={displayHomeLineup}
                 stamina={matchState.homeStamina}
                 playerStats={matchState.homePlayerStats}
+                teamGoals={matchState.score.home}
+                goalsConceded={matchState.score.away}
                 captain={
                   matchState.homeCaptainHalf === matchState.half ? matchState.homeCaptain : null
                 }
@@ -532,9 +685,11 @@ export function MatchEngine() {
                 compact
                 title={away.name}
                 accent={away.accentColor}
-                lineup={opponentLineup}
+                lineup={displayAwayLineup}
                 stamina={matchState.awayStamina}
                 playerStats={matchState.awayPlayerStats}
+                teamGoals={matchState.score.away}
+                goalsConceded={matchState.score.home}
                 captain={
                   matchState.awayCaptainHalf === matchState.half ? matchState.awayCaptain : null
                 }

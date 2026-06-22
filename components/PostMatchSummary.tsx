@@ -1,21 +1,29 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, useEffect, useRef, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BroadcastHeader } from "@/components/BroadcastHeader";
 import { CommentaryFeed } from "@/components/CommentaryFeed";
 import { RevealShowcase } from "@/components/RevealShowcase";
 import { SeasonFinale } from "@/components/SeasonFinale";
+import { SeasonTransferLog } from "@/components/SeasonTransferLog";
+import { TournamentFinale } from "@/components/TournamentFinale";
+import { buildTournamentFinaleSummary } from "@/lib/tournament-finale";
+import { getEntrant } from "@/lib/tournament";
 import { buildMatchSummary } from "@/lib/match-stats";
+import { matchDecidedWinner } from "@/lib/penalty-shootout";
+import { PenaltyShootoutBoard } from "@/components/PenaltyShootoutBoard";
 import { buildMatchReport } from "@/lib/match-report";
 import { playersWithMatchContributions } from "@/lib/player-match-stats";
 import { useGameStore } from "@/store/game-store";
-import { getMultiplayerSession } from "@/lib/multiplayer-session";
+import { clearMultiplayerSession, getMultiplayerSession } from "@/lib/multiplayer-session";
+import { getTournamentReturnRoom, clearTournamentReturnRoom } from "@/lib/tournament-match-session";
 import { myMatchSide } from "@/lib/multiplayer-perspective";
 import { useMultiplayerSync } from "@/hooks/useMultiplayerSync";
 import { useMultiplayerHostLoop } from "@/hooks/useMultiplayerHostLoop";
 import { signalMultiplayerRematch } from "@/lib/multiplayer-client";
+import { reportTournamentFixtureResult } from "@/lib/multiplayer-tournament";
 
 type PostMatchTab = "report" | "commentary" | "ratings";
 
@@ -52,10 +60,16 @@ export function PostMatchSummary() {
   const clearPendingReveal = useGameStore((s) => s.clearPendingReveal);
   const saveLineup = useGameStore((s) => s.saveLineup);
   const season = useGameStore((s) => s.season);
+  const continueSeason = useGameStore((s) => s.continueSeason);
+  const saveSeasonSlot = useGameStore((s) => s.saveSeasonSlot);
   const offlineTournament = useGameStore((s) => s.tournament);
+  const lastMatchContext = useGameStore((s) => s.lastMatchContext);
+  const recentSquadUnlocks = useGameStore((s) => s.recentSquadUnlocks);
+  const clearRecentSquadUnlocks = useGameStore((s) => s.clearRecentSquadUnlocks);
   const seasonFinished = season?.status === "finished" && !!matchState?.seasonMeta;
   const seasonActive = !!matchState?.seasonMeta && season?.status === "active";
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
+  const [tournamentReportError, setTournamentReportError] = useState<string | null>(null);
   const [tab, setTab] = useState<PostMatchTab>("report");
   const [winOwnPick, setWinOwnPick] = useState<string | null>(null);
   const [winAwayPick, setWinAwayPick] = useState<string | null>(null);
@@ -63,6 +77,44 @@ export function PostMatchSummary() {
   const [rematchPending, setRematchPending] = useState(false);
 
   const isTournamentMp = !!mpMatchMeta?.tournamentFixture;
+  const tournamentHubRoomId =
+    mpMatchMeta?.parentTournamentRoomId ?? getTournamentReturnRoom() ?? mpSession?.roomId ?? null;
+  const showTournamentReturn = isTournamentMp && !!tournamentHubRoomId;
+  const localCpuTournamentReported = useRef(false);
+
+  function returnToTournamentLobby() {
+    if (!tournamentHubRoomId) return;
+    clearTournamentReturnRoom();
+    resetMatch();
+    clearMultiplayerSession();
+    router.push(`/multiplayer/room?id=${tournamentHubRoomId}`);
+  }
+
+  useEffect(() => {
+    if (matchState?.status !== "finished") return;
+    const tf = mpMatchMeta?.tournamentFixture;
+    const hubRoomId =
+      mpMatchMeta?.parentTournamentRoomId ?? getTournamentReturnRoom() ?? null;
+    if (!tf?.localCpuMatch || !hubRoomId || localCpuTournamentReported.current) return;
+    localCpuTournamentReported.current = true;
+    void reportTournamentFixtureResult(hubRoomId, tf.fixtureId, matchState)
+      .catch((err) => {
+        localCpuTournamentReported.current = false;
+        const message =
+          err instanceof Error ? err.message : "Could not report result to the tournament.";
+        setTournamentReportError(message);
+        console.error("Tournament result report failed:", err);
+      });
+  }, [matchState, mpMatchMeta?.tournamentFixture]);
+
+  useEffect(() => () => clearRecentSquadUnlocks(), [clearRecentSquadUnlocks]);
+
+  useEffect(() => {
+    if (matchState?.status !== "finished") return;
+    if (lastMatchContext !== "season" && !season) return;
+    saveSeasonSlot();
+  }, [matchState?.status, lastMatchContext, season, saveSeasonSlot]);
+
   const myRematchReady =
     mySide === "home" ? mpMatchMeta?.rematch.host : mpMatchMeta?.rematch.away;
   const opponentRematchReady =
@@ -73,19 +125,33 @@ export function PostMatchSummary() {
     [matchState]
   );
 
+  const tournamentFinale = useMemo(() => {
+    if (!offlineTournament || offlineTournament.phase !== "finished" || lastMatchContext !== "tournament") {
+      return null;
+    }
+    return buildTournamentFinaleSummary(offlineTournament, { userId: undefined });
+  }, [offlineTournament, lastMatchContext]);
+
   const report = useMemo(
     () => (matchState && summary ? buildMatchReport(matchState, summary) : null),
     [matchState, summary]
   );
 
   if (!matchState || matchState.status !== "finished") {
+    const tf = mpMatchMeta?.tournamentFixture;
+    const backHref = tf?.localCpuMatch && tournamentHubRoomId
+      ? `/multiplayer/room?id=${tournamentHubRoomId}`
+      : isTournamentMp && tournamentHubRoomId
+        ? `/multiplayer/room?id=${tournamentHubRoomId}`
+        : "/draft";
+    const backLabel = showTournamentReturn ? "Tournament" : undefined;
     return (
       <>
-        <BroadcastHeader title="Post Match" backHref="/draft" />
+        <BroadcastHeader title="Post Match" backHref={backHref} backLabel={backLabel} />
         <main className="mx-auto max-w-lg px-4 py-16 text-center">
           <p className="text-slate-400">No completed match.</p>
-          <Link href="/draft" className="btn-broadcast-solid mt-6 inline-block">
-            Set up a match
+          <Link href={backHref} className="btn-broadcast-solid mt-6 inline-block">
+            {showTournamentReturn ? "Return to Tournament Lobby" : "Set up a match"}
           </Link>
         </main>
       </>
@@ -94,8 +160,9 @@ export function PostMatchSummary() {
 
   if (!summary || !report) return null;
 
-  const homeWin = summary.score.home > summary.score.away;
-  const awayWin = summary.score.away > summary.score.home;
+  const homeWin = matchDecidedWinner(matchState) === "home";
+  const awayWin = matchDecidedWinner(matchState) === "away";
+  const pens = matchState.penaltyShootout;
 
   return (
     <>
@@ -143,39 +210,50 @@ export function PostMatchSummary() {
             ) : pendingReveal?.result === "win" ? (
               <>
                 <p className="mb-2 text-xs text-slate-400">
-                  Pick one of yours and one opponent to fully reveal:
+                  {pendingReveal.ownChoices.length && pendingReveal.awayChoices.length
+                    ? "Pick one of yours and one opponent to fully reveal:"
+                    : pendingReveal.ownChoices.length
+                      ? "Pick one of your players to fully reveal:"
+                      : "Pick one opponent to fully reveal:"}
                 </p>
-                <div className="mb-2 flex flex-wrap gap-2">
-                  {pendingReveal.ownChoices.map((name) => (
-                    <button
-                      key={`own-${name}`}
-                      type="button"
-                      className={`btn-broadcast px-3 py-2 text-xs transition ${revealPickClass(winOwnPick === name)}`}
-                      onClick={() => setWinOwnPick(name)}
-                    >
-                      {name}
-                    </button>
-                  ))}
-                </div>
-                <div className="mb-3 flex flex-wrap gap-2">
-                  {pendingReveal.awayChoices.map((name) => (
-                    <button
-                      key={`away-${name}`}
-                      type="button"
-                      className={`btn-broadcast px-3 py-2 text-xs transition ${revealPickClass(winAwayPick === name)}`}
-                      onClick={() => setWinAwayPick(name)}
-                    >
-                      {name}
-                    </button>
-                  ))}
-                </div>
+                {pendingReveal.ownChoices.length > 0 ? (
+                  <div className="mb-2 flex flex-wrap gap-2">
+                    {pendingReveal.ownChoices.map((name) => (
+                      <button
+                        key={`own-${name}`}
+                        type="button"
+                        className={`btn-broadcast px-3 py-2 text-xs transition ${revealPickClass(winOwnPick === name)}`}
+                        onClick={() => setWinOwnPick(name)}
+                      >
+                        {name}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+                {pendingReveal.awayChoices.length > 0 ? (
+                  <div className="mb-3 flex flex-wrap gap-2">
+                    {pendingReveal.awayChoices.map((name) => (
+                      <button
+                        key={`away-${name}`}
+                        type="button"
+                        className={`btn-broadcast px-3 py-2 text-xs transition ${revealPickClass(winAwayPick === name)}`}
+                        onClick={() => setWinAwayPick(name)}
+                      >
+                        {name}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
                 <button
                   type="button"
                   className="btn-broadcast-solid text-xs"
-                  disabled={!winOwnPick || !winAwayPick}
+                  disabled={
+                    (pendingReveal.ownChoices.length > 0 && !winOwnPick) ||
+                    (pendingReveal.awayChoices.length > 0 && !winAwayPick)
+                  }
                   onClick={() => {
-                    if (!winOwnPick || !winAwayPick) return;
-                    chooseWinReveal(winOwnPick, winAwayPick);
+                    if (!winOwnPick && !winAwayPick) return;
+                    chooseWinReveal(winOwnPick ?? "", winAwayPick ?? "");
                     setWinOwnPick(null);
                     setWinAwayPick(null);
                   }}
@@ -199,7 +277,32 @@ export function PostMatchSummary() {
           </div>
         ) : null}
 
-        {seasonFinished && season ? <SeasonFinale season={season} /> : null}
+        {seasonFinished && season ? (
+          <SeasonFinale
+            season={season}
+            newlyUnlockedSquadIds={
+              season.championId === season.userUniverseId ? recentSquadUnlocks : []
+            }
+            onContinueSeason={() => {
+              if (continueSeason()) {
+                resetMatch();
+                router.push("/season");
+              }
+            }}
+          />
+        ) : null}
+
+        {tournamentFinale ? (
+          <TournamentFinale
+            summary={tournamentFinale}
+            championUniverseId={
+              offlineTournament?.championId
+                ? getEntrant(offlineTournament, offlineTournament.championId)?.universeId
+                : null
+            }
+            newlyUnlockedSquadIds={tournamentFinale.userWon ? recentSquadUnlocks : []}
+          />
+        ) : null}
 
         <div className="glass-panel mb-6 p-6 text-center">
           <p className="broadcast-label mb-2">Final Score</p>
@@ -222,7 +325,22 @@ export function PostMatchSummary() {
               {awayWin && <p className="text-xs text-broadcast-highlight">WINNER</p>}
             </div>
           </div>
+          {pens ? (
+            <div className="mt-4">
+              <PenaltyShootoutBoard
+                shootout={pens}
+                homeLabel={summary.homeName}
+                awayLabel={summary.awayName}
+                homeAccent={summary.homeAccent}
+                awayAccent={summary.awayAccent}
+              />
+            </div>
+          ) : null}
         </div>
+
+        {(seasonActive || seasonFinished) && season?.transferHistory?.length ? (
+          <SeasonTransferLog transfers={season.transferHistory} />
+        ) : null}
 
         {summary.manOfTheMatch ? (
           <div className="glass-panel mb-6 border border-broadcast-highlight/50 bg-broadcast-highlight/5 p-5 text-center">
@@ -325,8 +443,21 @@ export function PostMatchSummary() {
           </div>
         )}
 
+        {tournamentReportError ? (
+          <p className="mb-4 text-sm text-red-400">{tournamentReportError}</p>
+        ) : null}
+
         <div className="flex flex-wrap gap-3">
-          {mpSession ? (
+          {showTournamentReturn ? (
+            <button
+              type="button"
+              className="btn-broadcast-solid"
+              disabled={!!pendingReveal}
+              onClick={returnToTournamentLobby}
+            >
+              {pendingReveal ? "Claim your reward first" : "Return to Tournament Lobby"}
+            </button>
+          ) : mpSession ? (
             <>
               {!isTournamentMp ? (
                 <>
@@ -358,13 +489,15 @@ export function PostMatchSummary() {
                 type="button"
                 className="btn-broadcast-solid"
                 onClick={() => {
-                  router.push(`/multiplayer/room?id=${mpSession.roomId}`);
+                  if (mpSession.roomId) router.push(`/multiplayer/room?id=${mpSession.roomId}`);
                 }}
               >
-                {isTournamentMp ? "Back to tournament" : "Return to room"}
+                Return to room
               </button>
             </>
-          ) : offlineTournament && offlineTournament.phase !== "finished" ? (
+          ) : lastMatchContext === "tournament" &&
+            offlineTournament &&
+            offlineTournament.phase !== "finished" ? (
             <button
               type="button"
               className="btn-broadcast-solid"

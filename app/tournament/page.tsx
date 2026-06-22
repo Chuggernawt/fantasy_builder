@@ -6,26 +6,27 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { BroadcastHeader } from "@/components/BroadcastHeader";
 import { MultiplayerLobbyBuilder } from "@/components/MultiplayerLobbyBuilder";
 import { TournamentBracketView } from "@/components/TournamentBracketView";
+import { TournamentFinale } from "@/components/TournamentFinale";
+import { buildTournamentFinaleSummary } from "@/lib/tournament-finale";
+import { getUniverse } from "@/lib/squads";
 import {
   createEmptyLobby,
   lobbyProgressLabel,
+  lobbyReadyBlockReason,
   lobbyTeamReady,
   normalizeLobby,
 } from "@/lib/multiplayer-lobby";
 import type { PlayerLobbyState } from "@/lib/multiplayer-types";
+import { normalizeTeamTactics } from "@/lib/tactics";
 import type { PenaltyMode, TournamentFormat, TournamentState } from "@/lib/tournament-types";
 import {
-  activeFixtureReady,
-  addCpuToSlot,
-  allEntrantsReady,
-  allSlotsFilled,
-  beginTournamentAfterDraw,
-  createTournament,
+  createOfflineTournament,
   getActiveFixture,
   getEntrant,
-  hasDuplicateUniverses,
-  runTournamentDraw,
+  getEntrantActiveFixture,
+  repairOfflineTournament,
   updateEntrantLobby,
+  usedUniverses,
 } from "@/lib/tournament";
 import { useGameStore } from "@/store/game-store";
 import type { FormationId, LineupSlot } from "@/lib/types";
@@ -33,6 +34,7 @@ import type { FormationId, LineupSlot } from "@/lib/types";
 export default function OfflineTournamentPage() {
   const router = useRouter();
   const tournament = useGameStore((s) => s.tournament);
+  const recentSquadUnlocks = useGameStore((s) => s.recentSquadUnlocks);
   const setTournament = useGameStore((s) => s.setTournament);
   const setTournamentActiveFixture = useGameStore((s) => s.setTournamentActiveFixture);
   const startMatch = useGameStore((s) => s.startMatch);
@@ -49,7 +51,14 @@ export default function OfflineTournamentPage() {
     [tournament]
   );
 
-  const activeFixture = tournament ? getActiveFixture(tournament) : null;
+  const tournamentFinaleSummary = useMemo(
+    () => (tournament?.phase === "finished" ? buildTournamentFinaleSummary(tournament) : null),
+    [tournament]
+  );
+
+  const activeFixture = tournament && localEntrant
+    ? getEntrantActiveFixture(tournament, localEntrant.id) ?? getActiveFixture(tournament)
+    : null;
   const inActiveFixture =
     tournament && localEntrant
       ? activeFixture &&
@@ -57,32 +66,38 @@ export default function OfflineTournamentPage() {
           activeFixture.awayEntrantId === localEntrant.id)
       : false;
 
-  const takenUniverseId = useMemo(() => {
-    if (!tournament || !localEntrant || !activeFixture) return null;
-    if (tournament.phase === "lobby") {
-      const other = tournament.entrants.find(
-        (e) => e.id !== localEntrant.id && e.lobby.universeId
-      );
-      return other?.lobby.universeId ?? null;
-    }
-    const oppId =
-      activeFixture.homeEntrantId === localEntrant.id
-        ? activeFixture.awayEntrantId
-        : activeFixture.homeEntrantId;
-    return getEntrant(tournament, oppId)?.lobby.universeId ?? null;
-  }, [tournament, localEntrant, activeFixture]);
+  const takenUniverseIds = useMemo(() => {
+    if (!tournament || !localEntrant) return [];
+    const ids = Array.from(usedUniverses(tournament));
+    const mine = localEntrant.lobby.universeId ?? localEntrant.universeId;
+    return ids.filter((id) => id !== mine);
+  }, [tournament, localEntrant]);
 
   const showBuilder =
     !!tournament &&
     !!localEntrant &&
     !localEntrant.eliminated &&
-    (tournament.phase === "lobby" || (inActiveFixture && tournament.phase === "between_rounds"));
+    tournament.phase !== "finished";
 
   useEffect(() => {
-    if (!localEntrant || lobbyLoaded.current) return;
+    if (!tournament?.localEntrantId || tournament.phase === "finished") return;
+    if (tournament.drawRevealed && tournament.phase === "between_rounds") return;
+    const repaired = repairOfflineTournament(tournament);
+    if (
+      repaired.phase !== tournament.phase ||
+      repaired.drawRevealed !== tournament.drawRevealed ||
+      repaired.fixtures.length !== tournament.fixtures.length
+    ) {
+      setTournament(repaired);
+      setStatus("Pick your universe and lineup below, then hit Play.");
+    }
+  }, [tournament, setTournament]);
+
+  useEffect(() => {
+    if (!localEntrant) return;
     setMyLobby(normalizeLobby(localEntrant.lobby));
     lobbyLoaded.current = true;
-  }, [localEntrant]);
+  }, [localEntrant, localEntrant?.lobby.ready, localEntrant?.lobby.updatedAt, tournament?.phase]);
 
   function saveLocalLobby(lobby: PlayerLobbyState) {
     if (!tournament || !localEntrant) return;
@@ -90,51 +105,45 @@ export default function OfflineTournamentPage() {
   }
 
   function handleCreate() {
-    const t = createTournament(format, {
+    const t = createOfflineTournament(format, {
       penaltyMode,
       playerCount: format === "round_robin" ? playerCount : undefined,
-      localEntrantId: "slot-0",
       hostName: "You",
     });
     setTournament(t);
     lobbyLoaded.current = false;
-    setStatus("Tournament created — add CPUs, build your team, ready up, then run the draw.");
-  }
-
-  function handleRunDraw() {
-    if (!tournament) return;
-    if (!allSlotsFilled(tournament) || !allEntrantsReady(tournament)) {
-      setStatus("Fill every slot and ready all entrants first.");
-      return;
-    }
-    if (hasDuplicateUniverses(tournament)) {
-      setStatus("Each entrant needs a different universe.");
-      return;
-    }
-    let next = runTournamentDraw(tournament);
-    next = beginTournamentAfterDraw(next);
-    setTournament(next);
-    setStatus("Draw complete.");
+    setStatus("Pick your universe and lineup, then hit Play.");
   }
 
   function loadFixtureIntoStore(t: TournamentState, fixtureId: string) {
     const fixture = t.fixtures.find((f) => f.id === fixtureId);
     if (!fixture) return;
+    const local =
+      t.entrants.find((e) => e.id === t.localEntrantId) ?? t.entrants[0];
+    if (!local) return;
     const home = getEntrant(t, fixture.homeEntrantId);
     const away = getEntrant(t, fixture.awayEntrantId);
     if (!home?.lobby.universeId || !away?.lobby.universeId) return;
 
+    const playerIsHome = fixture.homeEntrantId === local.id;
+    const opponent = playerIsHome ? away : home;
+    const player = local;
+
     useGameStore.setState({
-      selectedUniverseId: home.lobby.universeId,
-      formationId: home.lobby.formationId as FormationId,
-      lineup: home.lobby.lineup as LineupSlot[],
-      matchBench: home.lobby.matchBench,
-      opponentUniverseId: away.lobby.universeId,
-      opponentFormationId: away.lobby.formationId as FormationId,
-      opponentLineup: away.lobby.lineup as LineupSlot[],
-      opponentBench: away.lobby.matchBench,
+      selectedUniverseId: player.lobby.universeId,
+      formationId: player.lobby.formationId as FormationId,
+      lineup: player.lobby.lineup as LineupSlot[],
+      matchBench: player.lobby.matchBench,
+      plannedTactics: normalizeTeamTactics(player.lobby.plannedTactics),
+      opponentUniverseId: opponent.lobby.universeId,
+      opponentFormationId: opponent.lobby.formationId as FormationId,
+      opponentLineup: opponent.lobby.lineup as LineupSlot[],
+      opponentBench: opponent.lobby.matchBench,
       seasonActiveFixtureId: null,
-      seasonPlayerIsHome: true,
+      seasonPlayerIsHome: playerIsHome,
+      matchState: null,
+      pendingReveal: null,
+      revealHighlights: null,
     });
     setTournamentActiveFixture(fixtureId);
     startMatch();
@@ -143,14 +152,25 @@ export default function OfflineTournamentPage() {
 
   function handlePlayFixture() {
     if (!tournament || !activeFixture) return;
+    const blockReason = lobbyReadyBlockReason(myLobby);
+    if (blockReason) {
+      setStatus(blockReason);
+      return;
+    }
     loadFixtureIntoStore(tournament, activeFixture.id);
   }
+
+  const canPlayFixture =
+    !!tournament &&
+    tournament.phase === "between_rounds" &&
+    inActiveFixture &&
+    lobbyTeamReady(myLobby);
 
   if (!tournament) {
     return (
       <>
         <BroadcastHeader title="Tournament" backHref="/" backLabel="Home" />
-        <main className="mx-auto max-w-xl px-4 py-6">
+        <main className="mx-auto max-w-xl px-4 py-6 space-y-4">
           <div className="glass-panel space-y-3 p-4">
             <p className="broadcast-label">Offline tournament</p>
             <label className="block text-xs">
@@ -193,8 +213,8 @@ export default function OfflineTournamentPage() {
               Start tournament
             </button>
             <p className="text-xs text-slate-500">
-              Same rewards as friendlies. CPU slots fill empty places. Bracket and table stay visible
-              throughout.
+              CPU opponents are drawn automatically. Pick your team and play — abandon to start over
+              with a new draw.
             </p>
             <Link href="/multiplayer" className="btn-broadcast inline-block text-xs">
               Online tournament instead
@@ -216,33 +236,7 @@ export default function OfflineTournamentPage() {
         ) : null}
 
         <div className="glass-panel p-4">
-          <TournamentBracketView tournament={tournament} />
-        </div>
-
-        <div className="glass-panel p-4">
-          <p className="broadcast-label mb-2">Entrants</p>
-          <ul className="space-y-1 text-xs">
-            {tournament.entrants.map((e) => (
-              <li key={e.id} className="flex items-center justify-between border border-broadcast-border/50 px-2 py-1">
-                <span>
-                  {e.displayName}
-                  {e.id === localEntrant?.id ? " (you)" : ""}
-                  {e.isCpu ? " CPU" : ""}
-                </span>
-                {tournament.phase === "lobby" && !e.userId && !e.isCpu && e.id !== localEntrant?.id ? (
-                  <button
-                    type="button"
-                    className="btn-broadcast px-2 py-0.5 text-[10px]"
-                    onClick={() => setTournament(addCpuToSlot(tournament, e.slot))}
-                  >
-                    + CPU
-                  </button>
-                ) : (
-                  <span className="text-slate-500">{e.lobby.ready || e.isCpu ? "Ready" : "…"}</span>
-                )}
-              </li>
-            ))}
-          </ul>
+          <TournamentBracketView tournament={tournament} offline />
         </div>
 
         {showBuilder ? (
@@ -250,7 +244,7 @@ export default function OfflineTournamentPage() {
             <p className="broadcast-label mb-2">Your team</p>
             <MultiplayerLobbyBuilder
               lobby={myLobby}
-              takenUniverseId={takenUniverseId}
+              takenUniverseIds={takenUniverseIds}
               onChange={(next) => {
                 setMyLobby(next);
                 saveLocalLobby(next);
@@ -258,40 +252,25 @@ export default function OfflineTournamentPage() {
               onPersist={saveLocalLobby}
             />
             <p className="mt-2 text-xs text-slate-500">{lobbyProgressLabel(myLobby)}</p>
-            <button
-              type="button"
-              className="btn-broadcast-solid mt-2 text-xs"
-              disabled={myLobby.ready || !lobbyTeamReady(myLobby)}
-              onClick={() => {
-                const next = { ...myLobby, ready: true, updatedAt: new Date().toISOString() };
-                setMyLobby(next);
-                saveLocalLobby(next);
-                setStatus("You are ready.");
-              }}
-            >
-              {myLobby.ready ? "Ready ✓" : "Ready"}
-            </button>
+            {tournament.phase === "between_rounds" && inActiveFixture ? (
+              canPlayFixture ? (
+                <button
+                  type="button"
+                  className="btn-broadcast-solid mt-3 text-xs"
+                  onClick={handlePlayFixture}
+                >
+                  Play {activeFixture?.roundName}
+                </button>
+              ) : (
+                <p className="mt-3 text-xs text-amber-400">
+                  Complete your lineup to play {activeFixture?.roundName ?? "your fixture"}.
+                </p>
+              )
+            ) : null}
           </section>
         ) : null}
 
         <div className="flex flex-wrap gap-2">
-          {tournament.phase === "lobby" ? (
-            <button
-              type="button"
-              className="btn-broadcast-solid text-xs"
-              disabled={!allSlotsFilled(tournament) || !allEntrantsReady(tournament)}
-              onClick={handleRunDraw}
-            >
-              Run random draw
-            </button>
-          ) : null}
-          {tournament.phase === "between_rounds" &&
-          inActiveFixture &&
-          activeFixtureReady(tournament) ? (
-            <button type="button" className="btn-broadcast-solid text-xs" onClick={handlePlayFixture}>
-              Play {activeFixture?.roundName}
-            </button>
-          ) : null}
           {tournament.phase === "finished" ? (
             <button
               type="button"
@@ -316,6 +295,51 @@ export default function OfflineTournamentPage() {
           >
             Abandon
           </button>
+        </div>
+
+        {tournamentFinaleSummary ? (
+          <TournamentFinale
+            summary={tournamentFinaleSummary}
+            championUniverseId={
+              tournament.championId
+                ? getEntrant(tournament, tournament.championId)?.universeId
+                : null
+            }
+            newlyUnlockedSquadIds={
+              tournamentFinaleSummary.userWon ? recentSquadUnlocks : []
+            }
+          />
+        ) : null}
+
+        <div className="glass-panel p-4">
+          <p className="broadcast-label mb-2">Entrants</p>
+          <ul className="space-y-1 text-xs">
+            {tournament.entrants.map((e) => {
+              const uni = e.universeId ? getUniverse(e.universeId) : null;
+              return (
+                <li
+                  key={e.id}
+                  className="flex items-center justify-between border border-broadcast-border/50 px-2 py-1"
+                >
+                  <span>
+                    {e.displayName}
+                    {e.id === localEntrant?.id ? " (you)" : ""}
+                    {e.isCpu ? " · CPU" : ""}
+                    {uni ? ` · ${uni.name}` : ""}
+                  </span>
+                  <span className="text-slate-500">
+                    {e.isCpu
+                      ? "CPU"
+                      : e.id === localEntrant?.id
+                        ? lobbyTeamReady(e.lobby)
+                          ? "Set"
+                          : "…"
+                        : "…"}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       </main>
     </>

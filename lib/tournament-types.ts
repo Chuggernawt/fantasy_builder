@@ -26,6 +26,8 @@ export interface TournamentFixture {
   pensHome?: number;
   pensAway?: number;
   status: "pending" | "ready" | "live" | "finished";
+  /** Human vs human — dedicated friendly room for this fixture. */
+  matchRoomId?: string | null;
   winnerEntrantId?: string | null;
   /** Cup: fixture id winner advances into */
   feedsIntoFixtureId?: string;
@@ -44,6 +46,24 @@ export interface RoundRobinRow {
   points: number;
 }
 
+export interface TournamentPlayerRecord {
+  key: string;
+  entrantId: string;
+  entrantName: string;
+  universeId: string;
+  playerName: string;
+  matches: number;
+  goals: number;
+  assists: number;
+  ratingTotal: number;
+}
+
+export interface TournamentAccumulatedStats {
+  players: TournamentPlayerRecord[];
+  matchesPlayed: number;
+  totalGoals: number;
+}
+
 export interface TournamentState {
   format: TournamentFormat;
   playerCount: number;
@@ -56,8 +76,12 @@ export interface TournamentState {
   drawRevealed: boolean;
   currentRound: number;
   activeFixtureId: string | null;
+  /** All human fixtures in the current round that may be played in parallel. */
+  activeFixtureIds?: string[];
   championId: string | null;
   table: RoundRobinRow[];
+  /** Cumulative stats from completed human/simulated fixtures. */
+  stats?: TournamentAccumulatedStats | null;
   /** Local human entrant id (offline) or set per client */
   localEntrantId?: string | null;
 }

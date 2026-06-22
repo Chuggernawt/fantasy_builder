@@ -25,13 +25,16 @@ import type { MultiplayerRoom, PlayerLobbyState } from "@/lib/multiplayer-types"
 import {
   createEmptyLobby,
   lobbyProgressLabel,
+  lobbyReadyBlockReason,
   lobbyTeamReady,
   normalizeLobby,
   validateLobbyPair,
 } from "@/lib/multiplayer-lobby";
 import { applySnapshotToStore } from "@/lib/multiplayer-snapshot";
-import { clearMultiplayerSession, setMultiplayerSession } from "@/lib/multiplayer-session";
+import { clearMultiplayerSession, setMultiplayerSession, isForeignMultiplayerSession } from "@/lib/multiplayer-session";
 import { TournamentRoomContent } from "@/components/TournamentRoomContent";
+import { ChallengeLinkButton } from "@/components/ChallengeLinkButton";
+import { roomSupportsChallengeLink } from "@/lib/challenge-link";
 
 const LOBBY_SAVE_MS = 350;
 const ROOM_POLL_MS = 2500;
@@ -53,6 +56,8 @@ function MultiplayerRoomInner() {
   const [messages, setMessages] = useState<Array<{ id: string; username: string; text: string }>>([]);
   const [msgText, setMsgText] = useState("");
   const [status, setStatus] = useState<string | null>(null);
+  const [statusFlash, setStatusFlash] = useState(false);
+  const [readyWarning, setReadyWarning] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [friends, setFriends] = useState<Array<{ username: string; user_id: string }>>([]);
   const [inviteBusy, setInviteBusy] = useState<string | null>(null);
@@ -78,6 +83,12 @@ function MultiplayerRoomInner() {
   const isHost = room && userId ? room.host_user_id === userId : false;
   const canPlay = me?.role === "host" || me?.role === "away";
   const canInviteFriends = isHost && room?.status === "waiting" && !opponent;
+  const myUsername = me?.profile?.username ?? "Player";
+  const showChallengeLink =
+    !!room &&
+    !!userId &&
+    roomSupportsChallengeLink(room) &&
+    (room.room_mode === "tournament" || !opponent);
 
   useEffect(() => {
     if (!canInviteFriends) return;
@@ -149,14 +160,15 @@ function MultiplayerRoomInner() {
       setMessages(msgRows.map((m) => ({ id: m.id, username: m.username, text: m.text })));
 
       const myMember = memberRowsResolved.find((m) => m.user_id === uid);
-      if (myMember?.role && roomId) {
-        const simHost =
-          roomDataResolved.room_mode === "tournament"
-            ? roomDataResolved.host_user_id === uid
-            : myMember.role === "host";
-        setMultiplayerSession(roomId, myMember.role, {
-          simHost,
-        });
+      if (myMember?.role && roomId && !isForeignMultiplayerSession(roomId)) {
+        if (roomDataResolved.room_mode === "tournament") {
+          // HvH finals sync via child fixture room — set in enterTournamentFixtureMatch.
+          setMultiplayerSession(roomId, myMember.role, { simHost: false });
+        } else {
+          setMultiplayerSession(roomId, myMember.role, {
+            simHost: myMember.role === "host",
+          });
+        }
       }
       if (myMember && !lobbyLoaded.current) {
         const loaded = normalizeLobby(myMember.lobby);
@@ -246,9 +258,21 @@ function MultiplayerRoomInner() {
       : null;
   const canStart = isHost && startValidation?.ok === true;
 
+  function flashStatus(msg: string) {
+    setStatus(msg);
+    setStatusFlash(true);
+    window.setTimeout(() => setStatusFlash(false), 3200);
+  }
+
+  function flashReadyWarning(msg: string) {
+    setReadyWarning(msg);
+    window.setTimeout(() => setReadyWarning(null), 3200);
+  }
+
   async function handleReady() {
-    if (!lobbyTeamReady(myLobby)) {
-      setStatus("Pick a universe, full XI, and 5 subs before readying up.");
+    const blockReason = lobbyReadyBlockReason(myLobby);
+    if (blockReason) {
+      flashReadyWarning(blockReason);
       return;
     }
     if (opponentLobby.universeId && myLobby.universeId === opponentLobby.universeId) {
@@ -314,22 +338,39 @@ function MultiplayerRoomInner() {
         backHref="/multiplayer"
         backLabel="Lobby"
       />
-      <main className="mx-auto grid h-[calc(100dvh-3.25rem)] max-w-7xl grid-rows-[auto_minmax(0,1fr)] gap-3 px-2 py-2 md:px-3 lg:grid-cols-[minmax(0,1fr)_minmax(14rem,18rem)] lg:grid-rows-1 lg:gap-4">
-        {status ? (
-          <p className="border border-broadcast-border bg-black/60 px-3 py-2 text-sm text-broadcast-highlight lg:col-span-2">
+      <main className="mx-auto grid h-[calc(100dvh-3.25rem)] max-w-7xl grid-rows-[auto_minmax(0,1fr)] gap-3 px-2 py-2 md:px-3 lg:grid-cols-[minmax(0,1fr)_minmax(14rem,18rem)] lg:gap-4">
+        {status && !isTournament ? (
+          <p
+            className={`border px-3 py-2 text-sm lg:col-span-2 ${
+              statusFlash
+                ? "animate-pulse border-red-500/80 bg-red-950/50 text-red-200"
+                : "border-broadcast-border bg-black/60 text-broadcast-highlight"
+            }`}
+          >
             {status}
           </p>
         ) : null}
 
         {isTournament ? (
-          <TournamentRoomContent
+          <div className="flex min-h-0 min-w-0 flex-col overflow-hidden lg:row-span-2">
+            <TournamentRoomContent
             room={room}
             roomId={roomId}
             userId={userId}
             isRoomHost={isHost}
+            challengerUsername={myUsername}
             onRefresh={refreshRoom}
-            onStatus={setStatus}
-          />
+            onStatus={(msg) => {
+              if (!msg) {
+                setStatus(null);
+                setStatusFlash(false);
+                return;
+              }
+              setStatus(msg);
+              setStatusFlash(false);
+            }}
+            />
+          </div>
         ) : (
         <div className="flex min-h-0 flex-col gap-2 overflow-hidden">
           <div className="glass-panel shrink-0 px-3 py-2">
@@ -343,6 +384,13 @@ function MultiplayerRoomInner() {
               </span>
               {!opponent ? (
                 <span className="text-amber-400">Waiting for opponent to join...</span>
+              ) : null}
+              {showChallengeLink ? (
+                <ChallengeLinkButton
+                  roomId={roomId}
+                  challengerUsername={myUsername}
+                  className="btn-broadcast-solid text-xs"
+                />
               ) : null}
             </div>
             {opponent ? (
@@ -378,11 +426,14 @@ function MultiplayerRoomInner() {
               <button
                 type="button"
                 className="btn-broadcast-solid text-xs"
-                disabled={myReady || !lobbyTeamReady(myLobby)}
+                disabled={myReady}
                 onClick={handleReady}
               >
                 {myReady ? "Ready ✓" : "Ready"}
               </button>
+              {readyWarning ? (
+                <p className="animate-pulse text-xs text-red-300">{readyWarning}</p>
+              ) : null}
               {isHost ? (
                 <button
                   type="button"
@@ -445,6 +496,16 @@ function MultiplayerRoomInner() {
               Send
             </button>
           </div>
+
+          {showChallengeLink ? (
+            <div className="mt-4 border-t border-broadcast-border/40 pt-3">
+              <p className="broadcast-label mb-2">Challenge link</p>
+              <p className="mb-2 text-[10px] leading-snug text-slate-500">
+                Copy a link to share outside the game. Friends sign in and join this lobby automatically.
+              </p>
+              <ChallengeLinkButton roomId={roomId} challengerUsername={myUsername} />
+            </div>
+          ) : null}
 
           {canInviteFriends ? (
             <div className="mt-4 border-t border-broadcast-border/40 pt-3">

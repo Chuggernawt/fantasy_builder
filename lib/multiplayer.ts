@@ -17,6 +17,15 @@ import {
   validateLobbyPair,
 } from "./multiplayer-lobby";
 import { completeTournamentMatchIfNeeded, mergeTournamentOnJoin } from "./multiplayer-tournament";
+import {
+  mapAuthError,
+  sanitizeUsername,
+  usernameToAuthEmail,
+} from "./auth-username";
+import type { PlayerCareerStats } from "./career-stats";
+import { emptyCareerStats, normalizeCareerStats } from "./career-stats";
+import type { AccountProgress } from "./account-progress";
+import { normalizeAccountProgress } from "./account-progress";
 
 function roomCode(): string {
   return Math.random().toString(36).slice(2, 8).toUpperCase();
@@ -43,11 +52,11 @@ async function ensureAuthenticatedProfile(): Promise<void> {
   }
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) throw new Error("You must be signed in.");
-  const username = String(data.user.user_metadata?.username ?? "").trim();
+  const username = sanitizeUsername(String(data.user.user_metadata?.username ?? ""));
   if (!username) {
-    throw new Error("Profile missing. Choose a username below or sign out and sign in again.");
+    throw new Error("Profile missing. Sign out and sign in again.");
   }
-  await restoreProfile(username);
+  await ensureProfile(username);
 }
 
 function lobbyFromSnapshot(snapshot: MultiplayerSnapshot | null | undefined): PlayerLobbyState | null {
@@ -98,15 +107,11 @@ export async function prepareMultiplayerUser(): Promise<string> {
   return currentUserId();
 }
 
-function normalizeUsername(raw: string): string {
-  return raw.trim().toLowerCase();
-}
-
 export async function isUsernameAvailable(
   username: string,
   exceptUserId?: string | null
 ): Promise<boolean> {
-  const checkName = normalizeUsername(username);
+  const checkName = sanitizeUsername(username);
   if (checkName.length < 3) return false;
 
   const { data, error } = await supabase.rpc("is_username_available", {
@@ -118,7 +123,7 @@ export async function isUsernameAvailable(
     const msg = error.message.toLowerCase();
     if (msg.includes("is_username_available") || msg.includes("function")) {
       throw new Error(
-        "Username check is not configured. Run supabase/profile_auth_migration.sql in Supabase."
+        "Username check is not configured. Run supabase/persistent_accounts_migration.sql in Supabase."
       );
     }
     throw error;
@@ -142,7 +147,7 @@ function profileErrorMessage(err: unknown): string {
 
 export async function ensureProfile(username: string): Promise<void> {
   const userId = await currentUserId();
-  const cleanUsername = normalizeUsername(username);
+  const cleanUsername = sanitizeUsername(username);
   if (cleanUsername.length < 3) throw new Error("Username must be at least 3 characters.");
 
   const available = await isUsernameAvailable(cleanUsername, userId);
@@ -160,21 +165,8 @@ export async function ensureProfile(username: string): Promise<void> {
   if (error) throw new Error(profileErrorMessage(error));
 }
 
-/** Signed-in session but profile row missing (e.g. admin deleted profiles). */
-export async function restoreProfile(username: string): Promise<void> {
-  const cleanUsername = normalizeUsername(username);
-  if (cleanUsername.length < 3) {
-    throw new Error("Username must be at least 3 characters.");
-  }
-
-  await ensureProfile(cleanUsername);
-  await supabase.auth.updateUser({ data: { username: cleanUsername } });
-  markMultiplayerProfileReady();
-}
-
-export async function signInAnonymouslyWithUsername(username: string): Promise<void> {
-  const cleanUsername = normalizeUsername(username);
-  if (!cleanUsername) throw new Error("Username is required.");
+export async function signUpWithUsername(username: string, password: string): Promise<void> {
+  const cleanUsername = sanitizeUsername(username);
   if (cleanUsername.length < 3) {
     throw new Error("Username must be at least 3 characters.");
   }
@@ -183,42 +175,110 @@ export async function signInAnonymouslyWithUsername(username: string): Promise<v
     throw new Error("That username is already taken.");
   }
 
-  await signOut();
-
-  const { error } = await supabase.auth.signInAnonymously({
-    options: {
-      data: { username: cleanUsername },
-    },
+  const { data, error } = await supabase.auth.signUp({
+    email: usernameToAuthEmail(cleanUsername),
+    password,
+    options: { data: { username: cleanUsername } },
   });
-  if (error) {
-    const lower = error.message.toLowerCase();
-    if (lower.includes("anonymous") || lower.includes("provider is not enabled")) {
-      throw new Error(
-        "Anonymous sign-in is disabled in Supabase. Enable it under Authentication > Providers > Anonymous."
-      );
-    }
-    throw error;
+  if (error) throw mapAuthError(error);
+  if (!data.session) {
+    throw new Error("Could not create account. Ask the host to enable sign-ups in Supabase.");
   }
 
   try {
     await ensureProfile(cleanUsername);
     markMultiplayerProfileReady();
   } catch (err) {
-    await supabase.auth.signOut();
-    profileVerified = false;
+    await signOut();
     throw new Error(profileErrorMessage(err));
   }
 }
 
+export async function signInWithUsername(username: string, password: string): Promise<void> {
+  const cleanUsername = sanitizeUsername(username);
+  if (!cleanUsername) throw new Error("Username is required.");
+  if (!password) throw new Error("Password is required.");
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email: usernameToAuthEmail(cleanUsername),
+    password,
+  });
+  if (error) throw mapAuthError(error);
+
+  const profile = await getMyProfile();
+  if (!profile) {
+    await ensureProfile(cleanUsername);
+    await supabase.auth.updateUser({ data: { username: cleanUsername } });
+  }
+  markMultiplayerProfileReady();
+}
+
 export async function getMyProfile(): Promise<MultiplayerProfile | null> {
   const userId = await currentUserId();
+  return getProfileByUserId(userId);
+}
+
+export async function getProfileByUserId(userId: string): Promise<MultiplayerProfile | null> {
   const { data, error } = await supabase
     .from("profiles")
-    .select("user_id,username,created_at")
+    .select("user_id,username,created_at,career_stats,revealed_stats")
     .eq("user_id", userId)
     .maybeSingle();
   if (error) throw error;
   return (data as MultiplayerProfile | null) ?? null;
+}
+
+async function isFriendWith(userId: string): Promise<boolean> {
+  const me = await currentUserId();
+  const { data, error } = await supabase
+    .from("friendships")
+    .select("id")
+    .eq("status", "accepted")
+    .or(
+      `and(user_id.eq.${me},friend_user_id.eq.${userId}),and(user_id.eq.${userId},friend_user_id.eq.${me})`
+    )
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return !!data;
+}
+
+export async function getFriendCareerStats(
+  userId: string
+): Promise<{ username: string; careerStats: PlayerCareerStats }> {
+  if (!(await isFriendWith(userId))) {
+    throw new Error("You can only view stats for accepted friends.");
+  }
+  const profile = await getProfileByUserId(userId);
+  if (!profile) throw new Error("Profile not found.");
+  return {
+    username: profile.username,
+    careerStats: profile.career_stats
+      ? normalizeCareerStats(profile.career_stats)
+      : emptyCareerStats(),
+  };
+}
+
+export async function saveCareerStats(stats: PlayerCareerStats): Promise<void> {
+  const userId = await currentUserId();
+  const { error } = await supabase
+    .from("profiles")
+    .update({ career_stats: stats })
+    .eq("user_id", userId);
+  if (error) throw error;
+}
+
+export async function saveProfileProgress(progress: AccountProgress): Promise<void> {
+  const userId = await currentUserId();
+  const normalized = normalizeAccountProgress(progress);
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      career_stats: normalized.careerStats,
+      revealed_stats: normalized.revealedStats,
+    })
+    .eq("user_id", userId);
+  if (error) throw error;
 }
 
 export async function createRoom(
@@ -248,23 +308,25 @@ export async function createRoom(
   return data as MultiplayerRoom;
 }
 
-export async function joinRoomByCode(code: string): Promise<MultiplayerRoom> {
+function normalizeMultiplayerRoom(room: MultiplayerRoom): MultiplayerRoom {
+  return {
+    ...room,
+    room_mode: room.room_mode ?? "friendly",
+    tournament: room.tournament ?? null,
+  };
+}
+
+async function joinExistingRoom(room: MultiplayerRoom): Promise<MultiplayerRoom> {
   const userId = await currentUserId();
-  const { data: room, error } = await supabase
-    .from("mp_rooms")
-    .select("*")
-    .eq("code", code.trim().toUpperCase())
-    .single();
-  if (error) throw error;
+  const tourney = normalizeMultiplayerRoom(room);
 
   const { data: members, error: mError } = await supabase
     .from("mp_room_members")
     .select("room_id,user_id,role,joined_at")
-    .eq("room_id", room.id);
+    .eq("room_id", tourney.id);
   if (mError) throw mError;
   const memberRows = (members ?? []) as Array<{ user_id: string; role: MemberRole }>;
   const already = memberRows.find((m) => m.user_id === userId);
-  const tourney = room as MultiplayerRoom;
   if (!already) {
     let role: MemberRole = "spectator";
     if (tourney.room_mode !== "tournament") {
@@ -277,7 +339,7 @@ export async function joinRoomByCode(code: string): Promise<MultiplayerRoom> {
       role = filled < max ? "player" : "spectator";
     }
     const { error: insertErr } = await supabase.from("mp_room_members").insert({
-      room_id: room.id,
+      room_id: tourney.id,
       user_id: userId,
       role,
     });
@@ -289,14 +351,35 @@ export async function joinRoomByCode(code: string): Promise<MultiplayerRoom> {
         .select("username")
         .eq("user_id", userId)
         .maybeSingle();
-      await mergeTournamentOnJoin(room.id, profile?.username ?? "Player");
+      await mergeTournamentOnJoin(tourney.id, profile?.username ?? "Player");
+    }
+  } else if (tourney.room_mode === "tournament") {
+    const inTournament = tourney.tournament?.entrants.some((e) => e.userId === userId);
+    if (!inTournament) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("user_id", userId)
+        .maybeSingle();
+      await mergeTournamentOnJoin(tourney.id, profile?.username ?? "Player");
     }
   }
-  return {
-    ...tourney,
-    room_mode: tourney.room_mode ?? "friendly",
-    tournament: tourney.tournament ?? null,
-  };
+  return tourney;
+}
+
+export async function joinRoomById(roomId: string): Promise<MultiplayerRoom> {
+  const room = await getRoom(roomId);
+  return joinExistingRoom(room);
+}
+
+export async function joinRoomByCode(code: string): Promise<MultiplayerRoom> {
+  const { data: room, error } = await supabase
+    .from("mp_rooms")
+    .select("*")
+    .eq("code", code.trim().toUpperCase())
+    .single();
+  if (error) throw error;
+  return joinExistingRoom(room as MultiplayerRoom);
 }
 
 export async function joinPublicQueue(): Promise<MultiplayerRoom> {
@@ -538,7 +621,7 @@ export async function inviteFriendToRoom(roomId: string, targetUsername: string)
   const { data: target, error: targetErr } = await supabase
     .from("profiles")
     .select("user_id")
-    .ilike("username", targetUsername.trim())
+    .eq("username", targetUsername.trim())
     .maybeSingle();
   if (targetErr) throw targetErr;
   if (!target) throw new Error("Username not found.");
@@ -596,7 +679,7 @@ export async function sendFriendRequest(username: string): Promise<void> {
   const { data: target, error: targetErr } = await supabase
     .from("profiles")
     .select("user_id")
-    .ilike("username", username.trim())
+    .eq("username", username.trim())
     .maybeSingle();
   if (targetErr) throw targetErr;
   if (!target) throw new Error("Username not found.");

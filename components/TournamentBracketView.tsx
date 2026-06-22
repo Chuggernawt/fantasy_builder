@@ -8,10 +8,15 @@ import {
 } from "@/lib/tournament";
 import type { TournamentFixture, TournamentState } from "@/lib/tournament-types";
 import { tournamentFormatLabel } from "@/lib/tournament-types";
+import { TournamentKnockoutBracket, MatchCard } from "@/components/TournamentKnockoutBracket";
 
 interface TournamentBracketViewProps {
   tournament: TournamentState;
   compact?: boolean;
+  /** When true, only show the visual bracket (no duplicate fixture list). */
+  graphicOnly?: boolean;
+  /** Solo offline tournament — no host/lobby copy. */
+  offline?: boolean;
 }
 
 function phaseLabel(phase: TournamentState["phase"]): string {
@@ -74,27 +79,36 @@ function FixtureRow({
   );
 }
 
-export function TournamentBracketView({ tournament, compact }: TournamentBracketViewProps) {
+export function TournamentBracketView({ tournament, compact, graphicOnly, offline }: TournamentBracketViewProps) {
   const active = getActiveFixture(tournament);
   const rounds = [...new Set(tournament.fixtures.map((f) => f.round))].sort((a, b) => a - b);
   const champion = tournament.championId
     ? getEntrant(tournament, tournament.championId)?.displayName
     : null;
+  const isKnockout = tournament.format === "cup4" || tournament.format === "cup8";
+
+  if (graphicOnly && isKnockout) {
+    return <TournamentKnockoutBracket tournament={tournament} compact={compact} />;
+  }
 
   return (
     <div className={`space-y-3 ${compact ? "text-xs" : ""}`}>
-      <div className="flex flex-wrap items-center gap-2 text-xs">
-        <span className="broadcast-label">{tournamentFormatLabel(tournament.format)}</span>
-        <span className="text-slate-500">· {phaseLabel(tournament.phase)}</span>
-        <span className="text-slate-500">
-          · Pens: {tournament.penaltyMode === "sim" ? "Simulated" : "Interactive"}
-        </span>
-      </div>
+      {!graphicOnly ? (
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="broadcast-label">{tournamentFormatLabel(tournament.format)}</span>
+          <span className="text-slate-500">· {phaseLabel(tournament.phase)}</span>
+          <span className="text-slate-500">
+            · Pens: {tournament.penaltyMode === "sim" ? "Simulated" : "Interactive"}
+          </span>
+        </div>
+      ) : null}
 
       {tournament.drawRevealed ? (
         <div>
-          <p className="broadcast-label mb-1 text-[10px]">Draw order</p>
-          <p className="text-xs text-slate-300">
+          {!graphicOnly ? (
+            <p className="broadcast-label mb-1 text-[10px]">Draw order</p>
+          ) : null}
+          <p className={`text-slate-300 ${compact ? "text-[10px]" : "text-xs"}`}>
             {tournament.drawOrder
               .map(
                 (slot) =>
@@ -105,8 +119,36 @@ export function TournamentBracketView({ tournament, compact }: TournamentBracket
           </p>
         </div>
       ) : (
-        <p className="text-xs text-slate-500">Draw not run yet — bracket appears after the host runs the draw.</p>
+        <p className="text-xs text-slate-500">
+          {offline
+            ? "Setting up bracket…"
+            : "Draw not run yet — bracket appears after the host runs the draw."}
+        </p>
       )}
+
+      {isKnockout && tournament.drawRevealed && tournament.fixtures.length ? (
+        <div>
+          <p className="broadcast-label mb-2 text-[10px]">Bracket</p>
+          <TournamentKnockoutBracket tournament={tournament} compact={compact} offline={offline} />
+        </div>
+      ) : null}
+
+      {tournament.format === "round_robin" && tournament.drawRevealed && tournament.fixtures.length ? (
+        <div>
+          <p className="broadcast-label mb-2 text-[10px]">Fixtures</p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {tournament.fixtures.map((fixture) => (
+              <MatchCard
+                key={fixture.id}
+                tournament={tournament}
+                fixture={fixture}
+                active={active?.id === fixture.id}
+                compact={compact}
+              />
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {tournament.format === "round_robin" && tournament.table.length ? (
         <div>
@@ -136,7 +178,7 @@ export function TournamentBracketView({ tournament, compact }: TournamentBracket
         </div>
       ) : null}
 
-      {tournament.fixtures.length ? (
+      {!graphicOnly && !isKnockout && tournament.fixtures.length ? (
         <div className="space-y-3">
           {rounds.map((round) => (
             <div key={round}>

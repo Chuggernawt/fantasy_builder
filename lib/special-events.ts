@@ -4,6 +4,7 @@ import type { SpecialEffect } from "./special-effects";
 import { applySpecialEffect } from "./special-effects";
 import type { AttackContext, SpecialCastEntry } from "./special-events-types";
 import { commentaryId } from "./simulation-utils";
+import { isPlayerSentOff } from "./player-match-stats";
 
 export interface SpecialLine {
   text: string;
@@ -91,7 +92,11 @@ export function tryPhaseSpecial(
   ctx: AttackContext,
   events: CommentaryEvent[]
 ): void {
-  const cast = ctx.specialCast.filter((c) => castHasLines(c.name));
+  const cast = ctx.specialCast.filter((c) => {
+    if (!castHasLines(c.name)) return false;
+    const stats = c.team === "home" ? ctx.homePlayerStats : ctx.awayPlayerStats;
+    return !isPlayerSentOff(stats, c.name);
+  });
   if (!cast.length) return;
   if (Math.random() >= SPECIAL_PHASE_PROBABILITY) return;
 

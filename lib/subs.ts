@@ -53,7 +53,8 @@ export function cpuHalftimeSubs(
   setup: TeamSetup,
   stamina: Record<string, number>,
   revealedStats?: Record<string, StatKey[]>,
-  subsBudget?: number
+  subsBudget?: number,
+  sentOffNames?: Set<string>
 ): LineupSlot[] {
   const universe = getUniverse(setup.universeId);
   if (!universe) return setup.lineup;
@@ -69,7 +70,12 @@ export function cpuHalftimeSubs(
 
   const tiredSlots = shuffle(
     lineup
-      .filter((s) => s.playerName && s.role !== "GK")
+      .filter(
+        (s) =>
+          s.playerName &&
+          s.role !== "GK" &&
+          !(sentOffNames?.has(s.playerName) ?? false)
+      )
       .map((s) => ({
         slot: s,
         stamina: stamina[s.playerName!] ?? 100,
@@ -108,6 +114,33 @@ export function applySubstitution(
   return lineup.map((s) =>
     s.slotId === slotId ? { ...s, playerName } : s
   );
+}
+
+export function swapLineupSlots(lineup: LineupSlot[], slotA: string, slotB: string): LineupSlot[] | null {
+  const a = lineup.find((s) => s.slotId === slotA);
+  const b = lineup.find((s) => s.slotId === slotB);
+  if (!a || !b || !a.playerName || !b.playerName) return null;
+  return lineup.map((slot) => {
+    if (slot.slotId === slotA) return { ...slot, playerName: b.playerName };
+    if (slot.slotId === slotB) return { ...slot, playerName: a.playerName };
+    return slot;
+  });
+}
+
+export const POSITION_SWAP_STAMINA_COST = 5;
+
+export function applyPositionSwapStaminaPenalty(
+  stamina: Record<string, number>,
+  swappedPlayers: string[],
+  cost = POSITION_SWAP_STAMINA_COST
+): Record<string, number> {
+  const next = { ...stamina };
+  for (const name of swappedPlayers) {
+    if (name in next) {
+      next[name] = Math.max(0, next[name] - cost);
+    }
+  }
+  return next;
 }
 
 export function refreshStaminaAfterLineupChange(

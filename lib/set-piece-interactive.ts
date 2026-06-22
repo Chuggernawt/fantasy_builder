@@ -5,6 +5,8 @@ import { roleRating } from "./stats";
 import { commentaryId } from "./simulation-utils";
 import { recordAssist, recordGoal } from "./player-match-stats";
 import { stoppageClockDisplay } from "./stoppage-time";
+import { advancePenaltyShootout } from "./penalty-shootout";
+import { getHomeMatchSetup, getAwayMatchSetup } from "./player-side";
 
 export const SET_PIECE_CHOOSE_MS = 10_000;
 export const SET_PIECE_REVEAL_MS = 5_000;
@@ -65,9 +67,10 @@ export function resolvePenaltyChance(
   const keeperR = playerAbility(defUni, keeper, "gk");
   const skillEdge = (takerR - keeperR) / 200;
 
-  if (atkChoice === defChoice) return clamp01(0.1 - skillEdge);
-  if (defChoice === 2 && (atkChoice === 1 || atkChoice === 3)) return clamp01(0.8 + skillEdge);
-  if (atkChoice !== defChoice) return clamp01(0.9 + skillEdge);
+  // Tuned for ~80% conversion vs random CPU (1/3 same-zone, 2/9 keeper central, 4/9 wrong dive).
+  if (atkChoice === defChoice) return clamp01(0.5 - skillEdge);
+  if (defChoice === 2 && (atkChoice === 1 || atkChoice === 3)) return clamp01(0.92 + skillEdge);
+  if (atkChoice !== defChoice) return clamp01(0.96 + skillEdge);
   return clamp01(0.5);
 }
 
@@ -229,22 +232,26 @@ export function finalizeSetPieceReveal(state: MatchState): MatchState {
   const piece = state.interactiveSetPiece;
   if (!piece) return { ...state, status: "running", interactiveSetPiece: null };
 
-  const cupDecider = state.tournamentMeta?.cupKnockout && piece.kind === "penalty";
+  const isShootoutKick = !!piece.shootoutDecider;
   const attacking = piece.attacking;
   const score = { ...state.score };
   const commentary = [...state.commentary];
   const minute = matchEventMinute(state);
 
   if (piece.goalScored) {
-    if (attacking === "home") score.home++;
-    else score.away++;
+    if (!isShootoutKick) {
+      if (attacking === "home") score.home++;
+      else score.away++;
+    }
     const homePlayerStats = { ...state.homePlayerStats };
     const awayPlayerStats = { ...state.awayPlayerStats };
-    const atkStats = attacking === "home" ? homePlayerStats : awayPlayerStats;
-    recordGoal(atkStats, piece.taker);
-    const cornerTaker = piece.cornerTaker;
-    if (piece.kind === "corner" && cornerTaker && cornerTaker !== piece.taker) {
-      recordAssist(atkStats, cornerTaker);
+    if (!isShootoutKick) {
+      const atkStats = attacking === "home" ? homePlayerStats : awayPlayerStats;
+      recordGoal(atkStats, piece.taker);
+      const cornerTaker = piece.cornerTaker;
+      if (piece.kind === "corner" && cornerTaker && cornerTaker !== piece.taker) {
+        recordAssist(atkStats, cornerTaker);
+      }
     }
     commentary.push({
       id: commentaryId(),
@@ -255,13 +262,31 @@ export function finalizeSetPieceReveal(state: MatchState): MatchState {
       team: attacking,
       playerName: piece.taker,
       assistPlayerName:
-        piece.kind === "corner" && cornerTaker && cornerTaker !== piece.taker
-          ? cornerTaker
+        !isShootoutKick &&
+        piece.kind === "corner" &&
+        piece.cornerTaker &&
+        piece.cornerTaker !== piece.taker
+          ? piece.cornerTaker
           : undefined,
     });
+
+    if (isShootoutKick) {
+      const home = getHomeMatchSetup();
+      const away = getAwayMatchSetup();
+      if (home && away) {
+        return advancePenaltyShootout(
+          { ...state, score, commentary, homePlayerStats, awayPlayerStats },
+          home,
+          away,
+          attacking,
+          true
+        );
+      }
+    }
+
     return {
       ...state,
-      status: cupDecider ? "finished" : "running",
+      status: "running",
       score,
       commentary,
       homePlayerStats,
@@ -281,9 +306,17 @@ export function finalizeSetPieceReveal(state: MatchState): MatchState {
     });
   }
 
+  if (isShootoutKick) {
+    const home = getHomeMatchSetup();
+    const away = getAwayMatchSetup();
+    if (home && away) {
+      return advancePenaltyShootout({ ...state, score, commentary }, home, away, attacking, false);
+    }
+  }
+
   return {
     ...state,
-    status: cupDecider ? "finished" : "running",
+    status: "running",
     score,
     commentary,
     interactiveSetPiece: null,

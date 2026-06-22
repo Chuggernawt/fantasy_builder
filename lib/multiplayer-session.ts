@@ -5,6 +5,20 @@ const ROOM_KEY = "fb_mp_room_id";
 const ROLE_KEY = "fb_mp_role";
 const MATCH_SIDE_KEY = "fb_mp_match_side";
 const SIM_HOST_KEY = "fb_mp_sim_host";
+const SYNC_RESET_KEY = "fb_mp_sync_reset";
+
+export function bumpMultiplayerSyncGeneration(): void {
+  if (typeof window === "undefined") return;
+  sessionStorage.setItem(SYNC_RESET_KEY, String(Date.now()));
+}
+
+export function consumeMultiplayerSyncReset(): boolean {
+  if (typeof window === "undefined") return false;
+  const v = sessionStorage.getItem(SYNC_RESET_KEY);
+  if (!v) return false;
+  sessionStorage.removeItem(SYNC_RESET_KEY);
+  return true;
+}
 
 export interface MultiplayerSession {
   roomId: string;
@@ -83,4 +97,10 @@ export function isMultiplayerClient(): boolean {
 
 export function resolveRoomId(queryRoomId: string | null): string | null {
   return queryRoomId || getMultiplayerSession()?.roomId || null;
+}
+
+/** True when the client is already in a child fixture room — don't overwrite from hub polls. */
+export function isForeignMultiplayerSession(hubRoomId: string): boolean {
+  const existing = getMultiplayerSession();
+  return !!existing?.roomId && existing.roomId !== hubRoomId;
 }

@@ -1,14 +1,20 @@
-import type { MatchState } from "./types";
+import type { MatchState, TeamTactics } from "./types";
 
 export type RoomVisibility = "public" | "private";
 export type RoomMode = "friendly" | "tournament";
 export type RoomStatus = "waiting" | "draft" | "live" | "finished";
 export type MemberRole = "host" | "away" | "spectator" | "player";
 
+import type { PlayerCareerStats } from "./career-stats";
+import type { StatKey } from "./types";
+import type { AccountProgress } from "./account-progress";
+
 export interface MultiplayerProfile {
   user_id: string;
   username: string;
   created_at: string;
+  career_stats?: PlayerCareerStats | null;
+  revealed_stats?: Record<string, StatKey[]> | null;
 }
 
 import type { PenaltyMode, TournamentFormat, TournamentState } from "./tournament-types";
@@ -38,6 +44,7 @@ export interface PlayerLobbyState {
   formationId: string;
   lineup: Array<{ slotId: string; role: string; playerName: string | null }>;
   matchBench: string[];
+  plannedTactics?: TeamTactics;
   ready: boolean;
   updatedAt: string;
 }
@@ -73,7 +80,7 @@ export interface MultiplayerSnapshot {
   mp?: MpMatchMeta | null;
 }
 
-export type MpPauseKind = "subs" | "halftime";
+export type MpPauseKind = "subs" | "halftime" | "extra_time";
 
 export interface MpPauseState {
   kind: MpPauseKind;
@@ -84,10 +91,12 @@ export interface MpPauseState {
   pendingHomeSubsMade?: number;
   pendingAwayLineup?: Array<{ slotId: string; role: string; playerName: string | null }> | null;
   pendingAwaySubsMade?: number;
-  pendingHomeTactic?: string | null;
+  pendingHomeTactics?: TeamTactics | null;
   pendingHomeCaptain?: string | null;
-  pendingAwayTactic?: string | null;
+  pendingAwayTactics?: TeamTactics | null;
   pendingAwayCaptain?: string | null;
+  pendingHomeExtraTime?: string | null;
+  pendingAwayExtraTime?: string | null;
 }
 
 export interface MpRematchState {
@@ -101,19 +110,26 @@ export interface MpTournamentFixtureMeta {
   penaltyMode: PenaltyMode;
   homeUserId: string | null;
   awayUserId: string | null;
+  /** Human vs CPU — played locally without locking the shared room. */
+  localCpuMatch?: boolean;
 }
 
 export interface MpMatchMeta {
   pause: MpPauseState | null;
   rematch: MpRematchState;
+  /** Child friendly room reports results back to the tournament hub. */
+  parentTournamentRoomId?: string | null;
+  /** Shared HvH fixture room — snapshots sync here, not the tournament hub. */
+  fixtureRoomId?: string | null;
   tournamentFixture?: MpTournamentFixtureMeta | null;
 }
 
 export type MpPlayerAction =
   | { type: "request_subs" }
   | { type: "subs_ready"; lineup: Array<{ slotId: string; role: string; playerName: string | null }>; subsMade: number }
-  | { type: "halftime_ready"; lineup: Array<{ slotId: string; role: string; playerName: string | null }>; subsMade: number; tactic?: string | null; captain?: string | null }
-  | { type: "set_tactic"; tactic: string }
+  | { type: "halftime_ready"; lineup: Array<{ slotId: string; role: string; playerName: string | null }>; subsMade: number; tactic?: TeamTactics | null; captain?: string | null }
+  | { type: "extra_time_ready"; approach: string }
+  | { type: "set_tactic"; tactic: TeamTactics }
   | { type: "set_captain"; playerName: string }
   | { type: "set_piece_pick"; choice: number; role: "attack" | "defend" }
   | { type: "rematch" };

@@ -32,6 +32,24 @@ export function isPlayerFullyRevealed(
   return ALL_STAT_KEYS.every((k) => set.has(k));
 }
 
+/** Players in the squad who still have hidden stats. */
+export function playersNotFullyRevealed(
+  names: string[],
+  revealed: Record<string, StatKey[]>
+): string[] {
+  return names.filter((name) => !isPlayerFullyRevealed(revealed, name));
+}
+
+/** Pick a used player who still has at least one hidden stat. */
+export function pickPlayerForRandomStatReveal(
+  names: string[],
+  revealed: Record<string, StatKey[]>
+): string | null {
+  const eligible = playersNotFullyRevealed(names, revealed);
+  if (!eligible.length) return null;
+  return eligible[Math.floor(Math.random() * eligible.length)];
+}
+
 export function revealAllForPlayer(
   revealed: Record<string, StatKey[]>,
   playerName: string

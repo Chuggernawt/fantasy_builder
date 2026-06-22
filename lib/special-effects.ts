@@ -142,7 +142,7 @@ export function applyXgModifiers(
   if (ctx.attackPenalty?.team === attacking) result -= ctx.attackPenalty.xg;
   ctx.attackBonus = null;
   ctx.attackPenalty = null;
-  return Math.max(0.04, Math.min(0.55, result));
+  return Math.max(0.04, Math.min(0.38, result));
 }
 
 export function consumeAttackModifiers(

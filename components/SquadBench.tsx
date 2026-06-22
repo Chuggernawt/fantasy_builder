@@ -2,7 +2,8 @@
 
 import type { DragEvent } from "react";
 import type { Player, Role } from "@/lib/types";
-import { getRoleKeyStats, STAT_SHORT } from "@/lib/stats";
+import { ALL_STAT_KEYS } from "@/lib/reveal";
+import { STAT_SHORT } from "@/lib/stats";
 import { writeDragData } from "@/lib/pitch-dnd";
 import { useGameStore } from "@/store/game-store";
 
@@ -30,7 +31,6 @@ export function SquadBench({
   const isPlayerFullyRevealed = useGameStore((s) => s.isPlayerFullyRevealed);
   const isStatRevealed = useGameStore((s) => s.isStatRevealed);
 
-  const keyStats = role ? getRoleKeyStats(role) : null;
   const sorted = [...players].sort((a, b) => a.name.localeCompare(b.name));
 
   return (
@@ -83,15 +83,13 @@ export function SquadBench({
                       <p className="truncate font-display text-[10px] font-semibold uppercase tracking-wide">
                         {p.name}
                       </p>
-                      {keyStats ? (
-                        <div className="flex flex-wrap gap-x-1.5">
-                          {keyStats.map((key) => (
-                            <span key={key} className="font-mono text-[9px] text-broadcast-highlight">
-                              {STAT_SHORT[key]} {isStatRevealed(p.name, key) ? p.stats[key] : "?"}
-                            </span>
-                          ))}
-                        </div>
-                      ) : null}
+                      <div className="grid grid-cols-3 gap-x-1 gap-y-0.5">
+                        {ALL_STAT_KEYS.map((key) => (
+                          <span key={key} className="font-mono text-[8px] text-broadcast-highlight">
+                            {STAT_SHORT[key]} {isStatRevealed(p.name, key) ? p.stats[key] : "?"}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   </button>
                 </li>

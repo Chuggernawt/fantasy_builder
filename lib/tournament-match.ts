@@ -1,6 +1,22 @@
 import type { MatchState } from "./types";
-import type { TournamentState } from "./tournament-types";
+import type { MpTournamentFixtureMeta } from "./multiplayer-types";
+import type { PenaltyMode, TournamentState } from "./tournament-types";
 import { getEntrant } from "./tournament";
+import { matchDecidedWinner } from "./penalty-shootout";
+
+/** Cup knockout decider metadata for an active tournament fixture match. */
+export function resolveCupKnockoutMeta(input: {
+  tournamentActiveFixtureId: string | null;
+  tournament: TournamentState | null;
+  mpFixture?: MpTournamentFixtureMeta | null;
+}): MatchState["tournamentMeta"] | undefined {
+  if (!input.tournamentActiveFixtureId) return undefined;
+  const format = input.tournament?.format ?? input.mpFixture?.format;
+  if (!format || format === "round_robin") return undefined;
+  const penaltyMode: PenaltyMode =
+    input.tournament?.penaltyMode ?? input.mpFixture?.penaltyMode ?? "interactive";
+  return { cupKnockout: true, penaltyMode };
+}
 
 export function resolveTournamentWinnerFromMatch(
   t: TournamentState,
@@ -18,25 +34,26 @@ export function resolveTournamentWinnerFromMatch(
   const homeScore = matchState.score.home;
   const awayScore = matchState.score.away;
 
+  const shootout = matchState.penaltyShootout;
+  if (shootout && matchState.status === "finished") {
+    const winner = matchDecidedWinner(matchState);
+    if (winner === "draw") return null;
+    const homeWon = winner === "home";
+    return {
+      homeScore,
+      awayScore,
+      pensHome: shootout.home,
+      pensAway: shootout.away,
+      winnerEntrantId: homeWon ? fixture.homeEntrantId : fixture.awayEntrantId,
+    };
+  }
+
   if (homeScore !== awayScore) {
     return {
       homeScore,
       awayScore,
       winnerEntrantId:
         homeScore > awayScore ? fixture.homeEntrantId : fixture.awayEntrantId,
-    };
-  }
-
-  // Draw after full match — check interactive set piece result or sim
-  const sp = matchState.interactiveSetPiece;
-  if (sp?.kind === "penalty" && sp.goalScored != null) {
-    const homeWon = sp.attacking === "home" ? sp.goalScored : !sp.goalScored;
-    return {
-      homeScore,
-      awayScore,
-      pensHome: homeWon ? 1 : 0,
-      pensAway: homeWon ? 0 : 1,
-      winnerEntrantId: homeWon ? fixture.homeEntrantId : fixture.awayEntrantId,
     };
   }
 
@@ -53,16 +70,7 @@ export function resolveTournamentWinnerFromMatch(
     };
   }
 
-  // Interactive pens expected but not resolved — default home shootout sim
-  const ph = 4;
-  const pa = 3;
-  return {
-    homeScore,
-    awayScore,
-    pensHome: ph,
-    pensAway: pa,
-    winnerEntrantId: fixture.homeEntrantId,
-  };
+  return null;
 }
 
 export function tournamentEntrantName(t: TournamentState, entrantId: string): string {

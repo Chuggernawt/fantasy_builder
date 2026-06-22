@@ -87,7 +87,25 @@ export type CommentaryType =
   | "substitution"
   | "stoppage";
 
-export type TacticalStyle = "press" | "sit_deep" | "direct" | "through_middle";
+export type BuildUpStyle = "short" | "patient" | "balanced" | "direct" | "counter";
+export type ChanceCreationStyle =
+  | "left_overload"
+  | "central"
+  | "right_overload"
+  | "wide_cross"
+  | "mixed";
+export type DefensiveShapeStyle =
+  | "high_press"
+  | "mid_block"
+  | "low_block"
+  | "man_oriented"
+  | "zonal_compact";
+
+export interface TeamTactics {
+  buildUp: BuildUpStyle;
+  chanceCreation: ChanceCreationStyle;
+  defensiveShape: DefensiveShapeStyle;
+}
 
 /** One-time extra-time approach (stoppage time). */
 export type ExtraTimeApproach =
@@ -164,6 +182,20 @@ export interface InteractiveSetPiece {
   defenderPick?: number;
   goalScored?: boolean;
   resultText?: string;
+  /** Cup knockout shootout kick — not an in-match penalty. */
+  shootoutDecider?: boolean;
+}
+
+export interface PenaltyShootoutState {
+  home: number;
+  away: number;
+  homeTaken: number;
+  awayTaken: number;
+  /** Side taking the current / next kick. */
+  nextShooter: "home" | "away";
+  /** Per-kick results in order (for the shootout graphic). */
+  homeKicks?: ("goal" | "miss")[];
+  awayKicks?: ("goal" | "miss")[];
 }
 
 export function emptySetPieceBudget(): SetPieceBudget {
@@ -226,9 +258,9 @@ export interface MatchState {
   awayStats: TeamMatchStats;
   homePlayerStats: Record<string, PlayerMatchStats>;
   awayPlayerStats: Record<string, PlayerMatchStats>;
-  homeTactic: TacticalStyle | null;
-  awayTactic: TacticalStyle | null;
-  /** Half number when home tactic was last set (0 = unset). */
+  homeTactics: TeamTactics | null;
+  awayTactics: TeamTactics | null;
+  /** 0 = pre-match default · 1 = locked in 1st half · 2 = locked/overridden for 2nd half */
   homeTacticHalf: number;
   awayTacticHalf: number;
   homeCaptain: string | null;
@@ -241,6 +273,8 @@ export interface MatchState {
   pendingSetPiece: PendingSetPiece | null;
   setPieceBudget: SetPieceBudget;
   interactiveSetPiece: InteractiveSetPiece | null;
+  /** Cup knockout penalty shootout after a draw at full time. */
+  penaltyShootout?: PenaltyShootoutState | null;
   momentum: number;
   /** Last in-game minute a player had a special event (soft anti-repeat). */
   specialCooldown: Record<string, number>;
@@ -269,6 +303,8 @@ export interface MatchState {
   inStoppageTime: boolean;
   homeExtraTimeApproach: ExtraTimeApproach | null;
   awayExtraTimeApproach: ExtraTimeApproach | null;
+  /** Offline SP: which side the human controls (frozen at kickoff). */
+  localPlayerSide?: "home" | "away";
 }
 
 export interface MatchSummary {
@@ -303,4 +339,6 @@ export interface TeamSetup {
   lineup: LineupSlot[];
   /** Up to 5 named subs — only these players may enter from the bench. */
   bench: string[];
+  /** Maps player name → original universe id (season transfers). */
+  playerOrigins?: Record<string, string>;
 }

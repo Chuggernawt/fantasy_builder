@@ -1,11 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import type { LineupSlot, MatchState, TacticalStyle } from "@/lib/types";
+import type { LineupSlot, MatchState, TeamTactics } from "@/lib/types";
 import { MAX_MATCH_SUBS } from "@/lib/constants";
 import { getUniverseTrait } from "@/lib/universe-traits";
-import { TACTICAL_OPTIONS } from "@/lib/match-influence";
-import { TacticPicker } from "@/components/TacticPicker";
+import { canPickTacticsInMatch, formatTacticsBrief } from "@/lib/tactics";
+import {
+  TacticAxisRows,
+  TacticConfirmButton,
+  TacticsSheet,
+  useTacticDraft,
+} from "@/components/TacticPicker";
 import { CaptainPicker } from "@/components/CaptainPicker";
 import type { MatchSide } from "@/lib/multiplayer-perspective";
 
@@ -18,7 +23,7 @@ interface MatchInfluenceBarProps {
   lineup: LineupSlot[];
   accent: string;
   onOpenSubs: () => void;
-  onSetTactic: (tactic: TacticalStyle) => void;
+  onSetTactic: (tactics: TeamTactics) => void;
   onCallCaptain: (name: string) => void;
 }
 
@@ -57,6 +62,49 @@ function ActionButton({
   );
 }
 
+function TacticsSheetContent({
+  half,
+  tactics,
+  tacticLocked,
+  onClose,
+  onSetTactic,
+}: {
+  half: 1 | 2;
+  tactics: TeamTactics | null;
+  tacticLocked: boolean;
+  onClose: () => void;
+  onSetTactic: (tactics: TeamTactics) => void;
+}) {
+  const { draft, updateDraft } = useTacticDraft(tactics);
+
+  return (
+    <TacticsSheet
+      open
+      title="Match tactics"
+      description={
+        half === 1
+          ? "Your plan carries into the 2nd half unless you change it at half time or in the 2nd half."
+          : "Set a new plan for the rest of the match."
+      }
+      onClose={onClose}
+      footer={
+        <TacticConfirmButton
+          draft={draft}
+          value={tactics}
+          disabled={tacticLocked}
+          confirmLabel="Lock in tactics"
+          onSelect={(t) => {
+            onSetTactic(t);
+            onClose();
+          }}
+        />
+      }
+    >
+      <TacticAxisRows draft={draft} disabled={tacticLocked} onUpdate={updateDraft} />
+    </TacticsSheet>
+  );
+}
+
 export function MatchInfluenceBar({
   matchState,
   side,
@@ -70,103 +118,108 @@ export function MatchInfluenceBar({
   const [panel, setPanel] = useState<ActivePanel>(null);
 
   const subsUsed = side === "home" ? matchState.homeSubsUsed : matchState.awaySubsUsed;
-  const tacticHalf = side === "home" ? matchState.homeTacticHalf : matchState.awayTacticHalf;
+  const tacticRevision = side === "home" ? matchState.homeTacticHalf : matchState.awayTacticHalf;
   const captainHalf = side === "home" ? matchState.homeCaptainHalf : matchState.awayCaptainHalf;
-  const tactic = side === "home" ? matchState.homeTactic : matchState.awayTactic;
+  const tactics = side === "home" ? matchState.homeTactics : matchState.awayTactics;
   const captain = side === "home" ? matchState.homeCaptain : matchState.awayCaptain;
 
   const subsLeft = MAX_MATCH_SUBS - subsUsed;
-  const tacticSet = tacticHalf === matchState.half;
+  const canPickTactic = canPickTacticsInMatch(tacticRevision, matchState.half);
+  const tacticLocked = !canPickTactic;
   const captainSet = captainHalf === matchState.half;
   const trait = getUniverseTrait(universeId);
 
-  const tacticLabel =
-    tacticSet && tactic ? TACTICAL_OPTIONS.find((o) => o.id === tactic)?.label : null;
+  const tacticLabel = tactics ? formatTacticsBrief(tactics) : null;
 
   if (matchState.status !== "running") return null;
 
   return (
-    <div className="glass-panel mb-3 shrink-0 p-3 md:p-4">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <p className="broadcast-label">Your calls</p>
-        <span className="text-xs text-slate-400">
-          Universe trait: <span className="text-slate-200">{trait.label}</span>
-          {tacticLabel ? (
-            <>
-              {" "}
-              · Tactic: <span className="text-broadcast-highlight">{tacticLabel}</span>
-            </>
-          ) : null}
-          {captainSet && captain ? (
-            <>
-              {" "}
-              · Captain: <span className="text-broadcast-highlight">{captain}</span>
-            </>
-          ) : null}
-        </span>
-      </div>
-
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <ActionButton
-          label="Substitutions"
-          sublabel={subsLeft > 0 ? `${subsLeft} of ${MAX_MATCH_SUBS} left — pauses match` : "All subs used"}
-          disabled={subsLeft <= 0}
-          accent={accent}
-          onClick={() => {
-            setPanel(null);
-            onOpenSubs();
-          }}
-        />
-        <ActionButton
-          label="Set Tactic"
-          sublabel={tacticSet ? "Locked this half" : "Once per half — tap to choose"}
-          disabled={tacticSet}
-          active={panel === "tactic"}
-          accent={accent}
-          onClick={() => setPanel((p) => (p === "tactic" ? null : "tactic"))}
-        />
-        <ActionButton
-          label="Captain's Call"
-          sublabel={captainSet ? `${captain} leading` : "Once per half — pick a leader"}
-          disabled={captainSet}
-          active={panel === "captain"}
-          accent={accent}
-          onClick={() => setPanel((p) => (p === "captain" ? null : "captain"))}
-        />
-      </div>
-
-      {panel === "tactic" && !tacticSet ? (
-        <div className="mt-4 border-t border-broadcast-border pt-4">
-          <p className="mb-3 text-sm font-semibold text-slate-200">Choose your tactic for this half</p>
-          <TacticPicker
-            prominent
-            value={tactic}
-            disabled={tacticSet}
-            onSelect={(t) => {
-              onSetTactic(t);
-              setPanel(null);
-            }}
-          />
+    <>
+      <div className="glass-panel mb-3 shrink-0 p-3 md:p-4">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <p className="broadcast-label">Your calls</p>
+          <span className="max-w-full text-xs leading-relaxed text-slate-400">
+            Universe trait: <span className="text-slate-200">{trait.label}</span>
+            {tacticLabel ? (
+              <>
+                {" "}
+                · Tactics: <span className="text-broadcast-highlight">{tacticLabel}</span>
+              </>
+            ) : null}
+            {captainSet && captain ? (
+              <>
+                {" "}
+                · Captain: <span className="text-broadcast-highlight">{captain}</span>
+              </>
+            ) : null}
+          </span>
         </div>
-      ) : null}
 
-      {panel === "captain" && !captainSet ? (
-        <div className="mt-4 border-t border-broadcast-border pt-4">
-          <p className="mb-3 text-sm font-semibold text-slate-200">Who takes the armband?</p>
-          <CaptainPicker
-            prominent
-            universeId={universeId}
-            lineup={lineup}
-            value={captain}
-            disabled={captainSet}
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <ActionButton
+            label="Substitutions"
+            sublabel={subsLeft > 0 ? `${subsLeft} of ${MAX_MATCH_SUBS} left — pauses match` : "All subs used"}
+            disabled={subsLeft <= 0}
             accent={accent}
-            onSelect={(name) => {
-              onCallCaptain(name);
+            onClick={() => {
               setPanel(null);
+              onOpenSubs();
             }}
           />
+          <ActionButton
+            label="Set Tactics"
+          sublabel={
+            tacticLocked
+              ? matchState.half === 1
+                ? "Locked for 1st half"
+                : "Locked for 2nd half"
+              : matchState.half === 1
+                ? "Once in 1st half — carries to 2nd"
+                : "Once in 2nd half"
+          }
+            disabled={tacticLocked}
+            active={panel === "tactic"}
+            accent={accent}
+            onClick={() => setPanel((p) => (p === "tactic" ? null : "tactic"))}
+          />
+          <ActionButton
+            label="Captain's Call"
+            sublabel={captainSet ? `${captain} leading` : "Once per half — pick a leader"}
+            disabled={captainSet}
+            active={panel === "captain"}
+            accent={accent}
+            onClick={() => setPanel((p) => (p === "captain" ? null : "captain"))}
+          />
         </div>
+
+        {panel === "captain" && !captainSet ? (
+          <div className="mt-4 max-h-[min(50dvh,24rem)] overflow-y-auto overscroll-contain border-t border-broadcast-border pt-4">
+            <p className="mb-3 text-sm font-semibold text-slate-200">Who takes the armband?</p>
+            <CaptainPicker
+              prominent
+              universeId={universeId}
+              lineup={lineup}
+              value={captain}
+              disabled={captainSet}
+              accent={accent}
+              onSelect={(name) => {
+                onCallCaptain(name);
+                setPanel(null);
+              }}
+            />
+          </div>
+        ) : null}
+      </div>
+
+      {panel === "tactic" && canPickTactic ? (
+        <TacticsSheetContent
+          half={matchState.half}
+          tactics={tactics}
+          tacticLocked={tacticLocked}
+          onClose={() => setPanel(null)}
+          onSetTactic={onSetTactic}
+        />
       ) : null}
-    </div>
+    </>
   );
 }

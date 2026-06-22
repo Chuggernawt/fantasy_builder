@@ -106,8 +106,90 @@ export function createTournament(
     activeFixtureId: null,
     championId: null,
     table: [],
+    stats: null,
     localEntrantId: opts.localEntrantId ?? entrants[0]?.id ?? null,
   };
+}
+
+/** Offline solo tournament — CPUs fill every other slot, draw runs immediately. */
+export function createOfflineTournament(
+  format: TournamentFormat,
+  opts: {
+    penaltyMode: PenaltyMode;
+    playerCount?: number;
+    hostName?: string;
+  }
+): TournamentState {
+  const localEntrantId = "slot-0";
+  let t = createTournament(format, {
+    penaltyMode: opts.penaltyMode,
+    playerCount: format === "round_robin" ? opts.playerCount : undefined,
+    localEntrantId,
+    hostName: opts.hostName ?? "You",
+  });
+
+  for (let slot = 1; slot < t.playerCount; slot++) {
+    t = addCpuToSlot(t, slot);
+  }
+
+  t = {
+    ...t,
+    entrants: t.entrants.map((e) =>
+      e.id === localEntrantId
+        ? {
+            ...e,
+            lobby: { ...normalizeLobby(e.lobby), ready: false, updatedAt: new Date().toISOString() },
+          }
+        : e
+    ),
+  };
+
+  t = runTournamentDraw(t);
+  t = beginTournamentAfterDraw(t);
+  return t;
+}
+
+export function isOfflineTournament(t: TournamentState): boolean {
+  return !!t.localEntrantId;
+}
+
+export function isLocalTournamentChampion(t: TournamentState): boolean {
+  if (!t.championId) return false;
+  const localId = t.localEntrantId ?? "slot-0";
+  return t.championId === localId;
+}
+
+/** Recover offline tournaments stuck in lobby (e.g. from an older client build). */
+export function repairOfflineTournament(t: TournamentState): TournamentState {
+  let next = t.localEntrantId ? t : { ...t, localEntrantId: "slot-0" };
+  if (next.phase === "finished") return next;
+
+  for (const e of next.entrants) {
+    if (!e.isCpu && !e.userId && e.id !== next.localEntrantId) {
+      next = addCpuToSlot(next, e.slot);
+    }
+  }
+
+  if (!next.drawRevealed && allSlotsFilled(next)) {
+    next = {
+      ...next,
+      entrants: next.entrants.map((e) =>
+        e.id === next.localEntrantId
+          ? {
+              ...e,
+              lobby: { ...normalizeLobby(e.lobby), ready: false, updatedAt: new Date().toISOString() },
+            }
+          : e
+      ),
+    };
+    next = runTournamentDraw(next);
+  }
+
+  if (next.drawRevealed && next.phase !== "between_rounds" && next.phase !== "finished") {
+    next = beginTournamentAfterDraw(next);
+  }
+
+  return next;
 }
 
 export function getEntrant(t: TournamentState, id: string): TournamentEntrant | undefined {
@@ -118,14 +200,16 @@ export function usedUniverses(t: TournamentState): Set<string> {
   return new Set(t.entrants.map((e) => e.universeId).filter((id): id is string => !!id));
 }
 
-export function addCpuToSlot(t: TournamentState, slot: number): TournamentState {
+export function addCpuToSlot(t: TournamentState, slot: number, universeId?: string): TournamentState {
   if (t.phase !== "lobby") return t;
   const idx = t.entrants.findIndex((e) => e.slot === slot);
   if (idx < 0) return t;
   const e = t.entrants[idx];
   if (e.userId || e.isCpu) return t;
   const used = usedUniverses(t);
-  const uniId = pickCpuUniverse(used);
+  let uniId = universeId ?? null;
+  if (uniId && used.has(uniId)) return t;
+  if (!uniId) uniId = pickCpuUniverse(used);
   const uni = getUniverse(uniId);
   const next = [...t.entrants];
   next[idx] = createTournamentEntrant(slot, {
@@ -173,12 +257,50 @@ export function updateEntrantLobby(
   return { ...t, entrants: next };
 }
 
+export function removeCpuFromSlot(t: TournamentState, slot: number): TournamentState {
+  if (t.phase !== "lobby") return t;
+  const idx = t.entrants.findIndex((e) => e.slot === slot);
+  if (idx < 0) return t;
+  const e = t.entrants[idx];
+  if (!e.isCpu) return t;
+  const next = [...t.entrants];
+  next[idx] = createTournamentEntrant(slot, {
+    isCpu: false,
+    displayName: `Open slot ${slot + 1}`,
+  });
+  return { ...t, entrants: next };
+}
+
+export function removeEntrantFromSlot(t: TournamentState, slot: number): TournamentState {
+  if (t.phase !== "lobby") return t;
+  if (slot === 0) return t;
+  const idx = t.entrants.findIndex((e) => e.slot === slot);
+  if (idx < 0) return t;
+  const e = t.entrants[idx];
+  if (e.id === t.localEntrantId) return t;
+  if (e.isCpu) return removeCpuFromSlot(t, slot);
+  if (e.userId) {
+    const next = [...t.entrants];
+    next[idx] = createTournamentEntrant(slot, { displayName: `Open slot ${slot + 1}` });
+    return { ...t, entrants: next };
+  }
+  return t;
+}
+
+export function entrantSlotFilled(t: TournamentState, e: TournamentEntrant): boolean {
+  return !!e.userId || e.isCpu || e.id === t.localEntrantId;
+}
+
 export function allSlotsFilled(t: TournamentState): boolean {
-  return t.entrants.every((e) => e.userId || e.isCpu);
+  return t.entrants.every((e) => entrantSlotFilled(t, e));
 }
 
 export function allEntrantsReady(t: TournamentState): boolean {
-  return t.entrants.every((e) => e.isCpu || (lobbyTeamReady(e.lobby) && e.lobby.ready));
+  return t.entrants.every((e) => {
+    if (!entrantSlotFilled(t, e)) return false;
+    if (e.isCpu) return true;
+    return lobbyTeamReady(e.lobby) && e.lobby.ready;
+  });
 }
 
 export function hasDuplicateUniverses(t: TournamentState): boolean {
@@ -319,10 +441,53 @@ function initRoundRobinTable(entrants: TournamentEntrant[]): RoundRobinRow[] {
   }));
 }
 
+function buildSmartDrawOrder(t: TournamentState): number[] {
+  const humans = shuffle(t.entrants.filter((e) => !e.isCpu).map((e) => e.slot));
+  const cpus = shuffle(t.entrants.filter((e) => e.isCpu).map((e) => e.slot));
+
+  if (t.format === "cup4" && humans.length === 2 && cpus.length === 2) {
+    return [humans[0], humans[1], cpus[0], cpus[1]];
+  }
+
+  if (t.format === "cup8" && humans.length >= 1 && cpus.length >= 1) {
+    const order: number[] = new Array(8);
+    const qfPairs: [number, number][] = [
+      [0, 7],
+      [3, 4],
+      [1, 6],
+      [2, 5],
+    ];
+    const humanQueue = [...humans];
+    const cpuQueue = [...cpus];
+    const rest: number[] = [];
+
+    for (const [a, b] of qfPairs) {
+      if (humanQueue.length && cpuQueue.length) {
+        order[a] = humanQueue.shift()!;
+        order[b] = cpuQueue.shift()!;
+      } else if (humanQueue.length >= 2) {
+        order[a] = humanQueue.shift()!;
+        order[b] = humanQueue.shift()!;
+      } else if (cpuQueue.length >= 2) {
+        order[a] = cpuQueue.shift()!;
+        order[b] = cpuQueue.shift()!;
+      } else {
+        while (humanQueue.length) rest.push(humanQueue.shift()!);
+        while (cpuQueue.length) rest.push(cpuQueue.shift()!);
+        order[a] = rest.shift()!;
+        order[b] = rest.shift()!;
+      }
+    }
+    return order;
+  }
+
+  return shuffle(t.entrants.map((e) => e.slot));
+}
+
 export function runTournamentDraw(t: TournamentState): TournamentState {
   if (t.phase !== "lobby" || !allSlotsFilled(t)) return t;
 
-  const drawOrder = shuffle(t.entrants.map((e) => e.slot));
+  const drawOrder = buildSmartDrawOrder(t);
   const ordered = drawOrder.map((slot) => t.entrants.find((e) => e.slot === slot)!);
 
   let fixtures: TournamentFixture[] = [];
@@ -349,10 +514,7 @@ export function runTournamentDraw(t: TournamentState): TournamentState {
 
 export function beginTournamentAfterDraw(t: TournamentState): TournamentState {
   if (!t.drawRevealed || t.phase !== "draw") return t;
-  let next = { ...t, phase: "round" as TournamentPhase };
-  next = simAllCpuFixturesInRound(next);
-  next = activateNextFixture(next);
-  return next;
+  return activateRoundFixtures({ ...t, phase: "round" }, { preserveReady: true });
 }
 
 function entrantIsCpu(t: TournamentState, id: string): boolean {
@@ -479,19 +641,18 @@ export function applyFixtureResult(
       const sorted = [...table].sort((a, b) => b.points - a.points || b.goalsFor - b.goalsAgainst - (a.goalsFor - a.goalsAgainst));
       next = { ...next, phase: "finished", championId: sorted[0]?.entrantId ?? null };
     } else {
-      next = activateNextFixture(next);
+      next = activateRoundFixtures(next);
     }
   } else {
     const final = fixtures.find((f) => f.roundName === "Final");
     if (final?.status === "finished" && final.winnerEntrantId) {
       next = { ...next, phase: "finished", championId: final.winnerEntrantId };
     } else {
-      next = simAllCpuFixturesInRound(next);
-      next = activateNextFixture(next);
+      next = activateRoundFixtures(next);
     }
   }
 
-  return resetReadyForActiveFixture(next);
+  return next;
 }
 
 function updateRoundRobinTable(
@@ -556,50 +717,192 @@ function pendingFixtures(t: TournamentState): TournamentFixture[] {
   );
 }
 
-export function activateNextFixture(t: TournamentState): TournamentState {
+export function activateRoundFixtures(
+  t: TournamentState,
+  opts?: { preserveReady?: boolean }
+): TournamentState {
   if (t.phase === "finished") return t;
-  const pending = pendingFixtures(t);
-  const humanPending = pending.find((f) => fixtureHasHuman(t, f));
-  const nextFixture = humanPending ?? pending[0];
-  if (!nextFixture) {
-    return { ...t, activeFixtureId: null, phase: t.phase === "round" ? "between_rounds" : t.phase };
+  let next = simAllCpuFixturesInRound(t);
+
+  const liveFixtures = next.fixtures.filter((f) => f.status === "live");
+  if (liveFixtures.length) {
+    const ids = liveFixtures.map((f) => f.id);
+    return {
+      ...next,
+      activeFixtureIds: ids,
+      activeFixtureId: ids[0],
+      phase: "between_rounds",
+      currentRound: liveFixtures[0].round,
+    };
+  }
+
+  const pending = pendingFixtures(next);
+  if (!pending.length) {
+    return {
+      ...next,
+      activeFixtureId: null,
+      activeFixtureIds: [],
+      phase: next.phase === "round" ? "between_rounds" : next.phase,
+    };
+  }
+
+  if (next.format === "round_robin") {
+    const humanPending = pending.filter((f) => fixtureHasHuman(next, f));
+    if (!humanPending.length) {
+      return {
+        ...next,
+        activeFixtureId: null,
+        activeFixtureIds: [],
+        phase: "between_rounds",
+      };
+    }
+    const ids = humanPending.map((f) => f.id);
+    if (!opts?.preserveReady) {
+      next = resetReadyForFixtures(next, ids);
+    }
+    return {
+      ...next,
+      activeFixtureIds: ids,
+      activeFixtureId: ids[0],
+      phase: "between_rounds",
+      currentRound: humanPending[0].round,
+    };
+  }
+
+  const minRound = Math.min(...pending.map((f) => f.round));
+  const roundFixtures = pending.filter((f) => f.round === minRound);
+
+  for (const f of roundFixtures) {
+    const homeCpu = entrantIsCpu(next, f.homeEntrantId);
+    const awayCpu = entrantIsCpu(next, f.awayEntrantId);
+    if (homeCpu && awayCpu) {
+      next = simCupFixture(next, f.id);
+    }
+  }
+
+  const humanPending = roundFixtures.filter((f) => {
+    const updated = next.fixtures.find((x) => x.id === f.id);
+    return updated?.status === "pending" && fixtureHasHuman(next, f);
+  });
+
+  if (!humanPending.length) {
+    return activateRoundFixtures(next, opts);
+  }
+
+  const ids = humanPending.map((f) => f.id);
+  if (!opts?.preserveReady) {
+    next = resetReadyForFixtures(next, ids);
   }
   return {
-    ...t,
-    activeFixtureId: nextFixture.id,
-    phase: "round",
-    currentRound: nextFixture.round,
+    ...next,
+    activeFixtureIds: ids,
+    activeFixtureId: ids[0],
+    phase: "between_rounds",
+    currentRound: minRound,
   };
 }
 
-export function getActiveFixture(t: TournamentState): TournamentFixture | null {
-  if (!t.activeFixtureId) return null;
-  return t.fixtures.find((f) => f.id === t.activeFixtureId) ?? null;
+/** @deprecated Use activateRoundFixtures */
+export function activateNextFixture(t: TournamentState): TournamentState {
+  return activateRoundFixtures(t);
 }
 
-export function resetReadyForActiveFixture(t: TournamentState): TournamentState {
-  const active = getActiveFixture(t);
-  if (!active) return t;
-  const ids = [active.homeEntrantId, active.awayEntrantId];
+export function getActiveFixtureIds(t: TournamentState): string[] {
+  if (t.activeFixtureIds?.length) return t.activeFixtureIds;
+  if (t.activeFixtureId) return [t.activeFixtureId];
+  return [];
+}
+
+export function getActiveFixtures(t: TournamentState): TournamentFixture[] {
+  return getActiveFixtureIds(t)
+    .map((id) => t.fixtures.find((f) => f.id === id))
+    .filter((f): f is TournamentFixture => !!f);
+}
+
+export function getActiveFixture(t: TournamentState): TournamentFixture | null {
+  return getActiveFixtures(t)[0] ?? null;
+}
+
+export function getUserActiveFixture(
+  t: TournamentState,
+  userId: string
+): TournamentFixture | null {
+  const entrantIds = entrantIdsForUser(t, userId);
+  return (
+    getActiveFixtures(t).find(
+      (f) => entrantIds.includes(f.homeEntrantId) || entrantIds.includes(f.awayEntrantId)
+    ) ?? null
+  );
+}
+
+export function getEntrantActiveFixture(
+  t: TournamentState,
+  entrantId: string
+): TournamentFixture | null {
+  return (
+    getActiveFixtures(t).find(
+      (f) => f.homeEntrantId === entrantId || f.awayEntrantId === entrantId
+    ) ?? null
+  );
+}
+
+export function fixtureHasCpu(t: TournamentState, fixtureId: string): boolean {
+  const fixture = t.fixtures.find((f) => f.id === fixtureId);
+  if (!fixture) return false;
+  const home = getEntrant(t, fixture.homeEntrantId);
+  const away = getEntrant(t, fixture.awayEntrantId);
+  return !!(home?.isCpu || away?.isCpu);
+}
+
+export function entrantIsHuman(e: TournamentEntrant | undefined): boolean {
+  return !!e?.userId && !e.isCpu;
+}
+
+export function isHumanVsHumanFixture(t: TournamentState, fixtureId: string): boolean {
+  const fixture = t.fixtures.find((f) => f.id === fixtureId);
+  if (!fixture?.homeEntrantId || !fixture?.awayEntrantId) return false;
+  const home = getEntrant(t, fixture.homeEntrantId);
+  const away = getEntrant(t, fixture.awayEntrantId);
+  return entrantIsHuman(home) && entrantIsHuman(away);
+}
+
+export function resetReadyForFixtures(t: TournamentState, fixtureIds: string[]): TournamentState {
+  const entrantIds = new Set<string>();
+  for (const fixtureId of fixtureIds) {
+    const fixture = t.fixtures.find((f) => f.id === fixtureId);
+    if (!fixture) continue;
+    entrantIds.add(fixture.homeEntrantId);
+    entrantIds.add(fixture.awayEntrantId);
+  }
   const entrants = t.entrants.map((e) => {
-    if (!ids.includes(e.id) || e.isCpu) return e;
+    if (!entrantIds.has(e.id) || e.isCpu) return e;
     return {
       ...e,
       lobby: { ...normalizeLobby(e.lobby), ready: false, updatedAt: new Date().toISOString() },
     };
   });
-  return { ...t, entrants, phase: "between_rounds" };
+  return { ...t, entrants };
 }
 
-export function activeFixtureReady(t: TournamentState): boolean {
-  const active = getActiveFixture(t);
-  if (!active) return false;
-  const home = getEntrant(t, active.homeEntrantId);
-  const away = getEntrant(t, active.awayEntrantId);
+export function resetReadyForActiveFixture(t: TournamentState): TournamentState {
+  return resetReadyForFixtures(t, getActiveFixtureIds(t));
+}
+
+function humanEntrantPlayable(t: TournamentState, e: TournamentEntrant): boolean {
+  if (!lobbyTeamReady(e.lobby)) return false;
+  if (t.localEntrantId && e.id === t.localEntrantId) return true;
+  return e.lobby.ready;
+}
+
+export function fixturePlayersReady(t: TournamentState, fixtureId: string): boolean {
+  const fixture = t.fixtures.find((f) => f.id === fixtureId);
+  if (!fixture) return false;
+  const home = getEntrant(t, fixture.homeEntrantId);
+  const away = getEntrant(t, fixture.awayEntrantId);
   if (!home || !away) return false;
   if (home.isCpu && away.isCpu) return true;
-  const homeOk = home.isCpu || (lobbyTeamReady(home.lobby) && home.lobby.ready);
-  const awayOk = away.isCpu || (lobbyTeamReady(away.lobby) && away.lobby.ready);
+  const homeOk = home.isCpu || humanEntrantPlayable(t, home);
+  const awayOk = away.isCpu || humanEntrantPlayable(t, away);
   return homeOk && awayOk;
 }
 
@@ -608,10 +911,11 @@ export function entrantIdsForUser(t: TournamentState, userId: string): string[] 
 }
 
 export function isUserInActiveFixture(t: TournamentState, userId: string): boolean {
-  const active = getActiveFixture(t);
-  if (!active) return false;
-  const ids = entrantIdsForUser(t, userId);
-  return ids.includes(active.homeEntrantId) || ids.includes(active.awayEntrantId);
+  return !!getUserActiveFixture(t, userId);
+}
+
+export function activeFixtureReady(t: TournamentState): boolean {
+  return getActiveFixtureIds(t).some((id) => fixturePlayersReady(t, id));
 }
 
 export function sortedRoundRobinTable(t: TournamentState): RoundRobinRow[] {

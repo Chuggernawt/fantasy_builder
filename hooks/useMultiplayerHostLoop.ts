@@ -8,6 +8,7 @@ import {
 } from "@/lib/multiplayer";
 import {
   beginMpHalftimePause,
+  beginMpExtraTimePause,
   canResumePause,
   defaultMpMatchMeta,
 } from "@/lib/multiplayer-match-flow";
@@ -59,6 +60,12 @@ export function useMultiplayerHostLoop({
 
       if (state?.status === "halftime" && !meta.pause) {
         meta = beginMpHalftimePause(meta);
+        useGameStore.getState().setMpMatchMeta(meta);
+        await pushSnapshot();
+      }
+
+      if (state?.status === "extra_time_choice" && !meta.pause) {
+        meta = beginMpExtraTimePause(meta);
         useGameStore.getState().setMpMatchMeta(meta);
         await pushSnapshot();
       }

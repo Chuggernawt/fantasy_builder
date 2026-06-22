@@ -28,8 +28,14 @@ export function MpPauseBanner({
     return () => clearInterval(timer);
   }, [pause]);
 
-  const label = pause.kind === "halftime" ? "Half time" : "Substitutions";
+  const label =
+    pause.kind === "halftime"
+      ? "Half time"
+      : pause.kind === "extra_time"
+        ? "Added time"
+        : "Substitutions";
   const bothReady = myReady && opponentReady;
+  const autoResume = pause.kind === "extra_time";
 
   return (
     <div className="glass-panel mb-2 shrink-0 border border-fuchsia-500/40 bg-fuchsia-950/30 p-3">
@@ -39,9 +45,14 @@ export function MpPauseBanner({
           <p className="font-display text-sm font-bold uppercase text-slate-100">{label}</p>
         </div>
         <p className="font-mono text-lg text-broadcast-highlight">
-          {bothReady ? "Both ready" : `${secondsLeft}s`}
+          {autoResume ? `${secondsLeft}s` : bothReady ? "Both ready" : `${secondsLeft}s`}
         </p>
       </div>
+      {autoResume ? (
+        <p className="mt-2 text-xs text-amber-300">
+          Pick your added-time approach below — play resumes automatically when the timer ends.
+        </p>
+      ) : (
       <div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-400">
         <span className={myReady ? "text-broadcast-highlight" : ""}>
           You: {myReady ? "Ready" : "Choosing…"}
@@ -50,7 +61,8 @@ export function MpPauseBanner({
           Opponent: {opponentReady ? "Ready" : "Choosing…"}
         </span>
       </div>
-      {isHost && bothReady && onHostStart ? (
+      )}
+      {!autoResume && isHost && bothReady && onHostStart ? (
         <button type="button" className="btn-broadcast-solid mt-3 w-full text-xs" onClick={onHostStart}>
           Start now (both ready)
         </button>

@@ -2,7 +2,21 @@
 
 import { useEffect } from "react";
 
-type FxKind = "click" | "whistle_start" | "whistle_end" | "reveal";
+type FxKind = "click" | "whistle_start" | "whistle_end" | "reveal" | "goal";
+
+const MATCH_AUDIO: Partial<Record<FxKind, string>> = {
+  whistle_start: "/whistle1.mp3",
+  whistle_end: "/whistle2.mp3",
+  goal: "/goal.mp3",
+};
+
+function playMatchAudio(kind: FxKind) {
+  const src = MATCH_AUDIO[kind];
+  if (!src) return false;
+  const audio = new Audio(src);
+  void audio.play().catch(() => {});
+  return true;
+}
 
 function beepSequence(kind: FxKind) {
   const ctx = new (window.AudioContext ||
@@ -12,21 +26,11 @@ function beepSequence(kind: FxKind) {
   const sequence: Array<[number, number, number]> =
     kind === "click"
       ? [[880, 0.015, 0]]
-      : kind === "whistle_start"
-        ? [
-            [740, 0.09, 0],
-            [980, 0.11, 0.1],
-          ]
-        : kind === "whistle_end"
-          ? [
-              [980, 0.08, 0],
-              [760, 0.14, 0.09],
-            ]
-          : [
-              [600, 0.06, 0],
-              [780, 0.06, 0.07],
-              [980, 0.08, 0.14],
-            ];
+      : [
+          [600, 0.06, 0],
+          [780, 0.06, 0.07],
+          [980, 0.08, 0.14],
+        ];
 
   sequence.forEach(([freq, dur, offset]) => {
     const osc = ctx.createOscillator();
@@ -43,6 +47,11 @@ function beepSequence(kind: FxKind) {
   });
 }
 
+function playFx(kind: FxKind) {
+  if (playMatchAudio(kind)) return;
+  beepSequence(kind);
+}
+
 export function SoundEffectsProvider() {
   useEffect(() => {
     let lastClick = 0;
@@ -53,13 +62,13 @@ export function SoundEffectsProvider() {
       const now = Date.now();
       if (now - lastClick < 45) return;
       lastClick = now;
-      beepSequence("click");
+      playFx("click");
     };
 
     const onFx = (e: Event) => {
       const detail = (e as CustomEvent<{ kind?: FxKind }>).detail?.kind;
       if (!detail) return;
-      beepSequence(detail);
+      playFx(detail);
     };
 
     document.addEventListener("pointerdown", onPointer, true);

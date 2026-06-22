@@ -12,6 +12,8 @@
 --   delete from auth.users u
 --   using public.profiles p
 --   where p.user_id = u.id and lower(p.username) = lower('desired_name');
+--
+-- Sign-out in the app calls release_my_multiplayer_identity() (see profile_release_migration.sql).
 
 create or replace function public.normalize_username(raw text)
 returns text

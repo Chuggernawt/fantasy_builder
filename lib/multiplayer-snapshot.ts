@@ -44,6 +44,11 @@ export function applySnapshotToStore(snapshot: MultiplayerSnapshot): void {
   const keepLocalReveal =
     prev.matchState?.status === "finished" &&
     (prev.pendingReveal !== null || prev.revealHighlights !== null);
+  const freshMatch =
+    snapshot.matchState?.status === "running" &&
+    snapshot.matchState.tick <= 1 &&
+    prev.matchState?.status !== "running";
+  const tournamentFixtureId = snapshot.mp?.tournamentFixture?.fixtureId ?? null;
 
   useGameStore.setState({
     selectedUniverseId: snapshot.selectedUniverseId,
@@ -56,6 +61,18 @@ export function applySnapshotToStore(snapshot: MultiplayerSnapshot): void {
     opponentBench: snapshot.opponentBench,
     matchState: snapshot.matchState as MatchState | null,
     mpMatchMeta: snapshot.mp ?? defaultMpMatchMeta(),
+    ...(freshMatch
+      ? {
+          pendingReveal: null,
+          revealHighlights: null,
+          seasonActiveFixtureId: null,
+          ...(tournamentFixtureId
+            ? { tournamentActiveFixtureId: tournamentFixtureId }
+            : { tournamentActiveFixtureId: null }),
+        }
+      : tournamentFixtureId
+        ? { tournamentActiveFixtureId: tournamentFixtureId }
+        : {}),
     ...(keepLocalReveal
       ? {
           pendingReveal: prev.pendingReveal,

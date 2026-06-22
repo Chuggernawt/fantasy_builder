@@ -8,10 +8,13 @@ import { BroadcastHeader } from "@/components/BroadcastHeader";
 import { PitchView } from "@/components/PitchView";
 import { SquadBench } from "@/components/SquadBench";
 import { MatchBenchPicker } from "@/components/MatchBenchPicker";
+import { TacticsPreMatchSelect } from "@/components/TacticsPreMatchSelect";
 import { FORMATIONS } from "@/lib/formations";
 import { countAssigned, isMatchReady } from "@/lib/lineup";
 import { getAllUniverses, getPlayer, getUniverse } from "@/lib/squads";
+import { isSquadUnlocked } from "@/lib/squad-unlocks";
 import { getPlayerFixture } from "@/lib/season";
+import { getSeasonTeamRoster, rosterEntriesToPlayers } from "@/lib/season-rosters";
 import { clearMultiplayerSession } from "@/lib/multiplayer-session";
 import { useGameStore } from "@/store/game-store";
 import type { FormationId } from "@/lib/types";
@@ -42,7 +45,17 @@ export default function DraftPage() {
     hasSavedLineup,
     setOpponent,
     startMatch,
+    plannedTactics,
+    setPlannedTactics,
   } = useGameStore();
+  const unlockedSquads = useGameStore((s) => s.careerStats.unlockedSquads ?? []);
+
+  useEffect(() => {
+    if (!selectedUniverseId) return;
+    if (!isSquadUnlocked(selectedUniverseId, unlockedSquads)) {
+      router.replace(`/squad/${selectedUniverseId}`);
+    }
+  }, [selectedUniverseId, unlockedSquads, router]);
 
   const [activeSlot, setActiveSlot] = useState<string | null>(null);
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
@@ -69,19 +82,24 @@ export default function DraftPage() {
   const activeSlotData = formation.slots.find((s) => s.id === activeSlot);
   const activeAssignment = lineup.find((l) => l.slotId === activeSlot);
 
+  const squadPlayers = useMemo(() => {
+    if (isSeasonDraft && season?.rosters && selectedUniverseId) {
+      return rosterEntriesToPlayers(getSeasonTeamRoster(season, selectedUniverseId));
+    }
+    return universe?.players ?? [];
+  }, [isSeasonDraft, season, selectedUniverseId, universe]);
+
   const availablePlayers = useMemo(() => {
-    if (!universe) return [];
-    return universe.players.filter(
+    return squadPlayers.filter(
       (p) =>
         !assignedNames.has(p.name) ||
         activeAssignment?.playerName === p.name
     );
-  }, [universe, assignedNames, activeAssignment?.playerName]);
+  }, [squadPlayers, assignedNames, activeAssignment?.playerName]);
 
   const reserves = useMemo(() => {
-    if (!universe) return [];
-    return universe.players.filter((p) => !assignedNames.has(p.name));
-  }, [universe, assignedNames]);
+    return squadPlayers.filter((p) => !assignedNames.has(p.name));
+  }, [squadPlayers, assignedNames]);
 
   if (!universe) {
     return (
@@ -125,6 +143,7 @@ export default function DraftPage() {
               {f.label}
             </button>
           ))}
+          <TacticsPreMatchSelect value={plannedTactics} onChange={setPlannedTactics} />
           <span className="ml-auto font-mono text-[10px] text-broadcast-highlight md:text-xs">
             XI {assignedCount}/11 · Subs {matchBench.length}/5
           </span>

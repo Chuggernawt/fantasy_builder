@@ -76,6 +76,22 @@ export function roleFitScore(stats: PlayerStats, role: Role): number {
   return Math.round(roleRating(stats, role));
 }
 
+const ALL_ROLES: Role[] = ["GK", "CB", "FB", "DM", "CM", "AM", "W", "ST"];
+
+/** Best-fitting role from raw stats (used when no slot is selected). */
+export function bestRoleForStats(stats: PlayerStats): Role {
+  let best: Role = "CM";
+  let bestScore = -1;
+  for (const role of ALL_ROLES) {
+    const score = roleFitScore(stats, role);
+    if (score > bestScore) {
+      bestScore = score;
+      best = role;
+    }
+  }
+  return best;
+}
+
 // Re-export for any legacy imports
 export { staminaMultiplier } from "./stamina";
 

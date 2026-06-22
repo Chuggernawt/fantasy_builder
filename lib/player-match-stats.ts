@@ -56,6 +56,13 @@ export function recordRed(
   ensurePlayerStats(map, player).redCards++;
 }
 
+export function isPlayerSentOff(
+  map: Record<string, PlayerMatchStats>,
+  playerName: string
+): boolean {
+  return (map[playerName]?.redCards ?? 0) > 0;
+}
+
 export function recordPass(
   map: Record<string, PlayerMatchStats>,
   player: string,

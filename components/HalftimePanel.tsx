@@ -1,13 +1,21 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { Formation, FormationId, LineupSlot, TacticalStyle } from "@/lib/types";
+import type { Formation, FormationId, LineupSlot, PlayerMatchStats, TeamTactics } from "@/lib/types";
 import { FORMATIONS } from "@/lib/formations";
 import { getBenchPlayerNames } from "@/lib/match-stats-bench";
 import { getPlayer } from "@/lib/squads";
-import { applySubstitution } from "@/lib/subs";
+import { applySubstitution, swapLineupSlots } from "@/lib/subs";
+import { analyzeLineupChanges, sentOffPlayerNames } from "@/lib/sub-utils";
 import { MAX_MATCH_SUBS } from "@/lib/constants";
-import { TACTICAL_OPTIONS } from "@/lib/match-influence";
+import { formatTacticsBrief } from "@/lib/tactics";
+import {
+  TacticAxisRows,
+  TacticConfirmButton,
+  TacticsSheet,
+  useTacticDraft,
+} from "@/components/TacticPicker";
+import { liveRatingsForLineup, livePlayerMatchRating, hasMatchActivity, ratingDisplayClass } from "@/lib/match-rating";
 import { PitchView } from "@/components/PitchView";
 import { CaptainPicker } from "@/components/CaptainPicker";
 import { writeDragData } from "@/lib/pitch-dnd";
@@ -20,18 +28,21 @@ interface SubstitutionPanelProps {
   lineup: LineupSlot[];
   matchBench: string[];
   stamina: Record<string, number>;
+  playerStats?: Record<string, PlayerMatchStats>;
+  teamGoals?: number;
+  goalsConceded?: number;
   subsUsed: number;
   maxSubs: number;
   title: string;
   heading: string;
   confirmLabel: string;
   showSecondHalfInfluence?: boolean;
-  currentTactic?: TacticalStyle | null;
+  currentTactics?: TeamTactics | null;
   currentCaptain?: string | null;
   onConfirm: (
     lineup: LineupSlot[],
     subsMade: number,
-    tactic?: TacticalStyle | null,
+    tactics?: TeamTactics | null,
     captain?: string | null
   ) => void;
 }
@@ -78,42 +89,66 @@ export function SubstitutionPanel({
   lineup,
   matchBench,
   stamina,
+  playerStats = {},
+  teamGoals = 0,
+  goalsConceded = 0,
   subsUsed,
   maxSubs,
   title,
   heading,
   confirmLabel,
   showSecondHalfInfluence = false,
-  currentTactic = null,
+  currentTactics = null,
   currentCaptain = null,
   onConfirm,
 }: SubstitutionPanelProps) {
   const [draft, setDraft] = useState<LineupSlot[]>(lineup);
   const [subTargetSlotId, setSubTargetSlotId] = useState<string | null>(null);
-  const [tactic, setTactic] = useState<TacticalStyle | null>(currentTactic);
+  const [pendingTactics, setPendingTactics] = useState<TeamTactics | null>(null);
+  const displayTactics = pendingTactics ?? currentTactics;
   const [captain, setCaptain] = useState<string | null>(currentCaptain);
   const [panel, setPanel] = useState<"tactic" | "captain" | null>(null);
 
   const formation = FORMATIONS.find((f) => f.id === formationId)!;
   const subsRemaining = maxSubs - subsUsed;
 
+  const sentOff = useMemo(() => sentOffPlayerNames(playerStats), [playerStats]);
+
   const availableBench = useMemo(
     () => getBenchPlayerNames(universeId, draft, matchBench),
     [universeId, draft, matchBench]
   );
 
+  const changeAnalysis = useMemo(
+    () => analyzeLineupChanges(lineup, draft, matchBench),
+    [lineup, draft, matchBench]
+  );
+  const pendingSubs = changeAnalysis.subs;
+  const positionSwapCount = changeAnalysis.positionSwappedPlayers.length;
+
   const changedSlotIds = useMemo(() => {
     const ids = new Set<string>();
-    draft.forEach((slot, i) => {
-      if (slot.playerName !== lineup[i]?.playerName) ids.add(slot.slotId);
+    draft.forEach((slot) => {
+      const orig = lineup.find((s) => s.slotId === slot.slotId);
+      if (orig?.playerName !== slot.playerName) ids.add(slot.slotId);
     });
     return ids;
   }, [draft, lineup]);
 
-  const pendingChanges = changedSlotIds.size;
+  const liveRatings = useMemo(
+    () =>
+      liveRatingsForLineup(draft, playerStats, {
+        teamGoals,
+        oppGoals: goalsConceded,
+        goalsConceded,
+      }),
+    [draft, playerStats, teamGoals, goalsConceded]
+  );
 
   function assignPlayer(slotId: string, playerName: string) {
-    if (subsUsed + pendingChanges >= maxSubs && !changedSlotIds.has(slotId)) {
+    const orig = lineup.find((s) => s.slotId === slotId);
+    if (orig?.playerName && sentOff.has(orig.playerName)) return;
+    if (subsUsed + pendingSubs >= maxSubs && !changedSlotIds.has(slotId)) {
       const slot = draft.find((s) => s.slotId === slotId);
       if (slot?.playerName !== playerName) return;
     }
@@ -125,10 +160,26 @@ export function SubstitutionPanel({
     }
   }
 
+  function swapPitchSlots(slotA: string, slotB: string) {
+    const slotAPlayer = draft.find((s) => s.slotId === slotA)?.playerName;
+    const slotBPlayer = draft.find((s) => s.slotId === slotB)?.playerName;
+    if (
+      (slotAPlayer && sentOff.has(slotAPlayer)) ||
+      (slotBPlayer && sentOff.has(slotBPlayer))
+    ) {
+      return;
+    }
+    const next = swapLineupSlots(draft, slotA, slotB);
+    if (next) {
+      setDraft(next);
+      setSubTargetSlotId(null);
+    }
+  }
+
 
   function handleBenchPick(playerName: string) {
     if (!subTargetSlotId) return;
-    if (subsRemaining - pendingChanges <= 0 && !changedSlotIds.has(subTargetSlotId)) return;
+    if (subsRemaining - pendingSubs <= 0 && !changedSlotIds.has(subTargetSlotId)) return;
     assignPlayer(subTargetSlotId, playerName);
   }
 
@@ -148,10 +199,16 @@ export function SubstitutionPanel({
             <p className="font-display text-sm font-bold uppercase">{heading}</p>
           </div>
           <p className="font-mono text-[10px] text-slate-400">
-            {subsRemaining - pendingChanges}/{maxSubs} subs
-            {pendingChanges > 0 ? (
-              <span className="text-amber-400"> · {pendingChanges} pending</span>
+            {subsRemaining - pendingSubs}/{maxSubs} subs
+            {pendingSubs > 0 ? (
+              <span className="text-amber-400"> · {pendingSubs} pending</span>
             ) : null}
+            {positionSwapCount > 0 ? (
+              <span className="text-sky-400"> · {positionSwapCount} reshuffle</span>
+            ) : null}
+          </p>
+          <p className="mt-1 text-[9px] text-slate-500">
+            Drag subs onto the pitch, or drag two players to swap positions (−5 fitness each).
           </p>
         </div>
 
@@ -159,7 +216,7 @@ export function SubstitutionPanel({
           <div className="mt-2 grid grid-cols-3 gap-1.5">
             <ActionButton
               label="Tactic"
-              sublabel={tactic ? "Set" : "Pick"}
+              sublabel={displayTactics ? formatTacticsBrief(displayTactics) : "Optional 2nd-half change"}
               active={panel === "tactic"}
               accent={accent}
               onClick={() => setPanel((p) => (p === "tactic" ? null : "tactic"))}
@@ -178,27 +235,6 @@ export function SubstitutionPanel({
               accent={accent}
               onClick={() => setSubTargetSlotId(null)}
             />
-          </div>
-        ) : null}
-
-        {panel === "tactic" && showSecondHalfInfluence ? (
-          <div className="mt-2 grid grid-cols-2 gap-1 sm:grid-cols-4">
-            {TACTICAL_OPTIONS.map((opt) => (
-              <button
-                key={opt.id}
-                type="button"
-                onClick={() => setTactic(opt.id)}
-                className={`border px-2 py-1.5 text-left text-[10px] ${
-                  tactic === opt.id
-                    ? "border-broadcast-highlight bg-broadcast-highlight/15"
-                    : "border-broadcast-border bg-black/60 hover:border-broadcast-highlight"
-                }`}
-              >
-                <span className="font-display font-semibold uppercase text-broadcast-highlight">
-                  {opt.label}
-                </span>
-              </button>
-            ))}
           </div>
         ) : null}
 
@@ -227,29 +263,44 @@ export function SubstitutionPanel({
               compact
               interactive
               stamina={stamina}
+              playerRatings={liveRatings}
               subTargetSlotId={subTargetSlotId}
               changedSlotIds={changedSlotIds}
-              allowPitchDrag={false}
+              allowPitchDrag
               getPlayer={(name) => getPlayer(universeId, name)}
               onSlotClick={(slotId) => {
                 const slot = draft.find((s) => s.slotId === slotId);
                 if (!slot?.playerName) return;
+                if (sentOff.has(slot.playerName)) return;
                 setSubTargetSlotId((prev) => (prev === slotId ? null : slotId));
                 setPanel(null);
               }}
               onAssignPlayer={assignPlayer}
+              onSwapSlots={swapPitchSlots}
             />
           </div>
         </div>
 
         <div className="glass-panel flex min-h-0 flex-col p-1.5">
           <p className="broadcast-label mb-1 text-[10px]">Subs</p>
+          <div className="mb-1 grid grid-cols-[1fr_2rem] gap-1 text-[8px] uppercase tracking-wider text-slate-600">
+            <span>Player</span>
+            <span className="text-center">Rtg</span>
+          </div>
           <ul className="grid flex-1 grid-rows-5 gap-1">
             {matchBench.map((name) => {
               const onPitch = draft.some((s) => s.playerName === name);
               const p = getPlayer(universeId, name);
               if (!p) return null;
               const available = availableBench.includes(name);
+              const pitchSlot = draft.find((s) => s.playerName === name);
+              const benchRating = liveRatings[name] ??
+                (hasMatchActivity(playerStats[name])
+                  ? livePlayerMatchRating(playerStats[name], pitchSlot?.role ?? "CM", {
+                      teamGoals,
+                      oppGoals: goalsConceded,
+                    })
+                  : null);
               return (
                 <li key={name}>
                   <button
@@ -277,8 +328,15 @@ export function SubstitutionPanel({
                     >
                       {isPlayerFullyRevealed(name) ? p.ovr : "??"}
                     </span>
-                    <span className="truncate font-display text-[10px] font-semibold uppercase">
+                    <span className="min-w-0 flex-1 truncate font-display text-[10px] font-semibold uppercase">
                       {p.name}
+                    </span>
+                    <span
+                      className={`shrink-0 font-mono text-[10px] font-bold ${
+                        benchRating != null ? ratingDisplayClass(benchRating) : "text-slate-700"
+                      }`}
+                    >
+                      {benchRating != null ? benchRating.toFixed(1) : "—"}
                     </span>
                   </button>
                 </li>
@@ -292,7 +350,7 @@ export function SubstitutionPanel({
         <button
           type="button"
           className="btn-broadcast flex-1 text-xs"
-          disabled={pendingChanges === 0}
+          disabled={pendingSubs === 0 && positionSwapCount === 0}
           onClick={resetDraft}
         >
           Cancel
@@ -300,12 +358,12 @@ export function SubstitutionPanel({
         <button
           type="button"
           className="btn-broadcast-solid flex-1 text-xs"
-          disabled={pendingChanges > subsRemaining}
+          disabled={pendingSubs > subsRemaining}
           onClick={() =>
             onConfirm(
               draft,
-              pendingChanges,
-              showSecondHalfInfluence ? tactic : undefined,
+              pendingSubs,
+              showSecondHalfInfluence ? pendingTactics ?? undefined : undefined,
               showSecondHalfInfluence ? captain : undefined
             )
           }
@@ -313,7 +371,55 @@ export function SubstitutionPanel({
           {confirmLabel}
         </button>
       </div>
+
+      {showSecondHalfInfluence ? (
+        <HalftimeTacticsSheet
+          open={panel === "tactic"}
+          displayTactics={displayTactics}
+          onClose={() => setPanel(null)}
+          onConfirm={setPendingTactics}
+        />
+      ) : null}
     </div>
+  );
+}
+
+function HalftimeTacticsSheet({
+  open,
+  displayTactics,
+  onClose,
+  onConfirm,
+}: {
+  open: boolean;
+  displayTactics: TeamTactics | null;
+  onClose: () => void;
+  onConfirm: (tactics: TeamTactics) => void;
+}) {
+  const { draft, updateDraft } = useTacticDraft(displayTactics);
+
+  if (!open) return null;
+
+  return (
+    <TacticsSheet
+      open
+      title="Second-half tactics"
+      description="Keep your first-half plan or set a new one for the second half."
+      onClose={onClose}
+      footer={
+        <TacticConfirmButton
+          draft={draft}
+          value={displayTactics}
+          disabled={false}
+          confirmLabel="Set for 2nd half"
+          onSelect={(t) => {
+            onConfirm(t);
+            onClose();
+          }}
+        />
+      }
+    >
+      <TacticAxisRows draft={draft} disabled={false} onUpdate={updateDraft} />
+    </TacticsSheet>
   );
 }
 

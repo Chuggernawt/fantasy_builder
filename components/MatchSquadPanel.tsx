@@ -1,6 +1,7 @@
 "use client";
 
 import type { LineupSlot, PlayerMatchStats } from "@/lib/types";
+import { livePlayerMatchRating, ratingDisplayClass } from "@/lib/match-rating";
 
 interface MatchSquadPanelProps {
   title: string;
@@ -8,6 +9,8 @@ interface MatchSquadPanelProps {
   lineup: LineupSlot[];
   stamina: Record<string, number>;
   playerStats?: Record<string, PlayerMatchStats>;
+  teamGoals?: number;
+  goalsConceded?: number;
   captain?: string | null;
   compact?: boolean;
 }
@@ -30,6 +33,8 @@ export function MatchSquadPanel({
   lineup,
   stamina,
   playerStats = {},
+  teamGoals = 0,
+  goalsConceded = 0,
   captain,
   compact = false,
 }: MatchSquadPanelProps) {
@@ -41,9 +46,10 @@ export function MatchSquadPanel({
         <p className="broadcast-label truncate text-[10px]" style={{ color: accent }}>
           {title}
         </p>
-        <div className="mt-1 grid grid-cols-[1.5rem_1fr_1rem_1rem_1rem_2.5rem] gap-0.5 text-[9px] uppercase tracking-wider text-slate-600">
+        <div className="mt-1 grid grid-cols-[1.5rem_1fr_1.75rem_1rem_1rem_1rem_2.5rem] gap-0.5 text-[9px] uppercase tracking-wider text-slate-600">
           <span />
           <span>Player</span>
+          <span className="text-center">Rtg</span>
           <span className="text-center">G</span>
           <span className="text-center">A</span>
           <span className="text-center">Y</span>
@@ -56,10 +62,15 @@ export function MatchSquadPanel({
           const val = stamina[name] ?? 100;
           const ps = playerStats[name];
           const isCaptain = captain === name;
+          const rating = livePlayerMatchRating(ps, slot.role, {
+            teamGoals,
+            oppGoals: goalsConceded,
+            goalsConceded: slot.role === "GK" ? goalsConceded : undefined,
+          });
 
           return (
             <li key={slot.slotId} className="mb-2 border-b border-broadcast-border/40 pb-2 last:border-0">
-              <div className="grid grid-cols-[1.5rem_1fr_1rem_1rem_1rem_2.5rem] items-center gap-0.5">
+              <div className="grid grid-cols-[1.5rem_1fr_1.75rem_1rem_1rem_1rem_2.5rem] items-center gap-0.5">
                 <span className="font-display text-[9px] font-bold text-slate-500">{slot.role}</span>
                 <span
                   className={`truncate font-display text-[10px] font-semibold uppercase leading-tight ${
@@ -69,6 +80,13 @@ export function MatchSquadPanel({
                 >
                   {isCaptain ? "★ " : ""}
                   {name}
+                </span>
+                <span
+                  className={`text-center font-mono text-[10px] font-bold ${
+                    rating != null ? ratingDisplayClass(rating) : "text-slate-700"
+                  }`}
+                >
+                  {rating != null ? rating.toFixed(1) : "·"}
                 </span>
                 <StatCell value={ps?.goals ?? 0} highlight />
                 <StatCell value={ps?.assists ?? 0} />

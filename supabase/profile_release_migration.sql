@@ -1,0 +1,2 @@
+-- Deprecated: persistent accounts keep profiles after sign-out.
+-- Safe to skip this file. If you ran it earlier, no action needed.

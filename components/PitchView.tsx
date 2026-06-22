@@ -6,6 +6,7 @@ import type { LineupSlot } from "@/lib/types";
 import type { FormationId } from "@/lib/types";
 import { getPitchCoord } from "@/lib/pitch-layout";
 import { getRoleKeyStats, STAT_SHORT } from "@/lib/stats";
+import { ratingDisplayClass } from "@/lib/match-rating";
 import { readDragData, writeDragData } from "@/lib/pitch-dnd";
 import { useGameStore } from "@/store/game-store";
 
@@ -25,6 +26,7 @@ interface PitchViewProps {
   changedSlotIds?: ReadonlySet<string>;
   subTargetSlotId?: string | null;
   stamina?: Record<string, number>;
+  playerRatings?: Record<string, number>;
   compact?: boolean;
   allowPitchDrag?: boolean;
 }
@@ -39,6 +41,7 @@ function PitchSlotToken({
   isSubTarget,
   interactive,
   staminaVal,
+  matchRating,
   compact,
   allowPitchDrag = true,
   onClick,
@@ -54,6 +57,7 @@ function PitchSlotToken({
   isSubTarget: boolean;
   interactive: boolean;
   staminaVal?: number;
+  matchRating?: number;
   compact?: boolean;
   allowPitchDrag?: boolean;
   onClick?: () => void;
@@ -166,8 +170,20 @@ function PitchSlotToken({
                     .map((key) => `${STAT_SHORT[key]} ${isStatRevealed(player.name, key) ? player.stats[key] : "?"}`)
                     .join(" · ")}
                 </p>
-              ) : staminaVal !== undefined ? (
-                <p className="mt-0.5 font-mono text-[9px] text-slate-400">{Math.round(staminaVal)}% fit</p>
+              ) : staminaVal !== undefined || matchRating !== undefined ? (
+                <p className="mt-0.5 font-mono text-[9px] leading-tight">
+                  {matchRating !== undefined ? (
+                    <span className={`font-bold ${ratingDisplayClass(matchRating)}`}>
+                      {matchRating.toFixed(1)}
+                    </span>
+                  ) : null}
+                  {matchRating !== undefined && staminaVal !== undefined ? (
+                    <span className="text-slate-600"> · </span>
+                  ) : null}
+                  {staminaVal !== undefined ? (
+                    <span className="text-slate-400">{Math.round(staminaVal)}% fit</span>
+                  ) : null}
+                </p>
               ) : null}
             </>
           ) : (
@@ -196,6 +212,7 @@ export function PitchView({
   changedSlotIds,
   subTargetSlotId = null,
   stamina,
+  playerRatings,
   compact = false,
   allowPitchDrag = true,
 }: PitchViewProps) {
@@ -244,6 +261,7 @@ export function PitchView({
               compact={compact}
               allowPitchDrag={allowPitchDrag}
               staminaVal={player ? stamina?.[player.name] : undefined}
+              matchRating={player ? playerRatings?.[player.name] : undefined}
               onClick={() => onSlotClick?.(slot.id)}
               onClear={player && onClearSlot ? () => onClearSlot(slot.id) : undefined}
               onDropPayload={(payload) => handleDropOnSlot(slot.id, payload)}

@@ -1,9 +1,9 @@
 -- Run this in Supabase SQL editor before using multiplayer.
--- It creates auth-linked profiles, friends, rooms, room members, chat, invites.
+-- Persistent accounts: username + password (case-sensitive usernames).
 --
--- The app uses anonymous auth + username (no email/password fields in-game).
--- In Supabase dashboard, enable:
--- Authentication > Providers > Anonymous > Enable anonymous sign-ins.
+-- In Supabase dashboard:
+-- Authentication > Providers > Email: enable, disable "Confirm email"
+-- Then run supabase/persistent_accounts_migration.sql
 
 create extension if not exists "pgcrypto";
 

@@ -7,7 +7,7 @@ import type {
   LineupSlot,
   MatchState,
   StatKey,
-  TacticalStyle,
+  TeamTactics,
   TeamSetup,
 } from "@/lib/types";
 import { DEFAULT_FORMATION } from "@/lib/formations";
@@ -22,23 +22,49 @@ import {
 import { autoFillLineup, createInitialMatchState } from "@/lib/simulation";
 import { commentaryId } from "@/lib/simulation-utils";
 import { CAPTAIN_BOOST_TICKS, MATCH_BENCH_SIZE, MAX_MATCH_SUBS } from "@/lib/constants";
-import { TACTICAL_OPTIONS } from "@/lib/match-influence";
-import { subAnnouncementLines } from "@/lib/sub-utils";
-import { cpuHalftimeSubs, cpuChooseSubCount, refreshStaminaAfterLineupChange } from "@/lib/subs";
+import { cpuPickTactics, defaultTeamTactics, formatTacticsCommentary } from "@/lib/tactics";
+import { analyzeLineupChanges, pinSentOffPlayersInLineup, positionSwapAnnouncementLines, sentOffPlayerNames, subAnnouncementLines } from "@/lib/sub-utils";
+import {
+  applyPositionSwapStaminaPenalty,
+  cpuHalftimeSubs,
+  cpuChooseSubCount,
+  refreshStaminaAfterLineupChange,
+} from "@/lib/subs";
+import { seedMatchPlayerStats } from "@/lib/background-match-stats";
 import { getPlayer } from "@/lib/squads";
-import { revealAllForPlayer, revealOneRandomStat } from "@/lib/reveal";
+import { revealAllForPlayer, revealOneRandomStat, playersNotFullyRevealed, pickPlayerForRandomStatReveal } from "@/lib/reveal";
 import type { RevealHighlight } from "@/lib/reveal";
 import type { SeasonHonour, SeasonLength, SeasonState } from "@/lib/season-types";
 import type { TournamentState } from "@/lib/tournament-types";
 import {
   applyFixtureResult,
+  isLocalTournamentChampion,
   simAllCpuFixturesInRound,
 } from "@/lib/tournament";
-import { resolveTournamentWinnerFromMatch } from "@/lib/tournament-match";
+import { resolveCupKnockoutMeta, resolveTournamentWinnerFromMatch } from "@/lib/tournament-match";
+import { matchDecidedWinner } from "@/lib/penalty-shootout";
+import { accumulateTournamentMatchStats } from "@/lib/tournament-stats";
 import type { MpMatchMeta } from "@/lib/multiplayer-types";
 import { getMultiplayerSession, clearMultiplayerSession } from "@/lib/multiplayer-session";
+import {
+  buildMatchCareerKey,
+  emptyCareerStats,
+  offlineTournamentWinKey,
+  recordMatchInCareerStats,
+  recordSeasonWinInCareerStats,
+  recordTournamentWinInCareerStats,
+  resolveCareerStatsMode,
+  seasonWinKey,
+  type PlayerCareerStats,
+} from "@/lib/career-stats";
+import {
+  achievementFromOfflineTournament,
+  applySquadUnlockAchievement,
+  isSquadUnlocked,
+  normalizeUnlockedSquads,
+} from "@/lib/squad-unlocks";
 import { playerRevealUniverses } from "@/lib/multiplayer-perspective";
-import { resolvePlayerIsHome, getHomeMatchSetup, getAwayMatchSetup } from "@/lib/player-side";
+import { resolvePlayerIsHome, getHomeMatchSetup, getAwayMatchSetup, getMyAndOpponentLineups, getMySquadPlayerNames, myPlayerStatsForMatch, myUniverseIdForMatch, resolveMyMatchSide } from "@/lib/player-side";
 import {
   applySeasonChampionReveal,
   applyRedCardSuspension,
@@ -50,7 +76,18 @@ import {
   recordPlayerMatchFromState,
 } from "@/lib/season";
 import { resetSetPieceBudgetForHalf } from "@/lib/set-piece-interactive";
-import { prepareCpuOpponentForSeason } from "@/lib/season-lite";
+import { prepareCpuOpponentForSeason, randomFillLineupFromRoster, fillLineupRestRandomFromRoster, pickRandomBenchFromRoster } from "@/lib/season-lite";
+import { ensureSeasonRosters, getSeasonTeamRoster, rosterToOriginMap } from "@/lib/season-rosters";
+import { executeSeasonSwap } from "@/lib/season-transfers";
+import {
+  continueSeasonCampaign as buildContinuedSeason,
+  canContinueSeasonCampaign,
+} from "@/lib/season-continue";
+import {
+  emptySeasonSaveSlots,
+  type SeasonSaveSlotIndex,
+  type SeasonSaveSlots,
+} from "@/lib/season-saves";
 import {
   buildMatchFormMap,
   finalizeMatchStateRatings,
@@ -63,6 +100,7 @@ export interface SavedLineup {
   formationId: FormationId;
   lineup: LineupSlot[];
   matchBench: string[];
+  plannedTactics?: TeamTactics;
   savedAt: string;
 }
 
@@ -98,17 +136,28 @@ interface GameStore {
   revealHighlights: RevealHighlight[] | null;
   savedLineups: Record<string, SavedLineup>;
   season: SeasonState | null;
+  seasonSaveSlots: SeasonSaveSlots;
+  activeSeasonSlot: SeasonSaveSlotIndex | null;
   seasonHonours: SeasonHonour[];
   seasonActiveFixtureId: string | null;
   seasonPlayerIsHome: boolean;
   tournament: TournamentState | null;
   tournamentActiveFixtureId: string | null;
   mpMatchMeta: MpMatchMeta | null;
+  /** Context of the last / current match for post-game routing. */
+  lastMatchContext: "friendly" | "season" | "tournament" | null;
   /** Per-universe player form carried across season/tournament matches (-5..+5). */
   playerForm: Record<string, Record<string, number>>;
+  /** Lifetime match / tournament career stats (in memory; persisted per account). */
+  careerStats: PlayerCareerStats;
+  /** Squads unlocked on the most recent season/tournament win (for finale banner). */
+  recentSquadUnlocks: string[];
+  /** Pre-match tactics — applied at kick-off (carries through unless changed at half time). */
+  plannedTactics: TeamTactics;
 
   selectUniverse: (id: string) => void;
   setFormation: (id: FormationId) => void;
+  setPlannedTactics: (tactics: TeamTactics) => void;
   setLineupSlot: (slotId: string, playerName: string | null) => void;
   swapLineupSlots: (slotA: string, slotB: string) => void;
   autoPickLineup: () => void;
@@ -117,15 +166,23 @@ interface GameStore {
   toggleMatchBenchPlayer: (playerName: string) => void;
   autoPickMatchBench: () => void;
   saveLineup: () => void;
+  saveLineupSnapshot: (
+    universeId: string,
+    formationId: FormationId,
+    lineup: LineupSlot[],
+    matchBench: string[],
+    plannedTactics?: TeamTactics
+  ) => void;
   loadSavedLineup: () => boolean;
+  loadLineupSnapshot: (universeId: string) => SavedLineup | null;
   hasSavedLineup: (universeId?: string) => boolean;
   setOpponent: (universeId: string) => void;
   startMatch: () => void;
   setMatchState: (state: MatchState | null) => void;
   openSubWindow: () => void;
   confirmSubs: (homeLineup: LineupSlot[], subsMade: number) => void;
-  setHomeTactic: (tactic: TacticalStyle) => void;
-  setAwayTactic: (tactic: TacticalStyle) => void;
+  setHomeTactic: (tactics: TeamTactics) => void;
+  setAwayTactic: (tactics: TeamTactics) => void;
   callHomeCaptain: (playerName: string) => void;
   callAwayCaptain: (playerName: string) => void;
   setMpMatchMeta: (meta: MpMatchMeta | null) => void;
@@ -133,7 +190,7 @@ interface GameStore {
   confirmHalftime: (
     homeLineup: LineupSlot[],
     subsMade: number,
-    tactic?: TacticalStyle | null,
+    tactics?: TeamTactics | null,
     captain?: string | null
   ) => void;
   confirmExtraTime: (approach: import("@/lib/types").ExtraTimeApproach) => void;
@@ -143,17 +200,55 @@ interface GameStore {
   isStatRevealed: (playerName: string, stat: StatKey) => boolean;
   isPlayerFullyRevealed: (playerName: string) => boolean;
   resetMatch: () => void;
+  clearRecentSquadUnlocks: () => void;
   resetAll: () => void;
   startSeason: (userUniverseId: string, length: SeasonLength) => void;
+  startSeasonInSlot: (
+    slot: SeasonSaveSlotIndex,
+    userUniverseId: string,
+    length: SeasonLength
+  ) => void;
+  loadSeasonSlot: (slot: SeasonSaveSlotIndex) => boolean;
+  saveSeasonSlot: () => void;
+  continueSeason: () => boolean;
   abandonSeason: () => void;
   prepareSeasonMatch: () => boolean;
   setTournament: (tournament: TournamentState | null) => void;
   setTournamentActiveFixture: (fixtureId: string | null) => void;
+  setCareerStats: (stats: PlayerCareerStats) => void;
+  executeSeasonTransfer: (
+    partnerTeamId: string,
+    outgoing: import("@/lib/season-types").SeasonRosterEntry,
+    incoming: import("@/lib/season-types").SeasonRosterEntry
+  ) => { ok: boolean; error?: string };
 }
 
-function cpuPickTactic(): TacticalStyle {
-  const opts = TACTICAL_OPTIONS.map((t) => t.id);
-  return opts[Math.floor(Math.random() * opts.length)];
+function writeSeasonToSlot(
+  slots: SeasonSaveSlots,
+  slot: SeasonSaveSlotIndex,
+  season: SeasonState
+): SeasonSaveSlots {
+  const next = [...slots] as SeasonSaveSlots;
+  next[slot] = { season, savedAt: new Date().toISOString() };
+  return next;
+}
+
+function mirrorSeasonPatchToSlot(
+  get: () => GameStore,
+  patch: Partial<GameStore>
+): Partial<GameStore> {
+  if (patch.season === undefined) return patch;
+  const slot = get().activeSeasonSlot;
+  const season = patch.season;
+  if (slot == null || !season) return patch;
+  return {
+    ...patch,
+    seasonSaveSlots: writeSeasonToSlot(get().seasonSaveSlots, slot, season),
+  };
+}
+
+function cpuPickTacticForSide(formationId: FormationId): TeamTactics {
+  return cpuPickTactics(formationId);
 }
 
 function cpuPickCaptain(lineup: LineupSlot[], universeId: string): string | null {
@@ -166,41 +261,46 @@ function cpuPickCaptain(lineup: LineupSlot[], universeId: string): string | null
   return weightedPick(candidates, (c) => c.ovr)?.name ?? null;
 }
 
-function applyAwayCpuSubs(
+function applyCpuSubsForSide(
   state: MatchState,
-  opponentLineup: LineupSlot[],
-  opponentUniverseId: string,
-  opponentFormationId: FormationId,
-  opponentBench: string[],
+  side: "home" | "away",
+  setup: {
+    universeId: string;
+    formationId: FormationId;
+    lineup: LineupSlot[];
+    bench: string[];
+  },
   revealedStats: Record<string, StatKey[]>
 ): { lineup: LineupSlot[]; subsMade: number; stamina: Record<string, number> } {
-  const awaySetup = {
-    universeId: opponentUniverseId,
-    formationId: opponentFormationId,
-    lineup: opponentLineup,
-    bench: opponentBench,
-  };
-  const remaining = MAX_MATCH_SUBS - state.awaySubsUsed;
+  const subsUsed = side === "home" ? state.homeSubsUsed : state.awaySubsUsed;
+  const staminaMap = side === "home" ? state.homeStamina : state.awayStamina;
+  const remaining = MAX_MATCH_SUBS - subsUsed;
   if (remaining <= 0) {
-    return { lineup: opponentLineup, subsMade: 0, stamina: state.awayStamina };
+    return { lineup: setup.lineup, subsMade: 0, stamina: staminaMap };
   }
-  const subsBudget = cpuChooseSubCount(opponentLineup, state.awayStamina, remaining);
+  const teamSetup = {
+    universeId: setup.universeId,
+    formationId: setup.formationId,
+    lineup: setup.lineup,
+    bench: setup.bench,
+  };
+  const subsBudget = cpuChooseSubCount(setup.lineup, staminaMap, remaining);
+  const playerStats = side === "home" ? state.homePlayerStats : state.awayPlayerStats;
+  const sentOff = sentOffPlayerNames(playerStats);
   const newLineup = cpuHalftimeSubs(
-    awaySetup,
-    state.awayStamina,
+    teamSetup,
+    staminaMap,
     revealedStats,
-    subsBudget
+    subsBudget,
+    sentOff
   );
-  let subsMade = newLineup.filter(
-    (s, i) => s.playerName !== opponentLineup[i]?.playerName
+  const pinnedLineup = pinSentOffPlayersInLineup(setup.lineup, newLineup, sentOff);
+  let subsMade = pinnedLineup.filter(
+    (s, i) => s.playerName !== setup.lineup[i]?.playerName
   ).length;
   subsMade = Math.min(subsMade, remaining);
-  const stamina = refreshStaminaAfterLineupChange(
-    opponentLineup,
-    newLineup,
-    state.awayStamina
-  );
-  return { lineup: newLineup, subsMade, stamina };
+  const stamina = refreshStaminaAfterLineupChange(setup.lineup, pinnedLineup, staminaMap);
+  return { lineup: pinnedLineup, subsMade, stamina };
 }
 
 export const useGameStore = create<GameStore>()(
@@ -220,13 +320,19 @@ export const useGameStore = create<GameStore>()(
       revealHighlights: null,
       savedLineups: {},
       season: null,
+      seasonSaveSlots: emptySeasonSaveSlots(),
+      activeSeasonSlot: null,
       seasonHonours: [],
       seasonActiveFixtureId: null,
       seasonPlayerIsHome: true,
       tournament: null,
       tournamentActiveFixtureId: null,
       mpMatchMeta: null,
+      lastMatchContext: null,
       playerForm: {},
+      careerStats: emptyCareerStats(),
+      recentSquadUnlocks: [],
+      plannedTactics: defaultTeamTactics(),
 
       selectUniverse: (id) => {
         set({
@@ -244,6 +350,8 @@ export const useGameStore = create<GameStore>()(
           lineup: remapLineupOnFormationChange(get().lineup, formationId),
         });
       },
+
+      setPlannedTactics: (tactics) => set({ plannedTactics: tactics }),
 
       setLineupSlot: (slotId, playerName) => {
         const lineup = get().lineup.map((s) => {
@@ -270,8 +378,17 @@ export const useGameStore = create<GameStore>()(
       },
 
       autoPickLineup: () => {
-        const { selectedUniverseId, formationId } = get();
+        const { selectedUniverseId, formationId, season } = get();
         if (!selectedUniverseId) return;
+        if (season?.status === "active" && season.rosters) {
+          const entries = getSeasonTeamRoster(season, selectedUniverseId);
+          const lineup = randomFillLineupFromRoster(entries, formationId);
+          set({
+            lineup,
+            matchBench: pickRandomBenchFromRoster(entries, lineup),
+          });
+          return;
+        }
         const lineup = randomFillLineup(selectedUniverseId, formationId);
         set({
           lineup,
@@ -280,8 +397,13 @@ export const useGameStore = create<GameStore>()(
       },
 
       fillLineupRest: () => {
-        const { selectedUniverseId, lineup } = get();
+        const { selectedUniverseId, lineup, season } = get();
         if (!selectedUniverseId) return;
+        if (season?.status === "active" && season.rosters) {
+          const entries = getSeasonTeamRoster(season, selectedUniverseId);
+          set({ lineup: fillLineupRestRandomFromRoster(lineup, entries) });
+          return;
+        }
         set({ lineup: fillLineupRestRandom(lineup, selectedUniverseId) });
       },
 
@@ -305,13 +427,39 @@ export const useGameStore = create<GameStore>()(
       },
 
       autoPickMatchBench: () => {
-        const { selectedUniverseId, lineup } = get();
+        const { selectedUniverseId, lineup, season } = get();
         if (!selectedUniverseId) return;
+        if (season?.status === "active" && season.rosters) {
+          const entries = getSeasonTeamRoster(season, selectedUniverseId);
+          set({ matchBench: pickRandomBenchFromRoster(entries, lineup) });
+          return;
+        }
         set({ matchBench: pickRandomBench(selectedUniverseId, lineup) });
       },
 
+      saveLineupSnapshot: (universeId, formationId, lineup, matchBench, plannedTactics) => {
+        if (!universeId) return;
+        set({
+          savedLineups: {
+            ...get().savedLineups,
+            [universeId]: {
+              formationId,
+              lineup,
+              matchBench,
+              plannedTactics: plannedTactics ?? get().plannedTactics,
+              savedAt: new Date().toISOString(),
+            },
+          },
+        });
+      },
+
+      loadLineupSnapshot: (universeId) => {
+        if (!universeId) return null;
+        return get().savedLineups[universeId] ?? null;
+      },
+
       saveLineup: () => {
-        const { selectedUniverseId, formationId, lineup, matchBench } = get();
+        const { selectedUniverseId, formationId, lineup, matchBench, plannedTactics } = get();
         if (!selectedUniverseId) return;
         set({
           savedLineups: {
@@ -320,6 +468,7 @@ export const useGameStore = create<GameStore>()(
               formationId,
               lineup,
               matchBench,
+              plannedTactics,
               savedAt: new Date().toISOString(),
             },
           },
@@ -335,6 +484,7 @@ export const useGameStore = create<GameStore>()(
           formationId: saved.formationId,
           lineup: saved.lineup,
           matchBench: saved.matchBench ?? [],
+          plannedTactics: saved.plannedTactics ?? get().plannedTactics,
         });
         return true;
       },
@@ -368,17 +518,23 @@ export const useGameStore = create<GameStore>()(
         const season = get().season;
         const fixtureId = get().seasonActiveFixtureId;
         const isSeasonMatch = season?.status === "active" && !!fixtureId;
+        const isTournamentMatch = !!get().tournamentActiveFixtureId;
         if (isSeasonMatch && season) {
+          const userOrigins = season.rosters
+            ? rosterToOriginMap(getSeasonTeamRoster(season, selectedUniverseId))
+            : {};
           const suspended = lineup
             .map((s) => s.playerName)
-            .filter(
-              (name): name is string =>
-                !!name && isPlayerSuspended(season, selectedUniverseId, name)
-            );
+            .filter((name): name is string => {
+              if (!name) return false;
+              const origin = userOrigins[name] ?? selectedUniverseId;
+              return isPlayerSuspended(season, origin, name);
+            });
           if (suspended.length) return;
         }
 
-        const playerIsHome = isSeasonMatch ? get().seasonPlayerIsHome : true;
+        const playerIsHome =
+          isSeasonMatch || isTournamentMatch ? get().seasonPlayerIsHome : true;
         const oppLineup =
           get().opponentLineup.length === 11
             ? get().opponentLineup
@@ -388,30 +544,39 @@ export const useGameStore = create<GameStore>()(
             ? get().opponentBench
             : pickRandomBench(opponentUniverseId, oppLineup);
 
+        const playerOrigins =
+          isSeasonMatch && season?.rosters
+            ? rosterToOriginMap(getSeasonTeamRoster(season, selectedUniverseId))
+            : undefined;
+        const oppOrigins =
+          isSeasonMatch && season?.rosters
+            ? rosterToOriginMap(getSeasonTeamRoster(season, opponentUniverseId))
+            : undefined;
+
         const playerSetup = {
           universeId: selectedUniverseId,
           formationId,
           lineup,
           bench: matchBench,
+          playerOrigins,
         };
         const oppSetup = {
           universeId: opponentUniverseId,
           formationId: opponentFormationId,
           lineup: oppLineup,
           bench: oppBench,
+          playerOrigins: oppOrigins,
         };
 
         const seasonMeta =
           isSeasonMatch && season ? buildSeasonMatchMeta(season) ?? undefined : undefined;
 
         const tourFixtureId = get().tournamentActiveFixtureId;
-        const tournament = get().tournament;
-        const isCupKnockout =
-          !!tourFixtureId && tournament && tournament.format !== "round_robin";
-        const tournamentMeta =
-          isCupKnockout && tournament
-            ? { cupKnockout: true, penaltyMode: tournament.penaltyMode }
-            : undefined;
+        const tournamentMeta = resolveCupKnockoutMeta({
+          tournamentActiveFixtureId: tourFixtureId,
+          tournament: get().tournament,
+          mpFixture: get().mpMatchMeta?.tournamentFixture,
+        });
 
         const homeUni = playerIsHome ? selectedUniverseId : opponentUniverseId;
         const awayUni = playerIsHome ? opponentUniverseId : selectedUniverseId;
@@ -429,17 +594,43 @@ export const useGameStore = create<GameStore>()(
           ? createInitialMatchState(playerSetup, oppSetup, { seasonMeta, playerForm: formMap })
           : createInitialMatchState(oppSetup, playerSetup, { seasonMeta, playerForm: formMap });
 
+        const plannedTactics = get().plannedTactics;
+        const cpuTactic = cpuPickTacticForSide(oppSetup.formationId);
+        const cpuCaptain = cpuPickCaptain(oppLineup, opponentUniverseId);
+
         set({
           opponentLineup: oppLineup,
           opponentBench: oppBench,
+          pendingReveal: null,
+          revealHighlights: null,
+          lastMatchContext: tourFixtureId
+            ? "tournament"
+            : isSeasonMatch
+              ? "season"
+              : "friendly",
           matchState: {
             ...base,
+            localPlayerSide: playerIsHome ? "home" : "away",
             tournamentMeta,
-            awayTactic: cpuPickTactic(),
-            awayTacticHalf: 1,
-            awayCaptain: cpuPickCaptain(oppLineup, opponentUniverseId),
-            awayCaptainHalf: 1,
-            awayCaptainBoostTicks: CAPTAIN_BOOST_TICKS,
+            ...(playerIsHome
+              ? {
+                  homeTactics: plannedTactics,
+                  homeTacticHalf: 0,
+                  awayTactics: cpuTactic,
+                  awayTacticHalf: 1,
+                  awayCaptain: cpuCaptain,
+                  awayCaptainHalf: 1,
+                  awayCaptainBoostTicks: CAPTAIN_BOOST_TICKS,
+                }
+              : {
+                  awayTactics: plannedTactics,
+                  awayTacticHalf: 0,
+                  homeTactics: cpuTactic,
+                  homeTacticHalf: 1,
+                  homeCaptain: cpuCaptain,
+                  homeCaptainHalf: 1,
+                  homeCaptainBoostTicks: CAPTAIN_BOOST_TICKS,
+                }),
           },
         });
       },
@@ -468,21 +659,34 @@ export const useGameStore = create<GameStore>()(
         let nextPlayerForm = get().playerForm;
 
         if (prev?.status !== "finished" && finalized.status === "finished") {
-          const playerIsHome = resolvePlayerIsHome();
-          const ownPlayed = get()
-            .lineup.map((s) => s.playerName)
+          const playerIsHome =
+            (finalized.localPlayerSide ??
+              (get().seasonPlayerIsHome ? "home" : "away")) === "home";
+          const { myLineup, oppLineup } = getMyAndOpponentLineups();
+          const ownPlayed = myLineup
+            .map((s) => s.playerName)
             .filter((p): p is string => !!p);
-          const oppPlayed = get()
-            .opponentLineup.map((s) => s.playerName)
+          const oppPlayed = oppLineup
+            .map((s) => s.playerName)
             .filter((p): p is string => !!p);
-          const playerUniId = (playerIsHome
-            ? get().selectedUniverseId
-            : get().opponentUniverseId) ?? "";
-          const oppUniId = (playerIsHome
-            ? get().opponentUniverseId
-            : get().selectedUniverseId) ?? matchState.awayUniverseId ?? "";
+          const playerUniId = myUniverseIdForMatch(finalized);
+          const oppUniId = playerIsHome
+            ? finalized.awayUniverseId
+            : finalized.homeUniverseId;
           const playerScore = playerIsHome ? finalized.score.home : finalized.score.away;
           const oppScore = playerIsHome ? finalized.score.away : finalized.score.home;
+          const decided = matchDecidedWinner(finalized);
+          const playerWon = decided === (playerIsHome ? "home" : "away");
+          const playerLost = decided === (playerIsHome ? "away" : "home");
+          const isRegulationDraw = finalized.score.home === finalized.score.away;
+          let careerPlayerScore = playerScore;
+          let careerOppScore = oppScore;
+          if (finalized.penaltyShootout && isRegulationDraw) {
+            const homeWonPens = decided === "home";
+            const wonPens = playerIsHome ? homeWonPens : !homeWonPens;
+            careerPlayerScore = wonPens ? 1 : 0;
+            careerOppScore = wonPens ? 0 : 1;
+          }
 
           const homeSetup = getHomeMatchSetup();
           const awaySetup = getAwayMatchSetup();
@@ -496,38 +700,51 @@ export const useGameStore = create<GameStore>()(
             patch.playerForm = nextPlayerForm;
           }
 
-          if (playerScore > oppScore) {
-            pendingReveal = {
-              result: "win",
-              ownChoices: ownPlayed,
-              awayChoices: oppPlayed,
-              message:
-                "Win reward: reveal one of your players and one opponent you faced.",
-            };
-          } else if (playerScore === oppScore) {
-            pendingReveal = {
-              result: "draw",
-              ownChoices: ownPlayed,
-              message: "Draw reward: pick one of your used players to fully reveal.",
-            };
+          if (playerWon) {
+            const ownRevealable = playersNotFullyRevealed(ownPlayed, revealedStats);
+            const oppRevealable = playersNotFullyRevealed(oppPlayed, revealedStats);
+            if (ownRevealable.length > 0 || oppRevealable.length > 0) {
+              pendingReveal = {
+                result: "win",
+                ownChoices: ownRevealable,
+                awayChoices: oppRevealable,
+                message:
+                  ownRevealable.length && oppRevealable.length
+                    ? "Win reward: reveal one of your players and one opponent you faced."
+                    : ownRevealable.length
+                      ? "Win reward: reveal one of your players."
+                      : "Win reward: reveal one opponent you faced.",
+              };
+            }
+          } else if (decided === "draw") {
+            const ownRevealable = playersNotFullyRevealed(ownPlayed, revealedStats);
+            if (ownRevealable.length > 0) {
+              pendingReveal = {
+                result: "draw",
+                ownChoices: ownRevealable,
+                message: "Draw reward: pick one of your used players to fully reveal.",
+              };
+            }
           } else if (ownPlayed.length > 0) {
-            const pick = ownPlayed[Math.floor(Math.random() * ownPlayed.length)];
-            const { next, stat } = revealOneRandomStat(revealedStats, pick);
-            revealedStats = next;
-            pendingReveal = {
-              result: "loss",
-              message: `Loss: random reveal unlocked ${pick}'s ${stat.toUpperCase()}.`,
-            };
-            revealHighlights = [
-              {
-                universeId: playerUniId,
-                playerName: pick,
-                mode: "single",
-                stat,
-              },
-            ];
-            if (typeof window !== "undefined") {
-              window.dispatchEvent(new CustomEvent("fb:sfx", { detail: { kind: "reveal" } }));
+            const pick = pickPlayerForRandomStatReveal(ownPlayed, revealedStats);
+            if (pick) {
+              const { next, stat } = revealOneRandomStat(revealedStats, pick);
+              revealedStats = next;
+              pendingReveal = {
+                result: "loss",
+                message: `Loss: random reveal unlocked ${pick}'s ${stat.toUpperCase()}.`,
+              };
+              revealHighlights = [
+                {
+                  universeId: playerUniId,
+                  playerName: pick,
+                  mode: "single",
+                  stat,
+                },
+              ];
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new CustomEvent("fb:sfx", { detail: { kind: "reveal" } }));
+              }
             }
           }
 
@@ -557,11 +774,13 @@ export const useGameStore = create<GameStore>()(
                 : finalized.awayPlayerStats;
               for (const [name, row] of Object.entries(userStats)) {
                 if (row.redCards > 0) {
-                  nextSeason = applyRedCardSuspension(
-                    nextSeason,
-                    nextSeason.userUniverseId,
-                    name
-                  );
+                  const userRoster = nextSeason.rosters
+                    ? getSeasonTeamRoster(nextSeason, nextSeason.userUniverseId)
+                    : [];
+                  const origin =
+                    userRoster.find((e) => e.playerName === name)?.universeId ??
+                    nextSeason.userUniverseId;
+                  nextSeason = applyRedCardSuspension(nextSeason, origin, name);
                 }
               }
               let seasonHonours = get().seasonHonours;
@@ -569,11 +788,15 @@ export const useGameStore = create<GameStore>()(
                 const summary = buildSeasonSummary(nextSeason);
                 if (summary) seasonHonours = [...seasonHonours, summary];
                 if (nextSeason.championId === nextSeason.userUniverseId) {
+                  const rosterNames = getSeasonTeamRoster(nextSeason, nextSeason.userUniverseId).map(
+                    (e) => e.playerName
+                  );
                   revealedStats = applySeasonChampionReveal(
                     revealedStats,
                     nextSeason.userUniverseId,
                     nextSeason.length,
-                    true
+                    true,
+                    rosterNames
                   );
                 }
               }
@@ -585,6 +808,7 @@ export const useGameStore = create<GameStore>()(
 
           const tourFixtureId = get().tournamentActiveFixtureId;
           let tournament = get().tournament;
+          const prevTournamentPhase = tournament?.phase;
           if (tournament && tourFixtureId && finalized) {
             const result = resolveTournamentWinnerFromMatch(
               tournament,
@@ -592,6 +816,7 @@ export const useGameStore = create<GameStore>()(
               finalized
             );
             if (result) {
+              tournament = accumulateTournamentMatchStats(tournament, tourFixtureId, finalized);
               tournament = applyFixtureResult(tournament, tourFixtureId, result);
               tournament = simAllCpuFixturesInRound(tournament);
               patch.tournament = tournament;
@@ -599,31 +824,131 @@ export const useGameStore = create<GameStore>()(
             }
           }
 
+          const userStats = myPlayerStatsForMatch(finalized);
+          const squadPlayerNames = getMySquadPlayerNames();
+          const careerMode = resolveCareerStatsMode(get().mpMatchMeta, get().lastMatchContext);
+          const mpSession = getMultiplayerSession();
+          const mpMeta = get().mpMatchMeta;
+          const scopeId =
+            mpSession?.roomId ??
+            (mpMeta?.parentTournamentRoomId && mpMeta.tournamentFixture?.fixtureId
+              ? `tour:${mpMeta.parentTournamentRoomId}:${mpMeta.tournamentFixture.fixtureId}`
+              : get().tournamentActiveFixtureId
+                ? `offline-tour:${get().tournamentActiveFixtureId}`
+                : get().seasonActiveFixtureId
+                  ? `offline-season:${get().seasonActiveFixtureId}`
+                  : `local:${playerUniId}:${finalized.score.home}-${finalized.score.away}`);
+          const matchKey = buildMatchCareerKey({
+            mode: careerMode,
+            scopeId,
+            universeId: playerUniId,
+            playerScore: careerPlayerScore,
+            oppScore: careerOppScore,
+            homeScore: finalized.score.home,
+            awayScore: finalized.score.away,
+            commentaryLength: finalized.commentary.length,
+          });
+          const prevCareerStats = get().careerStats;
+          let nextCareerStats = recordMatchInCareerStats(prevCareerStats, careerMode, {
+            universeId: playerUniId,
+            playerScore: careerPlayerScore,
+            oppScore: careerOppScore,
+            playerStats: userStats ?? {},
+            matchKey,
+            squadPlayerNames,
+          });
+
+          const recentUnlocks: string[] = [];
+
+          const finishedSeason = patch.season;
+          const prevSeason = get().season;
+          if (
+            finishedSeason?.status === "finished" &&
+            prevSeason?.status !== "finished" &&
+            finishedSeason.championId === finishedSeason.userUniverseId
+          ) {
+            const sKey = seasonWinKey(finishedSeason);
+            const wasNewSeasonWin = !prevCareerStats.seasonWinKeys.includes(sKey);
+            nextCareerStats = recordSeasonWinInCareerStats(nextCareerStats, sKey);
+            if (wasNewSeasonWin) {
+              const unlocked = applySquadUnlockAchievement(nextCareerStats, "offline_season");
+              nextCareerStats = unlocked.stats;
+              recentUnlocks.push(...unlocked.newlyUnlocked);
+            }
+          }
+
+          if (
+            tournament?.phase === "finished" &&
+            prevTournamentPhase !== "finished" &&
+            isLocalTournamentChampion(tournament)
+          ) {
+            const tKey = offlineTournamentWinKey(tournament);
+            const wasNewTournamentWin = !prevCareerStats.tournamentWinKeys.includes(tKey);
+            nextCareerStats = recordTournamentWinInCareerStats(nextCareerStats, tKey, false);
+            if (wasNewTournamentWin) {
+              const achievement = achievementFromOfflineTournament(tournament.format);
+              if (achievement) {
+                const unlocked = applySquadUnlockAchievement(nextCareerStats, achievement);
+                nextCareerStats = unlocked.stats;
+                recentUnlocks.push(...unlocked.newlyUnlocked);
+              }
+            }
+          }
+
+          patch.careerStats = nextCareerStats;
+          if (recentUnlocks.length) {
+            patch.recentSquadUnlocks = recentUnlocks;
+          }
+
           patch.revealedStats = revealedStats;
           patch.pendingReveal = pendingReveal;
           patch.revealHighlights = revealHighlights;
         }
 
-        set(patch);
+        set(mirrorSeasonPatchToSlot(get, patch));
       },
 
       openSubWindow: () => {
         const state = get().matchState;
         if (!state || state.status !== "running") return;
-        if (state.homeSubsUsed >= MAX_MATCH_SUBS) return;
+        const playerIsHome = resolvePlayerIsHome();
+        const subsUsed = playerIsHome ? state.homeSubsUsed : state.awaySubsUsed;
+        if (subsUsed >= MAX_MATCH_SUBS) return;
         set({ matchState: { ...state, status: "sub_window" } });
       },
 
-      confirmSubs: (homeLineup, subsMade) => {
+      confirmSubs: (playerLineup, _subsMade) => {
         const state = get().matchState;
-        const { opponentUniverseId, opponentFormationId, opponentLineup, opponentBench, lineup } = get();
+        const {
+          opponentUniverseId,
+          opponentFormationId,
+          opponentLineup,
+          opponentBench,
+          lineup,
+          matchBench,
+        } = get();
         if (!state || state.status !== "sub_window" || !opponentUniverseId) return;
 
-        const oldHome = lineup;
-        const homeStamina = refreshStaminaAfterLineupChange(
-          oldHome,
-          homeLineup,
-          state.homeStamina
+        const playerIsHome = resolvePlayerIsHome();
+        const playerSide = playerIsHome ? "home" : "away";
+        const cpuSide = playerIsHome ? "away" : "home";
+        const oldPlayerLineup = lineup;
+        const playerStats = playerIsHome ? state.homePlayerStats : state.awayPlayerStats;
+        const pinnedPlayerLineup = pinSentOffPlayersInLineup(
+          oldPlayerLineup,
+          playerLineup,
+          sentOffPlayerNames(playerStats)
+        );
+        const swapAnalysis = analyzeLineupChanges(oldPlayerLineup, pinnedPlayerLineup, matchBench);
+        const subsMade = swapAnalysis.subs;
+        let playerStamina = refreshStaminaAfterLineupChange(
+          oldPlayerLineup,
+          pinnedPlayerLineup,
+          playerIsHome ? state.homeStamina : state.awayStamina
+        );
+        playerStamina = applyPositionSwapStaminaPenalty(
+          playerStamina,
+          swapAnalysis.positionSwappedPlayers
         );
 
         const minute =
@@ -631,69 +956,100 @@ export const useGameStore = create<GameStore>()(
             ? Math.round((state.tick / state.ticksPerHalf) * 45)
             : 45 + Math.round((state.tick / state.ticksPerHalf) * 45);
 
-        const subEvents = subAnnouncementLines(oldHome, homeLineup, "Home").map((text) => ({
-          id: commentaryId(),
-          minute,
-          half: state.half,
-          type: "substitution" as const,
-          text,
-          team: "home" as const,
-        }));
-
-        const awayResult = applyAwayCpuSubs(
+        const cpuResult = applyCpuSubsForSide(
           state,
-          opponentLineup,
-          opponentUniverseId,
-          opponentFormationId,
-          opponentBench,
+          cpuSide,
+          {
+            universeId: opponentUniverseId,
+            formationId: opponentFormationId,
+            lineup: opponentLineup,
+            bench: opponentBench,
+          },
           get().revealedStats
         );
-        const awaySubEvents = subAnnouncementLines(opponentLineup, awayResult.lineup, "Away").map(
+
+        const playerTeamLabel = playerIsHome ? "Home" : "Away";
+        const cpuTeamLabel = playerIsHome ? "Away" : "Home";
+        const subEvents = subAnnouncementLines(oldPlayerLineup, pinnedPlayerLineup, playerTeamLabel).map(
           (text) => ({
             id: commentaryId(),
             minute,
             half: state.half,
             type: "substitution" as const,
             text,
-            team: "away" as const,
+            team: playerSide as "home" | "away",
+          })
+        );
+        const swapEvents = positionSwapAnnouncementLines(
+          oldPlayerLineup,
+          pinnedPlayerLineup,
+          matchBench,
+          playerTeamLabel
+        ).map((text) => ({
+          id: commentaryId(),
+          minute,
+          half: state.half,
+          type: "info" as const,
+          text,
+          team: playerSide as "home" | "away",
+        }));
+        const cpuSubEvents = subAnnouncementLines(opponentLineup, cpuResult.lineup, cpuTeamLabel).map(
+          (text) => ({
+            id: commentaryId(),
+            minute,
+            half: state.half,
+            type: "substitution" as const,
+            text,
+            team: cpuSide as "home" | "away",
           })
         );
 
+        const homeLineupFinal = playerIsHome ? pinnedPlayerLineup : cpuResult.lineup;
+        const awayLineupFinal = playerIsHome ? cpuResult.lineup : pinnedPlayerLineup;
+        const seededStats = seedMatchPlayerStats(
+          homeLineupFinal,
+          awayLineupFinal,
+          state.homePlayerStats,
+          state.awayPlayerStats
+        );
+
         set({
-          lineup: homeLineup,
-          opponentLineup: awayResult.lineup,
+          lineup: pinnedPlayerLineup,
+          opponentLineup: cpuResult.lineup,
           matchState: {
             ...state,
             status: "running",
-            homeStamina,
-            awayStamina: awayResult.stamina,
-            homeSubsUsed: state.homeSubsUsed + subsMade,
-            awaySubsUsed: state.awaySubsUsed + awayResult.subsMade,
-            commentary: [...state.commentary, ...subEvents, ...awaySubEvents],
+            homeStamina: playerIsHome ? playerStamina : cpuResult.stamina,
+            awayStamina: playerIsHome ? cpuResult.stamina : playerStamina,
+            homeSubsUsed:
+              state.homeSubsUsed + (playerIsHome ? subsMade : cpuResult.subsMade),
+            awaySubsUsed:
+              state.awaySubsUsed + (playerIsHome ? cpuResult.subsMade : subsMade),
+            homePlayerStats: seededStats.homePlayerStats,
+            awayPlayerStats: seededStats.awayPlayerStats,
+            commentary: [...state.commentary, ...subEvents, ...swapEvents, ...cpuSubEvents],
           },
         });
       },
 
-      setHomeTactic: (tactic) => {
+      setHomeTactic: (tactics) => {
         const state = get().matchState;
         if (!state || state.status !== "running") return;
-        if (state.homeTacticHalf === state.half) return;
+        if (state.half === 1 && state.homeTacticHalf === 1) return;
+        if (state.half === 2 && state.homeTacticHalf === 2) return;
         set({
           matchState: {
             ...state,
-            homeTactic: tactic,
+            homeTactics: tactics,
             homeTacticHalf: state.half,
             commentary: [
               ...state.commentary,
               {
                 id: commentaryId(),
-                minute:
-                  state.half === 1
-                    ? Math.round((state.tick / state.ticksPerHalf) * 45)
-                    : 45 + Math.round((state.tick / state.ticksPerHalf) * 45),
+                minute: Math.round((state.tick / state.ticksPerHalf) * 45),
                 half: state.half,
                 type: "info",
-                text: `TACTIC — Home switches to ${tactic.replaceAll("_", " ")}.`,
+                text: formatTacticsCommentary("Home", tactics),
                 team: "home",
               },
             ],
@@ -730,26 +1086,24 @@ export const useGameStore = create<GameStore>()(
         });
       },
 
-      setAwayTactic: (tactic) => {
+      setAwayTactic: (tactics) => {
         const state = get().matchState;
         if (!state || state.status !== "running") return;
-        if (state.awayTacticHalf === state.half) return;
+        if (state.half === 1 && state.awayTacticHalf === 1) return;
+        if (state.half === 2 && state.awayTacticHalf === 2) return;
         set({
           matchState: {
             ...state,
-            awayTactic: tactic,
+            awayTactics: tactics,
             awayTacticHalf: state.half,
             commentary: [
               ...state.commentary,
               {
                 id: commentaryId(),
-                minute:
-                  state.half === 1
-                    ? Math.round((state.tick / state.ticksPerHalf) * 45)
-                    : 45 + Math.round((state.tick / state.ticksPerHalf) * 45),
+                minute: Math.round((state.tick / state.ticksPerHalf) * 45),
                 half: state.half,
                 type: "info",
-                text: `TACTIC — Away switches to ${tactic.replaceAll("_", " ")}.`,
+                text: formatTacticsCommentary("Away", tactics),
                 team: "away",
               },
             ],
@@ -795,62 +1149,134 @@ export const useGameStore = create<GameStore>()(
         get().setMatchState({ ...matchState, status: "finished" });
       },
 
-      confirmHalftime: (homeLineup, subsMade, tactic, captain) => {
+      confirmHalftime: (playerLineup, _subsMade, tactics, captain) => {
         const state = get().matchState;
-        const { opponentUniverseId, opponentFormationId, opponentLineup, opponentBench } = get();
-        if (!state || !opponentUniverseId) return;
-
-        const oldHome = get().lineup;
-        const homeStamina = refreshStaminaAfterLineupChange(
-          oldHome,
-          homeLineup,
-          state.homeStamina
-        );
-
-        const awayResult = applyAwayCpuSubs(
-          state,
-          opponentLineup,
+        const {
           opponentUniverseId,
           opponentFormationId,
+          opponentLineup,
           opponentBench,
+          lineup,
+          matchBench,
+        } = get();
+        if (!state || !opponentUniverseId) return;
+
+        const playerIsHome = resolvePlayerIsHome();
+        const playerSide = playerIsHome ? "home" : "away";
+        const cpuSide = playerIsHome ? "away" : "home";
+        const oldPlayerLineup = lineup;
+        const playerStats = playerIsHome ? state.homePlayerStats : state.awayPlayerStats;
+        const pinnedPlayerLineup = pinSentOffPlayersInLineup(
+          oldPlayerLineup,
+          playerLineup,
+          sentOffPlayerNames(playerStats)
+        );
+        const swapAnalysis = analyzeLineupChanges(oldPlayerLineup, pinnedPlayerLineup, matchBench);
+        const subsMade = swapAnalysis.subs;
+        let playerStamina = refreshStaminaAfterLineupChange(
+          oldPlayerLineup,
+          pinnedPlayerLineup,
+          playerIsHome ? state.homeStamina : state.awayStamina
+        );
+        playerStamina = applyPositionSwapStaminaPenalty(
+          playerStamina,
+          swapAnalysis.positionSwappedPlayers
+        );
+
+        const cpuResult = applyCpuSubsForSide(
+          state,
+          cpuSide,
+          {
+            universeId: opponentUniverseId,
+            formationId: opponentFormationId,
+            lineup: opponentLineup,
+            bench: opponentBench,
+          },
           get().revealedStats
         );
 
-        const awayCaptain = cpuPickCaptain(awayResult.lineup, opponentUniverseId);
-        const awayTactic = cpuPickTactic();
+        const cpuCaptain = cpuPickCaptain(cpuResult.lineup, opponentUniverseId);
+        const cpuTactic = cpuPickTacticForSide(opponentFormationId);
 
         const subNotes: string[] = [];
         if (subsMade > 0) subNotes.push(`${subsMade} change(s) for your side.`);
-        if (awayResult.subsMade > 0) subNotes.push(`CPU makes ${awayResult.subsMade} sub(s).`);
+        if (swapAnalysis.positionSwappedPlayers.length > 0) {
+          subNotes.push(`${swapAnalysis.positionSwappedPlayers.length} player(s) reshuffled.`);
+        }
+        if (cpuResult.subsMade > 0) subNotes.push(`CPU makes ${cpuResult.subsMade} sub(s).`);
+
+        const playerTeamLabel = playerIsHome ? "Home" : "Away";
+        const homeLineupFinal = playerIsHome ? pinnedPlayerLineup : cpuResult.lineup;
+        const awayLineupFinal = playerIsHome ? cpuResult.lineup : pinnedPlayerLineup;
+        const seededStats = seedMatchPlayerStats(
+          homeLineupFinal,
+          awayLineupFinal,
+          state.homePlayerStats,
+          state.awayPlayerStats
+        );
 
         const nextState: MatchState = {
           ...state,
           status: "running",
           half: 2,
           tick: 0,
-          homeStamina,
-          awayStamina: awayResult.stamina,
-          homeSubsUsed: state.homeSubsUsed + subsMade,
-          awaySubsUsed: state.awaySubsUsed + awayResult.subsMade,
-          homeTactic: tactic ?? state.homeTactic,
-          homeTacticHalf: tactic ? 2 : state.homeTacticHalf,
-          homeCaptain: captain ?? state.homeCaptain,
-          homeCaptainHalf: captain ? 2 : state.homeCaptainHalf,
-          homeCaptainBoostTicks: captain ? CAPTAIN_BOOST_TICKS : state.homeCaptainBoostTicks,
-          awayTactic,
-          awayTacticHalf: 2,
-          awayCaptain,
-          awayCaptainHalf: 2,
-          awayCaptainBoostTicks: CAPTAIN_BOOST_TICKS,
+          homeStamina: playerIsHome ? playerStamina : cpuResult.stamina,
+          awayStamina: playerIsHome ? cpuResult.stamina : playerStamina,
+          homeSubsUsed:
+            state.homeSubsUsed + (playerIsHome ? subsMade : cpuResult.subsMade),
+          awaySubsUsed:
+            state.awaySubsUsed + (playerIsHome ? cpuResult.subsMade : subsMade),
+          homePlayerStats: seededStats.homePlayerStats,
+          awayPlayerStats: seededStats.awayPlayerStats,
+          ...(playerIsHome
+            ? {
+                homeTactics: tactics ?? state.homeTactics,
+                homeTacticHalf: tactics ? 2 : state.homeTacticHalf,
+                homeCaptain: captain ?? state.homeCaptain,
+                homeCaptainHalf: captain ? 2 : state.homeCaptainHalf,
+                homeCaptainBoostTicks: captain ? CAPTAIN_BOOST_TICKS : state.homeCaptainBoostTicks,
+                awayTactics: cpuTactic,
+                awayTacticHalf: 2,
+                awayCaptain: cpuCaptain,
+                awayCaptainHalf: 2,
+                awayCaptainBoostTicks: CAPTAIN_BOOST_TICKS,
+              }
+            : {
+                awayTactics: tactics ?? state.awayTactics,
+                awayTacticHalf: tactics ? 2 : state.awayTacticHalf,
+                awayCaptain: captain ?? state.awayCaptain,
+                awayCaptainHalf: captain ? 2 : state.awayCaptainHalf,
+                awayCaptainBoostTicks: captain ? CAPTAIN_BOOST_TICKS : state.awayCaptainBoostTicks,
+                homeTactics: cpuTactic,
+                homeTacticHalf: 2,
+                homeCaptain: cpuCaptain,
+                homeCaptainHalf: 2,
+                homeCaptainBoostTicks: CAPTAIN_BOOST_TICKS,
+              }),
           commentary: [
             ...state.commentary,
-            ...subAnnouncementLines(oldHome, homeLineup, "Home").map((text) => ({
+            ...subAnnouncementLines(oldPlayerLineup, pinnedPlayerLineup, playerTeamLabel).map(
+              (text) => ({
+                id: commentaryId(),
+                minute: 45,
+                half: 1 as const,
+                type: "substitution" as const,
+                text,
+                team: playerSide as "home" | "away",
+              })
+            ),
+            ...positionSwapAnnouncementLines(
+              oldPlayerLineup,
+              pinnedPlayerLineup,
+              matchBench,
+              playerTeamLabel
+            ).map((text) => ({
               id: commentaryId(),
               minute: 45,
               half: 1 as const,
-              type: "substitution" as const,
+              type: "info" as const,
               text,
-              team: "home" as const,
+              team: playerSide as "home" | "away",
             })),
             {
               id: commentaryId(),
@@ -859,12 +1285,24 @@ export const useGameStore = create<GameStore>()(
               type: "info",
               text: `SECOND HALF — ${subNotes.join(" ") || "No changes."}`,
             },
+            ...(tactics
+              ? [
+                  {
+                    id: commentaryId(),
+                    minute: 45,
+                    half: 1 as const,
+                    type: "info" as const,
+                    text: formatTacticsCommentary(playerTeamLabel, tactics),
+                    team: playerSide as "home" | "away",
+                  },
+                ]
+              : []),
           ],
         };
 
         set({
-          lineup: homeLineup,
-          opponentLineup: awayResult.lineup,
+          lineup: pinnedPlayerLineup,
+          opponentLineup: cpuResult.lineup,
           matchState: resetSetPieceBudgetForHalf(nextState),
         });
       },
@@ -923,15 +1361,21 @@ export const useGameStore = create<GameStore>()(
         const pending = get().pendingReveal;
         const { myUniId, oppUniId } = playerRevealUniverses();
         if (!pending || pending.result !== "win" || !myUniId || !oppUniId) return;
-        let next = revealAllForPlayer(get().revealedStats, ownPlayerName);
-        next = revealAllForPlayer(next, awayPlayerName);
+        let next = get().revealedStats;
+        const highlights: RevealHighlight[] = [];
+        if (ownPlayerName) {
+          next = revealAllForPlayer(next, ownPlayerName);
+          highlights.push({ universeId: myUniId, playerName: ownPlayerName, mode: "full" });
+        }
+        if (awayPlayerName) {
+          next = revealAllForPlayer(next, awayPlayerName);
+          highlights.push({ universeId: oppUniId, playerName: awayPlayerName, mode: "full" });
+        }
+        if (!highlights.length) return;
         set({
           revealedStats: next,
           pendingReveal: null,
-          revealHighlights: [
-            { universeId: myUniId, playerName: ownPlayerName, mode: "full" },
-            { universeId: oppUniId, playerName: awayPlayerName, mode: "full" },
-          ],
+          revealHighlights: highlights,
         });
         if (typeof window !== "undefined") {
           window.dispatchEvent(new CustomEvent("fb:sfx", { detail: { kind: "reveal" } }));
@@ -962,10 +1406,14 @@ export const useGameStore = create<GameStore>()(
           pendingReveal: null,
           revealHighlights: null,
           seasonActiveFixtureId: null,
+          tournamentActiveFixtureId: null,
           seasonPlayerIsHome: true,
           mpMatchMeta: null,
+          lastMatchContext: null,
         });
       },
+
+      clearRecentSquadUnlocks: () => set({ recentSquadUnlocks: [] }),
 
       resetAll: () =>
         set({
@@ -974,17 +1422,25 @@ export const useGameStore = create<GameStore>()(
           lineup: emptyLineupForFormation(DEFAULT_FORMATION),
           matchState: null,
           season: null,
+          seasonSaveSlots: emptySeasonSaveSlots(),
+          activeSeasonSlot: null,
           seasonActiveFixtureId: null,
           seasonPlayerIsHome: true,
         }),
 
       startSeason: (userUniverseId, length) => {
-        const seasonNumber =
-          get().seasonHonours.filter(
-            (h) => h.universeId === userUniverseId && h.seasonLength === length
-          ).length + 1;
+        get().startSeasonInSlot(0, userUniverseId, length);
+      },
+
+      startSeasonInSlot: (slot, userUniverseId, length) => {
+        const unlockedSquads = normalizeUnlockedSquads(get().careerStats.unlockedSquads);
+        if (!isSquadUnlocked(userUniverseId, unlockedSquads)) return;
+        const season = createSeason(userUniverseId, length, 1, unlockedSquads);
+        const seasonSaveSlots = writeSeasonToSlot(get().seasonSaveSlots, slot, season);
         set({
-          season: createSeason(userUniverseId, length, seasonNumber),
+          season,
+          seasonSaveSlots,
+          activeSeasonSlot: slot,
           seasonHonours: get().seasonHonours,
           seasonActiveFixtureId: null,
           seasonPlayerIsHome: true,
@@ -994,28 +1450,82 @@ export const useGameStore = create<GameStore>()(
         });
       },
 
-      abandonSeason: () =>
+      loadSeasonSlot: (slot) => {
+        const slotData = get().seasonSaveSlots[slot];
+        if (!slotData) return false;
         set({
-          season: null,
+          activeSeasonSlot: slot,
+          season: slotData.season,
           seasonActiveFixtureId: null,
           seasonPlayerIsHome: true,
-        }),
+          selectedUniverseId: slotData.season.userUniverseId,
+          lineup: emptyLineupForFormation(get().formationId),
+          matchBench: [],
+        });
+        return true;
+      },
+
+      saveSeasonSlot: () => {
+        const slot = get().activeSeasonSlot;
+        const season = get().season;
+        if (slot == null || !season) return;
+        set({
+          seasonSaveSlots: writeSeasonToSlot(get().seasonSaveSlots, slot, season),
+        });
+      },
+
+      continueSeason: () => {
+        const season = get().season;
+        const slot = get().activeSeasonSlot;
+        if (!season || slot == null || !canContinueSeasonCampaign(season)) return false;
+        const unlockedSquads = normalizeUnlockedSquads(get().careerStats.unlockedSquads);
+        const next = buildContinuedSeason(season, unlockedSquads);
+        set({
+          season: next,
+          seasonSaveSlots: writeSeasonToSlot(get().seasonSaveSlots, slot, next),
+          seasonActiveFixtureId: null,
+          seasonPlayerIsHome: true,
+          selectedUniverseId: next.userUniverseId,
+          lineup: emptyLineupForFormation(get().formationId),
+          matchBench: [],
+        });
+        return true;
+      },
+
+      abandonSeason: () => {
+        const slot = get().activeSeasonSlot;
+        const season = get().season;
+        const seasonSaveSlots = [...get().seasonSaveSlots] as SeasonSaveSlots;
+        if (slot != null && season?.status === "active") {
+          seasonSaveSlots[slot] = null;
+        }
+        set({
+          season: null,
+          activeSeasonSlot: null,
+          seasonSaveSlots,
+          seasonActiveFixtureId: null,
+          seasonPlayerIsHome: true,
+        });
+      },
 
       prepareSeasonMatch: () => {
-        const season = get().season;
-        if (!season || season.status !== "active") return false;
+        const rawSeason = get().season;
+        if (!rawSeason || rawSeason.status !== "active") return false;
+        const season = ensureSeasonRosters(rawSeason);
         const fixture = getPlayerFixture(season);
         if (!fixture) return false;
 
         clearMultiplayerSession();
         const isHome = fixture.homeUniverseId === season.userUniverseId;
         const oppId = isHome ? fixture.awayUniverseId : fixture.homeUniverseId;
-        const opp = prepareCpuOpponentForSeason(oppId);
+        const opp = prepareCpuOpponentForSeason(oppId, season.rosters);
 
         set({
+          season,
           selectedUniverseId: season.userUniverseId,
           seasonPlayerIsHome: isHome,
           seasonActiveFixtureId: fixture.id,
+          tournamentActiveFixtureId: null,
           lineup: emptyLineupForFormation(get().formationId),
           matchBench: [],
           opponentUniverseId: oppId,
@@ -1028,6 +1538,23 @@ export const useGameStore = create<GameStore>()(
 
       setTournament: (tournament) => set({ tournament }),
       setTournamentActiveFixture: (fixtureId) => set({ tournamentActiveFixtureId: fixtureId }),
+
+      setCareerStats: (stats) => set({ careerStats: stats }),
+
+      executeSeasonTransfer: (partnerTeamId, outgoing, incoming) => {
+        const raw = get().season;
+        if (!raw) return { ok: false, error: "No active season." };
+        const season = ensureSeasonRosters(raw);
+        const { season: next, error } = executeSeasonSwap(season, partnerTeamId, outgoing, incoming);
+        if (error) return { ok: false, error };
+        const slot = get().activeSeasonSlot;
+        const patch: Partial<GameStore> = { season: next };
+        if (slot != null) {
+          patch.seasonSaveSlots = writeSeasonToSlot(get().seasonSaveSlots, slot, next);
+        }
+        set(patch);
+        return { ok: true };
+      },
     }),
     {
       name: "fantasy-build-store",
@@ -1036,12 +1563,8 @@ export const useGameStore = create<GameStore>()(
         formationId: s.formationId,
         lineup: s.lineup,
         opponentUniverseId: s.opponentUniverseId,
-        revealedStats: s.revealedStats,
         savedLineups: s.savedLineups,
-        season: s.season,
-        seasonHonours: s.seasonHonours,
-        tournament: s.tournament,
-        playerForm: s.playerForm,
+        plannedTactics: s.plannedTactics,
       }),
     }
   )

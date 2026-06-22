@@ -1,6 +1,6 @@
 "use client";
 
-import type { LineupSlot, TacticalStyle } from "@/lib/types";
+import type { LineupSlot, TeamTactics } from "@/lib/types";
 import type { MpPlayerAction } from "@/lib/multiplayer-types";
 import { MAX_MATCH_SUBS } from "@/lib/constants";
 import {
@@ -37,17 +37,17 @@ export async function signalMultiplayerTactic(
   roomId: string,
   side: MatchSide,
   isHost: boolean,
-  tactic: TacticalStyle
+  tactics: TeamTactics
 ): Promise<void> {
   if (isHost && side === "home") {
-    useGameStore.getState().setHomeTactic(tactic);
+    useGameStore.getState().setHomeTactic(tactics);
     return;
   }
   if (isHost && side === "away") {
-    useGameStore.getState().setAwayTactic(tactic);
+    useGameStore.getState().setAwayTactic(tactics);
     return;
   }
-  await updateMyMpAction(roomId, { type: "set_tactic", tactic });
+  await updateMyMpAction(roomId, { type: "set_tactic", tactic: tactics });
 }
 
 export async function signalMultiplayerCaptain(
@@ -95,16 +95,37 @@ export async function confirmMultiplayerHalftimePause(
   isHost: boolean,
   lineup: LineupSlot[],
   subsMade: number,
-  tactic?: TacticalStyle | null,
+  tactics?: TeamTactics | null,
   captain?: string | null
 ): Promise<void> {
   const action: MpPlayerAction = {
     type: "halftime_ready",
     lineup,
     subsMade,
-    tactic: tactic ?? null,
+    tactic: tactics ?? null,
     captain: captain ?? null,
   };
+
+  if (isHost) {
+    const meta = useGameStore.getState().mpMatchMeta ?? defaultMpMatchMeta();
+    const nextMeta = applyMpActionToMeta(meta, action, side);
+    useGameStore.getState().setMpMatchMeta(nextMeta);
+    if (nextMeta.pause && canResumePause(nextMeta.pause)) {
+      tryResumeMpPause(nextMeta);
+    }
+    return;
+  }
+
+  await updateMyMpAction(roomId, action);
+}
+
+export async function confirmMultiplayerExtraTimePause(
+  roomId: string,
+  side: MatchSide,
+  isHost: boolean,
+  approach: import("@/lib/types").ExtraTimeApproach
+): Promise<void> {
+  const action: MpPlayerAction = { type: "extra_time_ready", approach };
 
   if (isHost) {
     const meta = useGameStore.getState().mpMatchMeta ?? defaultMpMatchMeta();

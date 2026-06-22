@@ -11,6 +11,8 @@ import {
 interface SetPiecePanelProps {
   piece: InteractiveSetPiece;
   isAttacker: boolean;
+  attackingLabel?: string;
+  defendingLabel?: string;
   myPick: number | null;
   onPick: (choice: number) => void;
 }
@@ -112,7 +114,7 @@ function penaltyZones(isAttacker: boolean): ZoneButton[] {
   ];
 }
 
-export function SetPiecePanel({ piece, isAttacker, myPick, onPick }: SetPiecePanelProps) {
+export function SetPiecePanel({ piece, isAttacker, attackingLabel, defendingLabel, myPick, onPick }: SetPiecePanelProps) {
   const [secondsLeft, setSecondsLeft] = useState(() =>
     piece.phase === "choose" ? setPieceTimeLeft(piece.chooseEndsAt) : setPieceTimeLeft(piece.revealEndsAt)
   );
@@ -151,9 +153,13 @@ export function SetPiecePanel({ piece, isAttacker, myPick, onPick }: SetPiecePan
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="broadcast-label text-[10px] text-amber-300">
-            {piece.kind === "penalty" ? "Penalty" : "Corner"} — {isAttacker ? "Attack" : "Defend"}
+            {piece.kind === "penalty" ? "Penalty" : "Corner"} — {isAttacker ? "You attack" : "You defend"}
           </p>
           <p className="text-sm text-slate-200">
+            {attackingLabel ?? (piece.attacking === "home" ? "Home" : "Away")} attack ·{" "}
+            {defendingLabel ?? (piece.attacking === "home" ? "Away" : "Home")} defend
+          </p>
+          <p className="text-xs text-slate-400">
             {piece.taker} vs {piece.keeper}
             {piece.kind === "corner" && piece.cornerTaker && piece.cornerTaker !== piece.taker
               ? ` · ${piece.cornerTaker} to deliver`
@@ -184,7 +190,12 @@ export function SetPiecePanel({ piece, isAttacker, myPick, onPick }: SetPiecePan
       </div>
 
       {myPick ? (
-        <p className="mt-2 text-center text-xs text-slate-400">Choice locked — waiting for opponent…</p>
+        <p className="mt-2 text-center text-xs text-slate-400">
+          {piece.phase === "choose" &&
+          (isAttacker ? piece.defenderPick : piece.attackerPick)
+            ? "Both sides locked in — resolving…"
+            : "Choice locked — waiting for opponent…"}
+        </p>
       ) : null}
     </div>
   );

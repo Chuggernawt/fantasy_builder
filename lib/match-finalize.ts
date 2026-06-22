@@ -60,8 +60,8 @@ export function finalizeMatchStateRatings(
     state.awayPlayerStats ?? {},
     lineupPlayerNames(awayLineup)
   );
-  homeStats = finalizePlayerRatings(homeStats, roles);
-  awayStats = finalizePlayerRatings(awayStats, roles);
+  homeStats = finalizePlayerRatings(homeStats, roles, state.score.home, state.score.away);
+  awayStats = finalizePlayerRatings(awayStats, roles, state.score.away, state.score.home);
   const motm = pickManOfTheMatch(homeStats, awayStats, roles);
 
   return {

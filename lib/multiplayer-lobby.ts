@@ -8,6 +8,7 @@ import {
 import type { MultiplayerSnapshot, PlayerLobbyState } from "./multiplayer-types";
 import { buildMatchFormMap } from "./match-finalize";
 import { createInitialMatchState } from "./simulation";
+import { defaultTeamTactics, normalizeTeamTactics } from "./tactics";
 import type { FormationId, LineupSlot } from "./types";
 
 export function createEmptyLobby(): PlayerLobbyState {
@@ -16,6 +17,7 @@ export function createEmptyLobby(): PlayerLobbyState {
     formationId: DEFAULT_FORMATION,
     lineup: emptyLineupForFormation(DEFAULT_FORMATION),
     matchBench: [],
+    plannedTactics: defaultTeamTactics(),
     ready: false,
     updatedAt: new Date().toISOString(),
   };
@@ -29,6 +31,7 @@ export function normalizeLobby(raw: PlayerLobbyState | null | undefined): Player
     formationId,
     lineup: raw.lineup?.length ? raw.lineup : emptyLineupForFormation(formationId),
     matchBench: raw.matchBench ?? [],
+    plannedTactics: normalizeTeamTactics(raw.plannedTactics),
     ready: !!raw.ready,
     updatedAt: raw.updatedAt ?? new Date().toISOString(),
   };
@@ -37,6 +40,16 @@ export function normalizeLobby(raw: PlayerLobbyState | null | undefined): Player
 export function lobbyTeamReady(lobby: PlayerLobbyState): boolean {
   if (!lobby.universeId) return false;
   return isMatchReady(lobby.lineup as LineupSlot[], lobby.matchBench);
+}
+
+export function lobbyReadyBlockReason(lobby: PlayerLobbyState): string | null {
+  if (!lobby.universeId) return "Choose a universe before readying up.";
+  const xi = countAssigned(lobby.lineup as LineupSlot[]);
+  if (xi < 11) return `Pick your full XI first (${xi}/11 on the pitch).`;
+  if (lobby.matchBench.length < 5) {
+    return `Pick 5 substitutes before readying up (${lobby.matchBench.length}/5).`;
+  }
+  return null;
 }
 
 export function validateLobbyPair(
@@ -80,6 +93,8 @@ export function buildMatchSnapshotFromLobbies(
     storeForm ?? {}
   );
   const base = createInitialMatchState(homeSetup, awaySetup, { playerForm });
+  const homeTactics = normalizeTeamTactics(host.plannedTactics);
+  const awayTactics = normalizeTeamTactics(away.plannedTactics);
   return {
     selectedUniverseId: host.universeId,
     formationId: host.formationId,
@@ -91,6 +106,10 @@ export function buildMatchSnapshotFromLobbies(
     opponentBench: away.matchBench,
     matchState: {
       ...base,
+      homeTactics,
+      homeTacticHalf: 0,
+      awayTactics,
+      awayTacticHalf: 0,
     },
     mp: defaultMpMatchMeta(),
     updatedAt: new Date().toISOString(),

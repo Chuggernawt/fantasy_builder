@@ -1,9 +1,11 @@
 import type { SeasonMatchMeta } from "./commentary-types";
-import { getAllUniverses, getUniverse } from "./squads";
+import { getUniverse } from "./squads";
 import { revealAllForPlayer } from "./reveal";
 import type { StatKey } from "./types";
 import { buildSeasonFixtures, initSeasonTable } from "./season-fixtures";
 import { simulateLiteMatch } from "./season-lite";
+import { initSeasonRosters, pickSeasonLeagueIds, SEASON_LEAGUE_SIZE } from "./season-rosters";
+import { openTransferWindowIfNeeded } from "./season-transfers";
 import type {
   LiteMatchResult,
   SeasonFixture,
@@ -14,16 +16,25 @@ import type {
   SeasonTeamRow,
 } from "./season-types";
 
+export { SEASON_LEAGUE_SIZE, pickSeasonLeagueIds } from "./season-rosters";
+
 export function playerStatKey(universeId: string, playerName: string): string {
   return `${universeId}::${playerName}`;
 }
 
-export function createSeason(userUniverseId: string, length: SeasonLength, seasonNumber: number): SeasonState {
-  const ids = getAllUniverses().map((u) => u.id);
+export function createSeason(
+  userUniverseId: string,
+  length: SeasonLength,
+  seasonNumber: number,
+  unlockedSquads: string[]
+): SeasonState {
+  const ids = pickSeasonLeagueIds(userUniverseId, unlockedSquads);
   return {
     seasonNumber,
     length,
     userUniverseId,
+    leagueUniverseIds: ids,
+    rosters: initSeasonRosters(ids),
     fixtures: buildSeasonFixtures(ids, userUniverseId, length),
     table: initSeasonTable(ids),
     playerStats: {},
@@ -31,6 +42,8 @@ export function createSeason(userUniverseId: string, length: SeasonLength, seaso
     status: "active",
     championId: null,
     suspensions: {},
+    transfersThisWindow: 0,
+    transferHistory: [],
   };
 }
 
@@ -271,9 +284,10 @@ export function recordPlayerMatchFromState(
 
 export function simRemainingMatchdayFixtures(season: SeasonState): SeasonState {
   let next = { ...season };
+  const rosters = next.rosters;
   const pending = getMatchdayFixtures(next, next.currentMatchday).filter((f) => !f.played);
   for (const f of pending) {
-    const result = simulateLiteMatch(f.homeUniverseId, f.awayUniverseId);
+    const result = simulateLiteMatch(f.homeUniverseId, f.awayUniverseId, rosters);
     next = recordLiteResult(next, result, f.id);
   }
   return advanceMatchdayIfComplete(tickSuspensions(next));
@@ -288,7 +302,8 @@ function advanceMatchdayIfComplete(season: SeasonState): SeasonState {
     const sorted = sortTable(season.table);
     return { ...season, status: "finished", championId: sorted[0]?.universeId ?? null };
   }
-  return { ...season, currentMatchday: season.currentMatchday + 1 };
+  const next = { ...season, currentMatchday: season.currentMatchday + 1 };
+  return openTransferWindowIfNeeded(next);
 }
 
 export function sortTable(table: SeasonTeamRow[]): SeasonTeamRow[] {
@@ -330,21 +345,25 @@ export function applySeasonChampionReveal(
   revealedStats: Record<string, StatKey[]>,
   userUniverseId: string,
   length: SeasonLength,
-  won: boolean
+  won: boolean,
+  rosterPlayerNames?: string[]
 ): Record<string, StatKey[]> {
   if (!won) return revealedStats;
-  const uni = getUniverse(userUniverseId);
-  if (!uni) return revealedStats;
 
   let next = { ...revealedStats };
+  const names =
+    rosterPlayerNames ??
+    getUniverse(userUniverseId)?.players.map((p) => p.name) ??
+    [];
+
   if (length === 38) {
-    for (const p of uni.players) {
-      next = revealAllForPlayer(next, p.name);
+    for (const name of names) {
+      next = revealAllForPlayer(next, name);
     }
   } else {
-    const shuffled = [...uni.players].sort(() => Math.random() - 0.5).slice(0, 11);
-    for (const p of shuffled) {
-      next = revealAllForPlayer(next, p.name);
+    const shuffled = [...names].sort(() => Math.random() - 0.5).slice(0, 11);
+    for (const name of shuffled) {
+      next = revealAllForPlayer(next, name);
     }
   }
   return next;

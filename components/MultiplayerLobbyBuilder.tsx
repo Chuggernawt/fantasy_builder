@@ -13,30 +13,49 @@ import {
   randomFillLineup,
   remapLineupOnFormationChange,
 } from "@/lib/lineup";
+import { TacticsPreMatchSelect } from "@/components/TacticsPreMatchSelect";
 import { lobbyTeamReady } from "@/lib/multiplayer-lobby";
+import { defaultTeamTactics } from "@/lib/tactics";
 import type { PlayerLobbyState } from "@/lib/multiplayer-types";
 import { getAllUniverses, getPlayer, getUniverse } from "@/lib/squads";
+import { isSquadUnlocked } from "@/lib/squad-unlocks";
+import { useGameStore } from "@/store/game-store";
 import type { FormationId, LineupSlot } from "@/lib/types";
 
 interface MultiplayerLobbyBuilderProps {
   lobby: PlayerLobbyState;
-  takenUniverseId: string | null;
+  /** @deprecated Use takenUniverseIds */
+  takenUniverseId?: string | null;
+  takenUniverseIds?: string[];
   onChange: (next: PlayerLobbyState) => void;
   onPersist?: (next: PlayerLobbyState) => void;
 }
 
 export function MultiplayerLobbyBuilder({
   lobby,
-  takenUniverseId,
+  takenUniverseId = null,
+  takenUniverseIds,
   onChange,
   onPersist,
 }: MultiplayerLobbyBuilderProps) {
   const [activeSlot, setActiveSlot] = useState<string | null>(null);
+  const [saveNotice, setSaveNotice] = useState<string | null>(null);
+  const saveLineupSnapshot = useGameStore((s) => s.saveLineupSnapshot);
+  const loadLineupSnapshot = useGameStore((s) => s.loadLineupSnapshot);
+  const hasSavedLineup = useGameStore((s) => s.hasSavedLineup);
+  const unlockedSquads = useGameStore((s) => s.careerStats.unlockedSquads ?? []);
   const universe = lobby.universeId ? getUniverse(lobby.universeId) : null;
   const formation = FORMATIONS.find((f) => f.id === lobby.formationId) ?? FORMATIONS[0];
   const lineup = lobby.lineup as LineupSlot[];
   const assignedCount = countAssigned(lineup);
-  const universes = getAllUniverses().filter((u) => u.id !== takenUniverseId);
+  const taken = useMemo(() => {
+    const ids = new Set(takenUniverseIds ?? []);
+    if (takenUniverseId) ids.add(takenUniverseId);
+    return ids;
+  }, [takenUniverseId, takenUniverseIds]);
+  const universes = getAllUniverses().filter(
+    (u) => !taken.has(u.id) && isSquadUnlocked(u.id, unlockedSquads)
+  );
 
   const assignedNames = useMemo(
     () => new Set(lineup.map((l) => l.playerName).filter(Boolean)),
@@ -106,6 +125,8 @@ export function MultiplayerLobbyBuilder({
     if (lobby.matchBench.length >= MATCH_BENCH_SIZE) return;
     patchLobby({ matchBench: [...lobby.matchBench, playerName] });
   }
+
+  const canLoadSaved = !!lobby.universeId && hasSavedLineup(lobby.universeId);
 
   if (!universe) {
     return (
@@ -182,6 +203,10 @@ export function MultiplayerLobbyBuilder({
             {f.label}
           </button>
         ))}
+        <TacticsPreMatchSelect
+          value={lobby.plannedTactics}
+          onChange={(plannedTactics) => patchLobby({ plannedTactics }, true)}
+        />
         <span className="ml-auto font-mono text-[10px] text-broadcast-highlight md:text-xs">
           XI {assignedCount}/11 · Subs {lobby.matchBench.length}/{MATCH_BENCH_SIZE}
         </span>
@@ -227,6 +252,50 @@ export function MultiplayerLobbyBuilder({
         >
           Clear
         </button>
+        <button
+          type="button"
+          className="btn-broadcast px-2 py-1 text-[10px]"
+          disabled={!lobby.universeId}
+          onClick={() => {
+            if (!lobby.universeId) return;
+            saveLineupSnapshot(
+              lobby.universeId,
+              lobby.formationId as FormationId,
+              lineup,
+              lobby.matchBench,
+              lobby.plannedTactics
+            );
+            setSaveNotice("Saved");
+          }}
+        >
+          Save
+        </button>
+        <button
+          type="button"
+          className="btn-broadcast px-2 py-1 text-[10px]"
+          disabled={!canLoadSaved}
+          onClick={() => {
+            if (!lobby.universeId) return;
+            const saved = loadLineupSnapshot(lobby.universeId);
+            if (!saved) return;
+            patchLobby(
+              {
+                formationId: saved.formationId,
+                lineup: saved.lineup,
+                matchBench: saved.matchBench,
+                plannedTactics: saved.plannedTactics ?? defaultTeamTactics(),
+              },
+              true
+            );
+            setActiveSlot(null);
+            setSaveNotice("Loaded");
+          }}
+        >
+          Load
+        </button>
+        {saveNotice ? (
+          <span className="self-center text-[10px] text-broadcast-highlight">{saveNotice}</span>
+        ) : null}
         <span className="hidden self-center text-[10px] text-slate-500 lg:inline">
           Drag squad → pitch · click slot to assign
         </span>

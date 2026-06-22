@@ -2,6 +2,7 @@ import type { MpMatchMeta, MpPauseState } from "./multiplayer-types";
 
 export const MP_SUB_PAUSE_MS = 20_000;
 export const MP_HALFTIME_PAUSE_MS = 30_000;
+export const MP_EXTRA_TIME_PAUSE_MS = 15_000;
 
 export function defaultMpMatchMeta(): MpMatchMeta {
   return { pause: null, rematch: { host: false, away: false } };
@@ -25,6 +26,18 @@ export function beginMpHalftimePause(meta: MpMatchMeta): MpMatchMeta {
     pause: {
       kind: "halftime",
       endsAt: new Date(Date.now() + MP_HALFTIME_PAUSE_MS).toISOString(),
+      homeReady: false,
+      awayReady: false,
+    },
+  };
+}
+
+export function beginMpExtraTimePause(meta: MpMatchMeta): MpMatchMeta {
+  return {
+    ...meta,
+    pause: {
+      kind: "extra_time",
+      endsAt: new Date(Date.now() + MP_EXTRA_TIME_PAUSE_MS).toISOString(),
       homeReady: false,
       awayReady: false,
     },

@@ -2,13 +2,16 @@ import type {
   FormationId,
   PendingSetPiece,
   PlayerMatchStats,
-  TacticalStyle,
+  Role,
+  TeamTactics,
   TeamMatchStats,
+  TeamSetup,
 } from "./types";
 
 export interface SimLineupPlayer {
   name: string;
   role: string;
+  naturalRole?: Role;
   stats: {
     pace: number;
     power: number;
@@ -67,8 +70,8 @@ export interface AttackContext {
   freekickTaker: string | null;
   homePlayerStats: Record<string, PlayerMatchStats>;
   awayPlayerStats: Record<string, PlayerMatchStats>;
-  homeTactic: TacticalStyle | null;
-  awayTactic: TacticalStyle | null;
+  homeTactics: TeamTactics | null;
+  awayTactics: TeamTactics | null;
   homeTacticHalf: number;
   awayTacticHalf: number;
   homeCaptain: string | null;
@@ -79,6 +82,8 @@ export interface AttackContext {
   awayCaptainBoostTicks: number;
   homeUniverseId: string;
   awayUniverseId: string;
+  homeSetup: TeamSetup;
+  awaySetup: TeamSetup;
   playerForm: Record<string, number>;
   inStoppageTime: boolean;
   homeExtraTimeApproach: import("./types").ExtraTimeApproach | null;

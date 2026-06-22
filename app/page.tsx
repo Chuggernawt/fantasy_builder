@@ -43,7 +43,7 @@ export default function HomePage() {
             </Link>
           </div>
           <p className="mx-auto mt-3 max-w-md text-xs text-slate-500">
-            Season: 20-team league — 19 or 38 games, full stats, lite sim for other fixtures, trophy
+            Season: 20-team league (random draw) — 19 or 38 games, full stats, lite sim for other fixtures, trophy
             rewards for winning the title.
           </p>
         </section>

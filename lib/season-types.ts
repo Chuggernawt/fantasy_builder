@@ -1,5 +1,19 @@
 export type SeasonLength = 19 | 38;
 
+export interface SeasonRosterEntry {
+  /** Original universe — stats and identity stay tied here after transfers. */
+  universeId: string;
+  playerName: string;
+}
+
+export interface SeasonTransferRecord {
+  matchday: number;
+  partnerTeamId: string;
+  out: SeasonRosterEntry;
+  in: SeasonRosterEntry;
+  completedAt: string;
+}
+
 export interface SeasonFixture {
   id: string;
   matchday: number;
@@ -87,6 +101,8 @@ export interface SeasonState {
   seasonNumber: number;
   length: SeasonLength;
   userUniverseId: string;
+  /** Universes in this season's 20-team league (new seasons only). */
+  leagueUniverseIds?: string[];
   fixtures: SeasonFixture[];
   table: SeasonTeamRow[];
   playerStats: Record<string, SeasonPlayerRow>;
@@ -95,4 +111,15 @@ export interface SeasonState {
   championId: string | null;
   /** Games remaining banned: key `${universeId}:${playerName}` */
   suspensions: Record<string, number>;
+  /** Per-club squads for this season (22 players each). */
+  rosters?: Record<string, SeasonRosterEntry[]>;
+  /** Swaps completed in the current transfer window. */
+  transfersThisWindow?: number;
+  /** Matchday when the active transfer window opened (5, 9, 13, …). */
+  transferWindowMatchday?: number;
+  transferHistory?: SeasonTransferRecord[];
+  /** Teams relegated when continuing into the next campaign season. */
+  lastRelegatedIds?: string[];
+  /** Teams promoted when continuing into the next campaign season. */
+  lastPromotedIds?: string[];
 }

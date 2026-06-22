@@ -1,9 +1,25 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BroadcastHeader } from "@/components/BroadcastHeader";
-import { getAllUniverses, getUniverse } from "@/lib/squads";
+import { SeasonHubCommentary } from "@/components/SeasonHubCommentary";
+import { SeasonTransferLog } from "@/components/SeasonTransferLog";
+import { SeasonTransferModal } from "@/components/SeasonTransferModal";
+import { getUniverse } from "@/lib/squads";
+import { partitionUniversesByLock } from "@/lib/squad-unlocks";
+import { ensureSeasonRosters } from "@/lib/season-rosters";
+import { getTransferHubStatus } from "@/lib/season-transfers";
+import {
+  canContinueSeasonCampaign,
+  formatRelegationAnnouncement,
+  isUserInRelegationZone,
+  relegationZoneStartIndex,
+} from "@/lib/season-continue";
+import {
+  seasonSaveSlotSummary,
+  type SeasonSaveSlotIndex,
+} from "@/lib/season-saves";
 import {
   getMatchdayFixtures,
   getPlayerFixture,
@@ -36,14 +52,29 @@ export default function SeasonPage() {
   const router = useRouter();
   const season = useGameStore((s) => s.season);
   const seasonHonours = useGameStore((s) => s.seasonHonours);
-  const startSeason = useGameStore((s) => s.startSeason);
+  const seasonSaveSlots = useGameStore((s) => s.seasonSaveSlots);
+  const activeSeasonSlot = useGameStore((s) => s.activeSeasonSlot);
+  const startSeasonInSlot = useGameStore((s) => s.startSeasonInSlot);
+  const loadSeasonSlot = useGameStore((s) => s.loadSeasonSlot);
+  const saveSeasonSlot = useGameStore((s) => s.saveSeasonSlot);
+  const continueSeason = useGameStore((s) => s.continueSeason);
   const abandonSeason = useGameStore((s) => s.abandonSeason);
   const prepareSeasonMatch = useGameStore((s) => s.prepareSeasonMatch);
 
   const [pickLength, setPickLength] = useState<SeasonLength | null>(null);
+  const [pendingUniverseId, setPendingUniverseId] = useState<string | null>(null);
+  const [saveNotice, setSaveNotice] = useState<string | null>(null);
   const [statsTab, setStatsTab] = useState<StatsTab>("scorers");
+  const [transferOpen, setTransferOpen] = useState(false);
 
-  const universes = getAllUniverses();
+  useEffect(() => {
+    if (season && !season.rosters) {
+      useGameStore.setState({ season: ensureSeasonRosters(season) });
+    }
+  }, [season]);
+
+  const careerStats = useGameStore((s) => s.careerStats);
+  const { available: universes } = partitionUniversesByLock(careerStats.unlockedSquads ?? []);
   const userUniverse = season ? getUniverse(season.userUniverseId) : null;
   const nextFixture = season ? getPlayerFixture(season) : null;
   const sortedTable = useMemo(
@@ -81,34 +112,101 @@ export default function SeasonPage() {
     router.push("/draft");
   }
 
+  function handleSave() {
+    saveSeasonSlot();
+    setSaveNotice("Saved");
+    window.setTimeout(() => setSaveNotice(null), 2000);
+  }
+
+  function confirmStartInSlot(slot: SeasonSaveSlotIndex) {
+    if (!pendingUniverseId || !pickLength) return;
+    const occupied = seasonSaveSlots[slot];
+    if (occupied && !window.confirm(`Overwrite save slot ${slot + 1}?`)) return;
+    startSeasonInSlot(slot, pendingUniverseId, pickLength);
+    setPendingUniverseId(null);
+    setPickLength(null);
+  }
+
   if (!season) {
+    const hasAnySave = seasonSaveSlots.some((s) => s != null);
     return (
       <>
         <BroadcastHeader title="Season Mode" backHref="/" backLabel="Home" />
         <main className="mx-auto max-w-4xl px-4 py-6">
           <p className="mb-6 text-sm text-slate-400">
-            All 20 universes in a full league. Win the title to earn trophy honours and squad
+            A random draw of 20 universes each season. Win the title to earn trophy honours and squad
             reveals — 38-game champions unlock every stat; 19-game champions get 11 random reveals.
+            Bottom three are relegated each campaign; carry your squad into the next season if you
+            stay up.
           </p>
+
+          {hasAnySave ? (
+            <section className="glass-panel mb-8 p-4">
+              <p className="broadcast-label mb-3">Load Save</p>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {([0, 1, 2] as const).map((slot) => {
+                  const data = seasonSaveSlots[slot];
+                  const uni = data ? getUniverse(data.season.userUniverseId) : null;
+                  return (
+                    <button
+                      key={slot}
+                      type="button"
+                      disabled={!data}
+                      onClick={() => loadSeasonSlot(slot)}
+                      className="glass-panel p-3 text-left transition enabled:hover:border-broadcast-highlight disabled:opacity-40"
+                      style={
+                        uni
+                          ? { borderLeftWidth: 4, borderLeftColor: uni.accentColor }
+                          : undefined
+                      }
+                    >
+                      <p className="font-display text-xs font-bold uppercase">Slot {slot + 1}</p>
+                      {data ? (
+                        <>
+                          <p className="mt-1 text-sm" style={{ color: uni?.accentColor }}>
+                            {uni?.name}
+                          </p>
+                          <p className="mt-1 text-[11px] text-slate-500">
+                            {seasonSaveSlotSummary(data)}
+                          </p>
+                          <p className="mt-1 text-[10px] text-slate-600">
+                            Saved {new Date(data.savedAt).toLocaleString()}
+                          </p>
+                        </>
+                      ) : (
+                        <p className="mt-1 text-xs text-slate-600">Empty</p>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
 
           <div className="mb-8 flex flex-wrap gap-3">
             <button
               type="button"
               className={`btn-broadcast px-4 py-2 ${pickLength === 19 ? "border-broadcast-highlight bg-broadcast-highlight/15" : ""}`}
-              onClick={() => setPickLength(19)}
+              onClick={() => {
+                setPickLength(19);
+                setPendingUniverseId(null);
+              }}
             >
               19 Games — each opponent once
             </button>
             <button
               type="button"
               className={`btn-broadcast px-4 py-2 ${pickLength === 38 ? "border-broadcast-highlight bg-broadcast-highlight/15" : ""}`}
-              onClick={() => setPickLength(38)}
+              onClick={() => {
+                setPickLength(38);
+                setPendingUniverseId(null);
+              }}
             >
               38 Games — home &amp; away
             </button>
           </div>
 
-          {pickLength ? (
+          {pickLength && !pendingUniverseId ? (
             <section>
               <p className="broadcast-label mb-3">Choose your universe</p>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -116,7 +214,7 @@ export default function SeasonPage() {
                   <button
                     key={u.id}
                     type="button"
-                    onClick={() => startSeason(u.id, pickLength)}
+                    onClick={() => setPendingUniverseId(u.id)}
                     className="glass-panel p-4 text-left transition hover:border-broadcast-highlight"
                     style={{ borderLeftWidth: 4, borderLeftColor: u.accentColor }}
                   >
@@ -126,9 +224,46 @@ export default function SeasonPage() {
                 ))}
               </div>
             </section>
-          ) : (
-            <p className="text-sm text-slate-500">Pick a season length to continue.</p>
-          )}
+          ) : null}
+
+          {pickLength && pendingUniverseId ? (
+            <section>
+              <p className="broadcast-label mb-1">Save slot</p>
+              <p className="mb-3 text-sm text-slate-400">
+                Choose where to store this {pickLength}-game campaign (
+                {getUniverse(pendingUniverseId)?.name}).
+              </p>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {([0, 1, 2] as const).map((slot) => {
+                  const occupied = seasonSaveSlots[slot];
+                  return (
+                    <button
+                      key={slot}
+                      type="button"
+                      onClick={() => confirmStartInSlot(slot)}
+                      className="glass-panel p-4 text-left transition hover:border-broadcast-highlight"
+                    >
+                      <p className="font-display text-sm font-bold uppercase">Slot {slot + 1}</p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {occupied ? seasonSaveSlotSummary(occupied) : "Empty — new save"}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                type="button"
+                className="btn-broadcast mt-4 text-xs"
+                onClick={() => setPendingUniverseId(null)}
+              >
+                Back to universe pick
+              </button>
+            </section>
+          ) : null}
+
+          {!pickLength ? (
+            <p className="text-sm text-slate-500">Pick a season length to start a new campaign.</p>
+          ) : null}
         </main>
       </>
     );
@@ -140,6 +275,10 @@ export default function SeasonPage() {
       : null;
   const userWon =
     season.status === "finished" && season.championId === season.userUniverseId;
+  const userRelegated = isUserInRelegationZone(season);
+  const canContinue = canContinueSeasonCampaign(season);
+  const relegateFrom = relegationZoneStartIndex(sortedTable.length);
+  const transferHub = getTransferHubStatus(season);
 
   return (
     <>
@@ -160,7 +299,14 @@ export default function SeasonPage() {
               {season.status === "finished"
                 ? "Season complete"
                 : `Matchday ${season.currentMatchday} of ${season.length}`}
+              {activeSeasonSlot != null ? ` · Save slot ${activeSeasonSlot + 1}` : null}
             </p>
+            {saveNotice ? (
+              <p className="mt-1 text-[11px] text-broadcast-highlight">{saveNotice}</p>
+            ) : null}
+            {season.status === "active" ? (
+              <p className="mt-1 text-[11px] text-slate-500">{transferHub.shortLabel}</p>
+            ) : null}
           </div>
           {season.status === "active" && nextFixture ? (
             <button type="button" className="btn-broadcast-solid" onClick={handlePlayNext}>
@@ -168,8 +314,30 @@ export default function SeasonPage() {
             </button>
           ) : null}
           {season.status === "active" ? (
+            <button
+              type="button"
+              className={`btn-broadcast text-xs ${
+                transferHub.open
+                  ? "border-broadcast-highlight/60 bg-broadcast-highlight/10"
+                  : "opacity-80"
+              }`}
+              onClick={() => setTransferOpen(true)}
+            >
+              {transferHub.buttonLabel}
+            </button>
+          ) : null}
+          {season.status === "active" ? (
+            <button type="button" className="btn-broadcast text-xs" onClick={handleSave}>
+              Save game
+            </button>
+          ) : null}
+          {season.status === "active" ? (
             <button type="button" className="btn-broadcast text-xs" onClick={abandonSeason}>
               Abandon season
+            </button>
+          ) : canContinue ? (
+            <button type="button" className="btn-broadcast-solid" onClick={() => continueSeason()}>
+              Continue season {season.seasonNumber + 1}
             </button>
           ) : (
             <button
@@ -185,28 +353,56 @@ export default function SeasonPage() {
         </div>
 
         {season.status === "finished" ? (
-          <div
-            className="glass-panel mb-6 border-t-4 p-4"
-            style={{ borderTopColor: championUni?.accentColor ?? "#eab308" }}
-          >
-            <p className="broadcast-label mb-1">Champions</p>
-            <p className="font-display text-xl font-bold uppercase text-broadcast-highlight">
-              {championUni?.name ?? "—"}
-            </p>
-            {userWon ? (
-              <p className="mt-2 text-sm text-slate-300">
-                Trophy won!{" "}
-                {season.length === 38
-                  ? "Your full 22-man squad stats are now revealed."
-                  : "11 random squad members have been fully revealed."}
+          userRelegated ? (
+            <div className="glass-panel mb-6 border-t-4 border-red-500 p-4">
+              <p className="broadcast-label mb-1 text-red-400">Relegated</p>
+              <p className="font-display text-xl font-bold uppercase text-red-400">
+                {userUniverse?.name} finish in the bottom three
               </p>
-            ) : (
-              <p className="mt-2 text-sm text-slate-500">Better luck next season.</p>
-            )}
-          </div>
+              <p className="mt-2 text-sm text-slate-400">
+                This save cannot continue. Start a new campaign in an empty slot when you are ready.
+              </p>
+              {championUni ? (
+                <p className="mt-2 text-sm text-slate-500">League champions: {championUni.name}</p>
+              ) : null}
+            </div>
+          ) : (
+            <div
+              className="glass-panel mb-6 border-t-4 p-4"
+              style={{ borderTopColor: championUni?.accentColor ?? "#eab308" }}
+            >
+              <p className="broadcast-label mb-1">Champions</p>
+              <p className="font-display text-xl font-bold uppercase text-broadcast-highlight">
+                {championUni?.name ?? "—"}
+              </p>
+              {userWon ? (
+                <p className="mt-2 text-sm text-slate-300">
+                  Trophy won!{" "}
+                  {season.length === 38
+                    ? "Your full 22-man squad stats are now revealed."
+                    : "11 random squad members have been fully revealed."}
+                </p>
+              ) : (
+                <p className="mt-2 text-sm text-slate-500">
+                  {canContinue
+                    ? "Continue into the next season with your current squad and league transfers."
+                    : "Better luck next season."}
+                </p>
+              )}
+              {season.lastRelegatedIds?.length && season.lastPromotedIds?.length ? (
+                <p className="mt-2 text-[11px] text-slate-500">
+                  {formatRelegationAnnouncement(
+                    season.lastRelegatedIds,
+                    season.lastPromotedIds,
+                    (id) => getUniverse(id)?.name ?? id
+                  )}
+                </p>
+              ) : null}
+            </div>
+          )
         ) : null}
 
-        <div className="mb-6 grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+        <div className="mb-6 grid items-stretch gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
           <section className="glass-panel overflow-x-auto p-4">
             <p className="broadcast-label mb-3">League Table</p>
             <table className="w-full min-w-[28rem] text-xs">
@@ -228,38 +424,55 @@ export default function SeasonPage() {
                 {sortedTable.map((row, i) => {
                   const uni = getUniverse(row.universeId);
                   const isUser = row.universeId === season.userUniverseId;
+                  const inRelegationZone = i >= relegateFrom;
                   return (
-                    <tr
-                      key={row.universeId}
-                      className={`border-t border-broadcast-border/40 ${isUser ? "bg-broadcast-highlight/10" : ""}`}
-                    >
-                      <td className="py-1.5 font-mono text-slate-500">{i + 1}</td>
-                      <td className="py-1.5 font-display uppercase" style={{ color: uni?.accentColor }}>
-                        {uni?.name ?? row.universeId}
-                      </td>
-                      <td className="py-1.5 text-center font-mono">{row.played}</td>
-                      <td className="py-1.5 text-center font-mono">{row.won}</td>
-                      <td className="py-1.5 text-center font-mono">{row.drawn}</td>
-                      <td className="py-1.5 text-center font-mono">{row.lost}</td>
-                      <td className="py-1.5 text-center font-mono">{row.goalsFor}</td>
-                      <td className="py-1.5 text-center font-mono">{row.goalsAgainst}</td>
-                      <td className="py-1.5 text-center font-mono">
-                        {row.goalsFor - row.goalsAgainst}
-                      </td>
-                      <td className="py-1.5 text-center font-mono font-bold text-broadcast-highlight">
-                        {row.points}
-                      </td>
-                    </tr>
+                    <Fragment key={row.universeId}>
+                      {i === relegateFrom ? (
+                        <tr>
+                          <td colSpan={10} className="py-0">
+                            <div
+                              className="my-1 border-t-2 border-dashed border-red-400/60"
+                              title="Relegation zone"
+                            />
+                          </td>
+                        </tr>
+                      ) : null}
+                      <tr
+                        className={`border-t border-broadcast-border/40 ${
+                          isUser ? "bg-broadcast-highlight/10" : ""
+                        } ${inRelegationZone ? "text-red-300/80" : ""}`}
+                      >
+                        <td className="py-1.5 font-mono text-slate-500">{i + 1}</td>
+                        <td
+                          className="py-1.5 font-display uppercase"
+                          style={{ color: uni?.accentColor }}
+                        >
+                          {uni?.name ?? row.universeId}
+                        </td>
+                        <td className="py-1.5 text-center font-mono">{row.played}</td>
+                        <td className="py-1.5 text-center font-mono">{row.won}</td>
+                        <td className="py-1.5 text-center font-mono">{row.drawn}</td>
+                        <td className="py-1.5 text-center font-mono">{row.lost}</td>
+                        <td className="py-1.5 text-center font-mono">{row.goalsFor}</td>
+                        <td className="py-1.5 text-center font-mono">{row.goalsAgainst}</td>
+                        <td className="py-1.5 text-center font-mono">
+                          {row.goalsFor - row.goalsAgainst}
+                        </td>
+                        <td className="py-1.5 text-center font-mono font-bold text-broadcast-highlight">
+                          {row.points}
+                        </td>
+                      </tr>
+                    </Fragment>
                   );
                 })}
               </tbody>
             </table>
           </section>
 
-          <section className="glass-panel p-4">
-            <p className="broadcast-label mb-2">Next Fixture</p>
+          <section className="glass-panel flex h-full flex-col p-4">
+            <p className="broadcast-label mb-2 shrink-0">Next Fixture</p>
             {nextFixture ? (
-              <div className="mb-4 text-sm">
+              <div className="mb-3 shrink-0 text-sm">
                 <p className="font-display font-bold uppercase text-broadcast-highlight">
                   {getUniverse(
                     nextFixture.homeUniverseId === season.userUniverseId
@@ -273,26 +486,40 @@ export default function SeasonPage() {
                 </p>
               </div>
             ) : (
-              <p className="mb-4 text-sm text-slate-500">No fixture remaining.</p>
+              <p className="mb-3 shrink-0 text-sm text-slate-500">No fixture remaining.</p>
             )}
 
+            <SeasonHubCommentary season={season} className="mb-3 min-h-[6rem] flex-1" />
+
             {matchdayResults.length > 0 ? (
-              <>
-                <p className="broadcast-label mb-2">Latest Matchday</p>
-                <ul className="max-h-48 space-y-1 overflow-y-auto text-[11px]">
-                  {matchdayResults.map((f) => (
-                    <li key={f.id} className="flex justify-between gap-2 text-slate-400">
-                      <span className="truncate">
-                        {getUniverse(f.homeUniverseId)?.name} vs{" "}
-                        {getUniverse(f.awayUniverseId)?.name}
-                      </span>
-                      <span className="shrink-0 font-mono text-broadcast-highlight">
-                        {f.homeScore}–{f.awayScore}
-                      </span>
-                    </li>
-                  ))}
+              <div className="shrink-0 border-t border-broadcast-border/40 pt-3">
+                <p className="broadcast-label mb-2">
+                  Latest Matchday{lastMatchday > 0 ? ` ${lastMatchday}` : ""}
+                </p>
+                <ul className="space-y-1 text-[11px]">
+                  {matchdayResults.map((f) => {
+                    const involvesUser =
+                      f.homeUniverseId === season.userUniverseId ||
+                      f.awayUniverseId === season.userUniverseId;
+                    return (
+                      <li
+                        key={f.id}
+                        className={`flex justify-between gap-2 ${
+                          involvesUser ? "font-semibold text-slate-200" : "text-slate-400"
+                        }`}
+                      >
+                        <span className="min-w-0 truncate">
+                          {getUniverse(f.homeUniverseId)?.name} vs{" "}
+                          {getUniverse(f.awayUniverseId)?.name}
+                        </span>
+                        <span className="shrink-0 font-mono text-broadcast-highlight">
+                          {f.homeScore}–{f.awayScore}
+                        </span>
+                      </li>
+                    );
+                  })}
                 </ul>
-              </>
+              </div>
             ) : null}
           </section>
         </div>
@@ -367,6 +594,10 @@ export default function SeasonPage() {
           )}
         </section>
 
+        {season.transferHistory?.length ? (
+          <SeasonTransferLog transfers={season.transferHistory} />
+        ) : null}
+
         {seasonHonours.length > 0 ? (
           <section className="glass-panel p-4">
             <p className="broadcast-label mb-3">Season History</p>
@@ -418,6 +649,13 @@ export default function SeasonPage() {
           </section>
         ) : null}
       </main>
+      {season.status === "active" ? (
+        <SeasonTransferModal
+          open={transferOpen}
+          onClose={() => setTransferOpen(false)}
+          season={season}
+        />
+      ) : null}
     </>
   );
 }

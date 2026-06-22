@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BroadcastHeader } from "@/components/BroadcastHeader";
+import { PlayerCareerStatsModal } from "@/components/PlayerCareerStatsModal";
 import { supabase } from "@/lib/supabase-client";
 import {
   createRoom,
@@ -17,9 +18,9 @@ import {
   listOpenPublicRooms,
   respondToFriendRequest,
   respondToInvite,
-  restoreProfile,
   sendFriendRequest,
-  signInAnonymouslyWithUsername,
+  signInWithUsername,
+  signUpWithUsername,
   signOut,
 } from "@/lib/multiplayer";
 import { clearMultiplayerSession } from "@/lib/multiplayer-session";
@@ -34,6 +35,8 @@ export default function MultiplayerPage() {
   const router = useRouter();
   const [sessionUserId, setSessionUserId] = useState<string | null>(null);
   const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
   const [joinCode, setJoinCode] = useState("");
   const [friendUsername, setFriendUsername] = useState("");
   const [status, setStatus] = useState<string | null>(null);
@@ -52,7 +55,9 @@ export default function MultiplayerPage() {
   const [creatingPrivate, setCreatingPrivate] = useState(false);
   const [creatingTournament, setCreatingTournament] = useState(false);
   const [profileReady, setProfileReady] = useState<boolean | null>(null);
-  const [restoreUsername, setRestoreUsername] = useState("");
+  const [statsFriend, setStatsFriend] = useState<{ userId: string; username: string } | null>(
+    null
+  );
 
   const signedIn = !!sessionUserId;
   const LOBBY_POLL_MS = 2500;
@@ -77,25 +82,14 @@ export default function MultiplayerPage() {
   useEffect(() => {
     if (!signedIn) {
       setProfileReady(null);
-      setRestoreUsername("");
       return;
     }
 
     let active = true;
-    supabase.auth.getUser().then(({ data }) => {
-      if (!active) return;
-      const metaName =
-        typeof data.user?.user_metadata?.username === "string"
-          ? data.user.user_metadata.username
-          : "";
-      if (metaName) setRestoreUsername(metaName);
-    });
-
     getMyProfile()
       .then((profile) => {
         if (!active) return;
         setProfileReady(!!profile);
-        if (profile?.username) setRestoreUsername(profile.username);
       })
       .catch(() => {
         if (!active) return;
@@ -140,8 +134,10 @@ export default function MultiplayerPage() {
     return () => clearInterval(timer);
   }, [signedIn, profileReady]);
 
-  const canAuth = useMemo(() => username.trim().length >= 3, [username]);
-  const canRestore = useMemo(() => restoreUsername.trim().length >= 3, [restoreUsername]);
+  const canAuth = useMemo(
+    () => username.trim().length >= 3 && password.length > 0,
+    [username, password]
+  );
 
   return (
     <>
@@ -156,88 +152,89 @@ export default function MultiplayerPage() {
         {!signedIn ? (
           <section className="mx-auto max-w-xl">
             <div className="glass-panel p-4">
-              <p className="broadcast-label mb-2">Enter multiplayer</p>
+              <p className="broadcast-label mb-2">
+                {authMode === "signin" ? "Sign in" : "Create account"}
+              </p>
               <div className="space-y-2">
                 <input
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Username"
+                  autoComplete="username"
                   className="w-full border border-broadcast-border bg-black/70 px-2 py-1.5 text-sm"
                 />
-                <button
-                  type="button"
-                  disabled={!canAuth}
-                  className="btn-broadcast-solid text-xs"
-                  onClick={async () => {
-                    try {
-                      await signInAnonymouslyWithUsername(username);
-                      setProfileReady(true);
-                      setStatus("Signed in.");
-                    } catch (err) {
-                      setStatus(err instanceof Error ? err.message : "Sign in failed.");
-                    }
-                  }}
-                >
-                  Continue
-                </button>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Password"
+                  autoComplete={authMode === "signup" ? "new-password" : "current-password"}
+                  className="w-full border border-broadcast-border bg-black/70 px-2 py-1.5 text-sm"
+                />
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    disabled={!canAuth}
+                    className="btn-broadcast-solid text-xs"
+                    onClick={async () => {
+                      try {
+                        if (authMode === "signup") {
+                          await signUpWithUsername(username, password);
+                        } else {
+                          await signInWithUsername(username, password);
+                        }
+                        setProfileReady(true);
+                        setPassword("");
+                        setStatus(authMode === "signup" ? "Account created." : "Signed in.");
+                      } catch (err) {
+                        setStatus(err instanceof Error ? err.message : "Authentication failed.");
+                      }
+                    }}
+                  >
+                    {authMode === "signup" ? "Create account" : "Sign in"}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-broadcast text-xs"
+                    onClick={() => {
+                      setAuthMode((m) => (m === "signin" ? "signup" : "signin"));
+                      setStatus(null);
+                    }}
+                  >
+                    {authMode === "signin" ? "Create New Account" : "Already have an account?"}
+                  </button>
+                </div>
               </div>
               <p className="mt-3 text-xs text-slate-500">
-                No email or password needed. Usernames are case-insensitive. If your profile was reset,
-                sign out and pick your username again.
+                Usernames are case-sensitive. Your account persists between sessions.
               </p>
             </div>
           </section>
         ) : profileReady === false ? (
           <section className="mx-auto max-w-xl">
             <div className="glass-panel p-4">
-              <p className="broadcast-label mb-2">Restore your profile</p>
+              <p className="broadcast-label mb-2">Profile missing</p>
               <p className="mb-3 text-xs text-slate-400">
-                You are signed in but your profile was removed. Choose a username to continue, or sign out
-                and sign in again with a different name.
+                You are signed in but your profile was removed. Sign out and sign in again, or contact
+                the host.
               </p>
-              <div className="space-y-2">
-                <input
-                  value={restoreUsername}
-                  onChange={(e) => setRestoreUsername(e.target.value)}
-                  placeholder="Username"
-                  className="w-full border border-broadcast-border bg-black/70 px-2 py-1.5 text-sm"
-                />
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    disabled={!canRestore}
-                    className="btn-broadcast-solid text-xs"
-                    onClick={async () => {
-                      try {
-                        await restoreProfile(restoreUsername);
-                        setProfileReady(true);
-                        setStatus("Profile restored.");
-                      } catch (err) {
-                        setStatus(err instanceof Error ? err.message : "Could not restore profile.");
-                      }
-                    }}
-                  >
-                    Restore profile
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-broadcast text-xs"
-                    onClick={async () => {
-                      try {
-                        clearMultiplayerSession();
-                        await signOut();
-                        setSessionUserId(null);
-                        setProfileReady(null);
-                        setStatus("Signed out.");
-                      } catch (err) {
-                        setStatus(err instanceof Error ? err.message : "Sign out failed.");
-                      }
-                    }}
-                  >
-                    Sign out
-                  </button>
-                </div>
-              </div>
+              <button
+                type="button"
+                className="btn-broadcast text-xs"
+                onClick={async () => {
+                  try {
+                    clearMultiplayerSession();
+                    await signOut();
+                    setSessionUserId(null);
+                    setProfileReady(null);
+                    setStatus("Signed out.");
+                  } catch (err) {
+                    setStatus(err instanceof Error ? err.message : "Sign out failed.");
+                  }
+                }}
+              >
+                Sign out
+              </button>
             </div>
           </section>
         ) : profileReady === null ? (
@@ -514,11 +511,20 @@ export default function MultiplayerPage() {
                     </ul>
                   </div>
                 ) : null}
-                <ul className="mt-3 max-h-40 space-y-1 overflow-y-auto text-xs">
+                <p className="mt-3 text-[10px] text-slate-500">Click a friend to view their stats.</p>
+                <ul className="mt-1 max-h-40 space-y-1 overflow-y-auto text-xs">
                   {friends.length ? (
                     friends.map((f) => (
-                      <li key={f.user_id} className="border border-broadcast-border/60 px-2 py-1">
-                        {f.username}
+                      <li key={f.user_id}>
+                        <button
+                          type="button"
+                          className="w-full border border-broadcast-border/60 px-2 py-1 text-left transition hover:border-broadcast-highlight hover:bg-broadcast-highlight/5"
+                          onClick={() =>
+                            setStatsFriend({ userId: f.user_id, username: f.username })
+                          }
+                        >
+                          {f.username}
+                        </button>
                       </li>
                     ))
                   ) : (
@@ -621,6 +627,12 @@ export default function MultiplayerPage() {
           </section>
         )}
       </main>
+      <PlayerCareerStatsModal
+        open={!!statsFriend}
+        onClose={() => setStatsFriend(null)}
+        userId={statsFriend?.userId}
+        username={statsFriend?.username}
+      />
     </>
   );
 }
