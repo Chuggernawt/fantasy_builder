@@ -1,7 +1,12 @@
 import type { CommentaryType, ExtraTimeApproach, MatchScore, MatchState } from "./types";
 
+import { TICKS_PER_HALF } from "./simulation-utils";
+
 export const TICKS_PER_STOPPAGE_MINUTE = 3;
 export const MAX_STOPPAGE_MINUTES = 10;
+
+/** Stoppage ticks span less game time — scale drain so added time doesn't over-tax stamina. */
+export const STOPPAGE_STAMINA_DRAIN_SCALE = TICKS_PER_HALF / (45 * TICKS_PER_STOPPAGE_MINUTE);
 
 export const EXTRA_TIME_OPTIONS: {
   id: ExtraTimeApproach;

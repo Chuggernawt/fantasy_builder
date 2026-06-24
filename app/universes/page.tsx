@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BroadcastHeader } from "@/components/BroadcastHeader";
 import { PageInstructions } from "@/components/PageInstructions";
+import { UniverseTraitDisplay } from "@/components/UniverseTraitDisplay";
 import {
   countUnlockedLockableSquads,
   partitionUniversesByLock,
@@ -51,6 +52,7 @@ export default function UniversesPage() {
                     {u.name}
                   </h2>
                   <p className="mt-1 text-xs text-slate-400">{u.tagline}</p>
+                  <UniverseTraitDisplay universeId={u.id} accent={u.accentColor} variant="card" />
                 </div>
                 <span
                   className="font-display text-2xl font-bold"
@@ -97,6 +99,12 @@ export default function UniversesPage() {
                             {u.name}
                           </h2>
                           <p className="mt-1 text-xs text-slate-500">{u.tagline}</p>
+                          <UniverseTraitDisplay
+                            universeId={u.id}
+                            accent={u.accentColor}
+                            variant="card"
+                            className="opacity-90"
+                          />
                         </div>
                         <span className="font-display text-2xl font-bold text-slate-600">???</span>
                       </div>

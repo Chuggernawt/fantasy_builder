@@ -45,11 +45,12 @@ export function staminaDrainPerTick(
 export function applyStaminaDrain(
   lineup: { name: string; role: Role; stats: { stamina: number } }[],
   staminaMap: Record<string, number>,
-  phase: "attacking" | "defending"
+  phase: "attacking" | "defending",
+  scale = 1
 ): void {
   for (const p of lineup) {
     if (p.name === "Unknown") continue;
-    const drain = staminaDrainPerTick(p.role, p.stats.stamina, phase);
+    const drain = staminaDrainPerTick(p.role, p.stats.stamina, phase) * scale;
     staminaMap[p.name] = Math.max(MIN_STAMINA, (staminaMap[p.name] ?? 100) - drain);
   }
 }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { getAllUniverses } from "@/lib/squads";
+import { getUniverseTrait } from "@/lib/universe-traits";
 
 interface CpuUniversePickerProps {
   takenUniverseIds: string[];
@@ -38,11 +39,14 @@ export function CpuUniversePicker({ takenUniverseIds, onAdd, busy }: CpuUniverse
         onChange={(e) => setSelected(e.target.value)}
         className="max-w-[8rem] border border-broadcast-border bg-black/80 px-1 py-0.5 text-[10px]"
       >
-        {available.map((u) => (
-          <option key={u.id} value={u.id}>
-            {u.name}
-          </option>
-        ))}
+        {available.map((u) => {
+          const trait = getUniverseTrait(u.id);
+          return (
+            <option key={u.id} value={u.id} title={`${trait.label} — ${trait.description}`}>
+              {u.name} ({trait.label})
+            </option>
+          );
+        })}
       </select>
       <button
         type="button"

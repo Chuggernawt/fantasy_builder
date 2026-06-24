@@ -1,3 +1,5 @@
+import type { ActiveMatchInjury } from "./injuries";
+
 export type StatKey = "pace" | "power" | "stamina" | "tackling" | "passing" | "gk";
 
 export type PlayerStats = Record<StatKey, number>;
@@ -85,7 +87,8 @@ export type CommentaryType =
   | "penalty"
   | "longball"
   | "substitution"
-  | "stoppage";
+  | "stoppage"
+  | "injury";
 
 export type BuildUpStyle = "short" | "patient" | "balanced" | "direct" | "counter";
 export type ChanceCreationStyle =
@@ -289,6 +292,14 @@ export interface MatchState {
   };
   /** Carried form per player name for both squads (from store at kickoff). */
   playerForm?: Record<string, number>;
+  /** In-match injuries — home team. */
+  homeActiveInjuries?: Record<string, ActiveMatchInjury>;
+  /** In-match injuries — away team. */
+  awayActiveInjuries?: Record<string, ActiveMatchInjury>;
+  /** Whether injuries/form apply in this match (season/tournament only). */
+  persistentMatchMode?: boolean;
+  /** Post-match team doctor breakdown (season/tournament). */
+  injuryReports?: import("./injuries").MatchInjuryReport[];
   manOfTheMatch?: {
     playerName: string;
     team: "home" | "away";
@@ -313,8 +324,8 @@ export interface MatchSummary {
   homeAccent: string;
   awayAccent: string;
   score: MatchScore;
-  homeGoals: { scorer: string; assist: string | null; minute: number }[];
-  awayGoals: { scorer: string; assist: string | null; minute: number }[];
+  homeGoals: { scorer: string; assist: string | null; minute: number; isPenalty?: boolean }[];
+  awayGoals: { scorer: string; assist: string | null; minute: number; isPenalty?: boolean }[];
   homePlayerStats: Record<string, PlayerMatchStats>;
   awayPlayerStats: Record<string, PlayerMatchStats>;
   homePossessionPct: number;

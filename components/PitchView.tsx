@@ -9,6 +9,7 @@ import { getRoleKeyStats, STAT_SHORT } from "@/lib/stats";
 import { ratingDisplayClass } from "@/lib/match-rating";
 import { readDragData, writeDragData } from "@/lib/pitch-dnd";
 import { useGameStore } from "@/store/game-store";
+import { FormColorBar, FitnessPct } from "@/components/PlayerFormLegend";
 
 interface PitchViewProps {
   formation: Formation;
@@ -26,6 +27,10 @@ interface PitchViewProps {
   changedSlotIds?: ReadonlySet<string>;
   subTargetSlotId?: string | null;
   stamina?: Record<string, number>;
+  /** Carried squad fitness (0–100) for season/tournament draft. */
+  squadFitness?: Record<string, number>;
+  /** Per-player form for season/tournament draft. */
+  playerForm?: Record<string, number>;
   playerRatings?: Record<string, number>;
   compact?: boolean;
   allowPitchDrag?: boolean;
@@ -41,6 +46,8 @@ function PitchSlotToken({
   isSubTarget,
   interactive,
   staminaVal,
+  squadFitnessVal,
+  formVal,
   matchRating,
   compact,
   allowPitchDrag = true,
@@ -57,6 +64,8 @@ function PitchSlotToken({
   isSubTarget: boolean;
   interactive: boolean;
   staminaVal?: number;
+  squadFitnessVal?: number;
+  formVal?: number;
   matchRating?: number;
   compact?: boolean;
   allowPitchDrag?: boolean;
@@ -147,12 +156,17 @@ function PitchSlotToken({
           )}
         </div>
 
-        <div className={`px-1.5 ${compact ? "py-0.5" : "py-1"}`}>
+        <div className={`px-1.5 ${compact ? "py-0.5 pb-2" : "py-1 pb-2.5"}`}>
           {player ? (
             <>
               <p className="truncate font-display text-[10px] font-semibold uppercase leading-tight tracking-wide sm:text-[11px]">
                 {player.name}
               </p>
+              {squadFitnessVal !== undefined ? (
+                <div className="mt-0.5 flex justify-center">
+                  <FitnessPct value={squadFitnessVal} compact />
+                </div>
+              ) : null}
               {!compact ? (
                 <div className="mt-1 grid grid-cols-3 gap-0.5">
                   {keyStats.map((key) => (
@@ -192,6 +206,9 @@ function PitchSlotToken({
             </p>
           )}
         </div>
+        {player && formVal !== undefined ? (
+          <FormColorBar value={formVal} height="h-2" className="absolute bottom-0 left-0 right-0" />
+        ) : null}
       </button>
     </div>
   );
@@ -212,6 +229,8 @@ export function PitchView({
   changedSlotIds,
   subTargetSlotId = null,
   stamina,
+  squadFitness,
+  playerForm,
   playerRatings,
   compact = false,
   allowPitchDrag = true,
@@ -261,6 +280,8 @@ export function PitchView({
               compact={compact}
               allowPitchDrag={allowPitchDrag}
               staminaVal={player ? stamina?.[player.name] : undefined}
+              squadFitnessVal={player ? squadFitness?.[player.name] : undefined}
+              formVal={player ? playerForm?.[player.name] : undefined}
               matchRating={player ? playerRatings?.[player.name] : undefined}
               onClick={() => onSlotClick?.(slot.id)}
               onClear={player && onClearSlot ? () => onClearSlot(slot.id) : undefined}

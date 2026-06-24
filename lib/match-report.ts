@@ -17,10 +17,7 @@ function fill(template: string, vars: Record<string, string | number>): string {
   );
 }
 
-function formatGoalList(goals: { scorer: string; minute: number }[]): string {
-  if (!goals.length) return "none";
-  return goals.map((g) => `${g.scorer} (${g.minute}')`).join(", ");
-}
+import { formatGoalListForReport } from "./match-goals";
 
 function extractPlayerMentions(events: CommentaryEvent[]): Map<string, number> {
   const counts = new Map<string, number>();
@@ -208,8 +205,8 @@ export function buildMatchReport(state: MatchState, summary: MatchSummary): Matc
           {
             home: homeName,
             away: awayName,
-            homeGoals: formatGoalList(summary.homeGoals),
-            awayGoals: formatGoalList(summary.awayGoals),
+            homeGoals: formatGoalListForReport(summary.homeGoals),
+            awayGoals: formatGoalListForReport(summary.awayGoals),
           }
         )
       );
@@ -220,7 +217,7 @@ export function buildMatchReport(state: MatchState, summary: MatchSummary): Matc
             `{home} found the net through {homeGoals}. {away} couldn't muster a reply.`,
             `All the goals came from {home}: {homeGoals}.`,
           ]),
-          { home: homeName, away: awayName, homeGoals: formatGoalList(summary.homeGoals) }
+          { home: homeName, away: awayName, homeGoals: formatGoalListForReport(summary.homeGoals) }
         )
       );
     } else {
@@ -230,7 +227,7 @@ export function buildMatchReport(state: MatchState, summary: MatchSummary): Matc
             `{away} were clinical with {awayGoals}. {home} drew a blank.`,
             `{away} goals: {awayGoals}. {home} left frustrated up front.`,
           ]),
-          { home: homeName, away: awayName, awayGoals: formatGoalList(summary.awayGoals) }
+          { home: homeName, away: awayName, awayGoals: formatGoalListForReport(summary.awayGoals) }
         )
       );
     }

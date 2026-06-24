@@ -8,6 +8,8 @@ import type {
   TeamSetup,
 } from "./types";
 
+import type { ActiveMatchInjury } from "./injuries";
+
 export interface SimLineupPlayer {
   name: string;
   role: string;
@@ -97,5 +99,9 @@ export interface AttackContext {
     cornerTaker?: string;
   } | null;
   comm: import("./commentary-types").CommentarySession;
+  /** Season/tournament matches — injuries and form apply. */
+  persistentMatchMode?: boolean;
+  homeActiveInjuries?: Record<string, ActiveMatchInjury>;
+  awayActiveInjuries?: Record<string, ActiveMatchInjury>;
 }
 

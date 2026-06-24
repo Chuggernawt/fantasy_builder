@@ -28,6 +28,7 @@ const TYPE_COLORS: Record<CommentaryEvent["type"], string> = {
   halftime: "text-broadcast-highlight font-bold",
   fulltime: "text-broadcast-highlight font-bold",
   stoppage: "text-amber-300 font-semibold",
+  injury: "text-red-300 font-semibold",
   info: "text-slate-300",
 };
 

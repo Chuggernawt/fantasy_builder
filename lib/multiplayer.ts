@@ -24,7 +24,10 @@ import {
 } from "./auth-username";
 import type { PlayerCareerStats } from "./career-stats";
 import { emptyCareerStats, normalizeCareerStats } from "./career-stats";
-import type { AccountProgress } from "./account-progress";
+import {
+  accountProgressToCloudPayload,
+  type AccountProgress,
+} from "./account-progress";
 import { normalizeAccountProgress } from "./account-progress";
 
 function roomCode(): string {
@@ -221,7 +224,7 @@ export async function getMyProfile(): Promise<MultiplayerProfile | null> {
 export async function getProfileByUserId(userId: string): Promise<MultiplayerProfile | null> {
   const { data, error } = await supabase
     .from("profiles")
-    .select("user_id,username,created_at,career_stats,revealed_stats")
+    .select("user_id,username,created_at,career_stats,revealed_stats,account_progress")
     .eq("user_id", userId)
     .maybeSingle();
   if (error) throw error;
@@ -276,6 +279,7 @@ export async function saveProfileProgress(progress: AccountProgress): Promise<vo
     .update({
       career_stats: normalized.careerStats,
       revealed_stats: normalized.revealedStats,
+      account_progress: accountProgressToCloudPayload(normalized),
     })
     .eq("user_id", userId);
   if (error) throw error;

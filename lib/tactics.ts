@@ -68,6 +68,11 @@ export function formatTacticsBrief(tactics: TeamTactics): string {
   return `${b} · ${c} · ${d}`;
 }
 
+export function formatScoutGlance(formationLabel: string, tactics: TeamTactics | null): string {
+  if (!tactics) return `${formationLabel} · Tactics pending`;
+  return `${formationLabel} · ${formatTacticsBrief(tactics)}`;
+}
+
 export function formatTacticsCommentary(teamLabel: string, tactics: TeamTactics): string {
   const build = BUILD_UP_OPTIONS.find((o) => o.id === tactics.buildUp);
   const chance = CHANCE_CREATION_OPTIONS.find((o) => o.id === tactics.chanceCreation);

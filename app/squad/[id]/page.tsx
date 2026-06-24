@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { BroadcastHeader } from "@/components/BroadcastHeader";
 import { PlayerCard } from "@/components/PlayerCard";
+import { UniverseTraitDisplay } from "@/components/UniverseTraitDisplay";
 import { getUniverse } from "@/lib/squads";
 import {
   isSquadUnlocked,
@@ -69,7 +70,13 @@ export default function SquadPage() {
               Squad Overview
             </p>
             <p className="text-sm text-slate-400">{universe.tagline}</p>
-            <p className="mt-1 font-mono text-broadcast-highlight">Team OVR ??? · 22 players · A–Z</p>
+            <UniverseTraitDisplay
+              universeId={universe.id}
+              accent={universe.accentColor}
+              variant="card"
+              className="mt-2 max-w-xl"
+            />
+            <p className="mt-2 font-mono text-broadcast-highlight">Team OVR ??? · 22 players · A–Z</p>
           </div>
           <input
             type="search"

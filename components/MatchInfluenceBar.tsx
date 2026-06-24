@@ -3,7 +3,8 @@
 import { useState } from "react";
 import type { LineupSlot, MatchState, TeamTactics } from "@/lib/types";
 import { MAX_MATCH_SUBS } from "@/lib/constants";
-import { getUniverseTrait } from "@/lib/universe-traits";
+import { getUniverse } from "@/lib/squads";
+import { UniverseTraitDisplay } from "@/components/UniverseTraitDisplay";
 import { canPickTacticsInMatch, formatTacticsBrief } from "@/lib/tactics";
 import {
   TacticAxisRows,
@@ -25,6 +26,9 @@ interface MatchInfluenceBarProps {
   onOpenSubs: () => void;
   onSetTactic: (tactics: TeamTactics) => void;
   onCallCaptain: (name: string) => void;
+  opponentName?: string;
+  opponentUniverseId?: string;
+  onOpenOpponentScout?: () => void;
 }
 
 function ActionButton({
@@ -114,6 +118,9 @@ export function MatchInfluenceBar({
   onOpenSubs,
   onSetTactic,
   onCallCaptain,
+  opponentName,
+  opponentUniverseId,
+  onOpenOpponentScout,
 }: MatchInfluenceBarProps) {
   const [panel, setPanel] = useState<ActivePanel>(null);
 
@@ -127,7 +134,7 @@ export function MatchInfluenceBar({
   const canPickTactic = canPickTacticsInMatch(tacticRevision, matchState.half);
   const tacticLocked = !canPickTactic;
   const captainSet = captainHalf === matchState.half;
-  const trait = getUniverseTrait(universeId);
+  const opponentUni = opponentUniverseId ? getUniverse(opponentUniverseId) : null;
 
   const tacticLabel = tactics ? formatTacticsBrief(tactics) : null;
 
@@ -136,23 +143,49 @@ export function MatchInfluenceBar({
   return (
     <>
       <div className="glass-panel mb-3 shrink-0 p-3 md:p-4">
+        <div className="mb-3 space-y-2">
+          <UniverseTraitDisplay
+            universeId={universeId}
+            accent={accent}
+            variant="strip"
+            prefix="Your trait"
+          />
+          {opponentUniverseId && opponentUni ? (
+            <UniverseTraitDisplay
+              universeId={opponentUniverseId}
+              accent={opponentUni.accentColor}
+              variant="strip"
+              prefix="Opponent"
+            />
+          ) : null}
+        </div>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <p className="broadcast-label">Your calls</p>
-          <span className="max-w-full text-xs leading-relaxed text-slate-400">
-            Universe trait: <span className="text-slate-200">{trait.label}</span>
-            {tacticLabel ? (
-              <>
-                {" "}
-                · Tactics: <span className="text-broadcast-highlight">{tacticLabel}</span>
-              </>
+          <div className="flex max-w-full flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs leading-relaxed text-slate-400">
+            {onOpenOpponentScout && opponentName ? (
+              <button
+                type="button"
+                onClick={onOpenOpponentScout}
+                className="text-left hover:text-broadcast-highlight"
+              >
+                Scout: <span className="text-slate-200">{opponentName}</span>{" "}
+                <span aria-hidden>↗</span>
+              </button>
             ) : null}
-            {captainSet && captain ? (
-              <>
-                {" "}
-                · Captain: <span className="text-broadcast-highlight">{captain}</span>
-              </>
-            ) : null}
-          </span>
+            <span>
+              {tacticLabel ? (
+                <>
+                  Tactics: <span className="text-broadcast-highlight">{tacticLabel}</span>
+                </>
+              ) : null}
+              {captainSet && captain ? (
+                <>
+                  {tacticLabel ? " · " : null}
+                  Captain: <span className="text-broadcast-highlight">{captain}</span>
+                </>
+              ) : null}
+            </span>
+          </div>
         </div>
 
         <div className="flex flex-col gap-2 sm:flex-row">

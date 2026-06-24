@@ -1,3 +1,7 @@
+import type { FormationId, LineupSlot } from "./types";
+import type { CpuPreferredXI, PersistedPlayerInjury } from "./injuries";
+import type { InstanceFormMap } from "./instance-form";
+
 export type SeasonLength = 19 | 38;
 
 export interface SeasonRosterEntry {
@@ -40,6 +44,14 @@ export interface SeasonCardEvent {
   type: "yellow" | "red";
 }
 
+export interface SeasonInjuryEvent {
+  universeId: string;
+  playerName: string;
+  severity: import("./injuries").InjurySeverity;
+  bodyPart: import("./injuries").InjuryBodyPart;
+  gamesOut: number;
+}
+
 export interface LiteMatchResult {
   homeUniverseId: string;
   awayUniverseId: string;
@@ -47,6 +59,7 @@ export interface LiteMatchResult {
   awayScore: number;
   goals: SeasonGoalEvent[];
   cards: SeasonCardEvent[];
+  injuries?: SeasonInjuryEvent[];
 }
 
 export interface SeasonTeamRow {
@@ -111,6 +124,16 @@ export interface SeasonState {
   championId: string | null;
   /** Games remaining banned: key `${universeId}:${playerName}` */
   suspensions: Record<string, number>;
+  /** Fixture absences from injury: key `${universeId}:${playerName}` */
+  injuries?: Record<string, PersistedPlayerInjury>;
+  /** Carried form per club in this season only. */
+  playerForm?: InstanceFormMap;
+  /** CPU teams reuse their first-picked XI when possible. */
+  cpuLineups?: Record<string, CpuPreferredXI>;
+  /** Carried match fitness per club (team id → player name → 0–100). */
+  squadStamina?: Record<string, Record<string, number>>;
+  /** Who appeared last matchday — used for between-fixture recovery. */
+  lastMatchdayStaminaPlayed?: Record<string, string[]>;
   /** Per-club squads for this season (22 players each). */
   rosters?: Record<string, SeasonRosterEntry[]>;
   /** Swaps completed in the current transfer window. */

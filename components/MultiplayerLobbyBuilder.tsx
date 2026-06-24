@@ -14,6 +14,8 @@ import {
   remapLineupOnFormationChange,
 } from "@/lib/lineup";
 import { TacticsPreMatchSelect } from "@/components/TacticsPreMatchSelect";
+import { PersistentMatchKey } from "@/components/PlayerFormLegend";
+import { UniverseTraitDisplay } from "@/components/UniverseTraitDisplay";
 import { lobbyTeamReady } from "@/lib/multiplayer-lobby";
 import { defaultTeamTactics } from "@/lib/tactics";
 import type { PlayerLobbyState } from "@/lib/multiplayer-types";
@@ -29,6 +31,10 @@ interface MultiplayerLobbyBuilderProps {
   takenUniverseIds?: string[];
   onChange: (next: PlayerLobbyState) => void;
   onPersist?: (next: PlayerLobbyState) => void;
+  playerForm?: Record<string, number>;
+  playerStamina?: Record<string, number>;
+  injuryLabels?: Record<string, string>;
+  showFormLegend?: boolean;
 }
 
 export function MultiplayerLobbyBuilder({
@@ -37,6 +43,10 @@ export function MultiplayerLobbyBuilder({
   takenUniverseIds,
   onChange,
   onPersist,
+  playerForm,
+  playerStamina,
+  injuryLabels,
+  showFormLegend = false,
 }: MultiplayerLobbyBuilderProps) {
   const [activeSlot, setActiveSlot] = useState<string | null>(null);
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
@@ -69,14 +79,17 @@ export function MultiplayerLobbyBuilder({
     if (!universe) return [];
     return universe.players.filter(
       (p) =>
-        !assignedNames.has(p.name) || activeAssignment?.playerName === p.name
+        !injuryLabels?.[p.name] &&
+        (!assignedNames.has(p.name) || activeAssignment?.playerName === p.name)
     );
-  }, [universe, assignedNames, activeAssignment?.playerName]);
+  }, [universe, assignedNames, activeAssignment?.playerName, injuryLabels]);
 
   const reserves = useMemo(() => {
     if (!universe) return [];
-    return universe.players.filter((p) => !assignedNames.has(p.name));
-  }, [universe, assignedNames]);
+    return universe.players.filter(
+      (p) => !assignedNames.has(p.name) && !injuryLabels?.[p.name]
+    );
+  }, [universe, assignedNames, injuryLabels]);
 
   function emit(next: PlayerLobbyState, persist = false) {
     onChange(next);
@@ -152,6 +165,7 @@ export function MultiplayerLobbyBuilder({
               <span className="font-display text-sm uppercase" style={{ color: u.accentColor }}>
                 {u.name}
               </span>
+              <UniverseTraitDisplay universeId={u.id} accent={u.accentColor} variant="card" />
             </button>
           ))}
         </div>
@@ -211,6 +225,13 @@ export function MultiplayerLobbyBuilder({
           XI {assignedCount}/11 · Subs {lobby.matchBench.length}/{MATCH_BENCH_SIZE}
         </span>
       </div>
+
+      <UniverseTraitDisplay
+        universeId={universe.id}
+        accent={universe.accentColor}
+        variant="strip"
+        prefix="Your trait"
+      />
 
       <div className="flex shrink-0 flex-wrap gap-1.5">
         <button
@@ -309,6 +330,11 @@ export function MultiplayerLobbyBuilder({
           >
             {universe.name} — {formation.label}
           </p>
+          {showFormLegend ? (
+            <div className="mb-2 shrink-0 border border-broadcast-border bg-black/40 px-2 py-1.5">
+              <PersistentMatchKey />
+            </div>
+          ) : null}
           <div className="min-h-0 flex-1">
             <PitchView
               formation={formation}
@@ -319,6 +345,8 @@ export function MultiplayerLobbyBuilder({
               interactive
               compact
               getPlayer={(name) => getPlayer(universe.id, name)}
+              playerForm={playerForm}
+              squadFitness={playerStamina}
               onSlotClick={(slotId) =>
                 setActiveSlot((prev) => (prev === slotId ? null : slotId))
               }
@@ -344,6 +372,10 @@ export function MultiplayerLobbyBuilder({
               roleLabel={activeSlotData?.label}
               accent={universe.accentColor}
               assignedSlotPlayer={activeAssignment?.playerName ?? null}
+              playerForm={playerForm}
+              playerStamina={playerStamina}
+              injuryLabels={injuryLabels}
+              showFormLegend={false}
               onSelect={(name) => {
                 if (!activeSlot) return;
                 setLineupSlot(activeSlot, name);
@@ -364,6 +396,9 @@ export function MultiplayerLobbyBuilder({
               reserves={reserves}
               accent={universe.accentColor}
               matchBench={lobby.matchBench}
+              playerForm={playerForm}
+              playerStamina={playerStamina}
+              injuryLabels={injuryLabels}
               onTogglePlayer={toggleBenchPlayer}
               onAutoPick={() => {
                 if (!lobby.universeId) return;

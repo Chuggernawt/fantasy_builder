@@ -15,6 +15,7 @@ import { buildMatchSummary } from "@/lib/match-stats";
 import { matchDecidedWinner } from "@/lib/penalty-shootout";
 import { PenaltyShootoutBoard } from "@/components/PenaltyShootoutBoard";
 import { buildMatchReport } from "@/lib/match-report";
+import { doctorReportLine } from "@/lib/injuries";
 import { playersWithMatchContributions } from "@/lib/player-match-stats";
 import { useGameStore } from "@/store/game-store";
 import { clearMultiplayerSession, getMultiplayerSession } from "@/lib/multiplayer-session";
@@ -424,6 +425,18 @@ export function PostMatchSummary() {
                 </ul>
               </div>
             )}
+            {matchState?.injuryReports && matchState.injuryReports.length > 0 ? (
+              <div className="mt-5 border-t border-broadcast-border pt-4">
+                <p className="broadcast-label mb-2">Team Doctor</p>
+                <ul className="space-y-1.5 text-xs text-slate-300">
+                  {matchState.injuryReports.map((r, i) => (
+                    <li key={i} className="leading-relaxed">
+                      {doctorReportLine(r)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
           </div>
         ) : tab === "ratings" ? (
           <div className="mb-6">
@@ -604,7 +617,7 @@ function GoalList({
 }: {
   title: string;
   accent: string;
-  goals: { scorer: string; assist: string | null; minute: number }[];
+  goals: { scorer: string; assist: string | null; minute: number; isPenalty?: boolean }[];
 }) {
   return (
     <div className="glass-panel p-4" style={{ borderTopWidth: 3, borderTopColor: accent }}>
@@ -616,9 +629,10 @@ function GoalList({
       ) : (
         <ul className="space-y-1 text-sm">
           {goals.map((g, i) => (
-            <li key={`${g.scorer}-${i}`}>
+            <li key={`${g.scorer}-${g.minute}-${i}`}>
               <span className="font-mono text-broadcast-highlight">{g.minute}&apos;</span>{" "}
               {g.scorer}
+              {g.isPenalty ? <span className="text-slate-400"> (pen)</span> : null}
               {g.assist ? (
                 <span className="text-slate-400"> (assist: {g.assist})</span>
               ) : null}

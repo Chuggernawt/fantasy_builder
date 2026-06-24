@@ -146,15 +146,21 @@ export function applyPositionSwapStaminaPenalty(
 export function refreshStaminaAfterLineupChange(
   oldLineup: LineupSlot[],
   newLineup: LineupSlot[],
-  stamina: Record<string, number>
+  stamina: Record<string, number>,
+  options?: { persistentMatch?: boolean }
 ): Record<string, number> {
   const next = { ...stamina };
+  const persistent = options?.persistentMatch ?? false;
   newLineup.forEach((slot, i) => {
     const oldName = oldLineup[i]?.playerName;
     const newName = slot.playerName;
     if (oldName !== newName && newName) {
-      if (oldName) delete next[oldName];
-      next[newName] = 100;
+      if (!persistent) {
+        if (oldName) delete next[oldName];
+        next[newName] = 100;
+      } else if (!(newName in next)) {
+        next[newName] = 100;
+      }
     }
   });
   return next;

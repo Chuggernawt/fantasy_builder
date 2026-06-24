@@ -49,6 +49,7 @@ import {
   stoppageClockDisplay,
   stoppageWeightForEvent,
   TICKS_PER_STOPPAGE_MINUTE,
+  STOPPAGE_STAMINA_DRAIN_SCALE,
 } from "./stoppage-time";
 import type { AttackContext, SimLineupPlayer } from "./special-events-types";
 import {
@@ -57,6 +58,14 @@ import {
   flushPhaseSpecial,
 } from "./special-events";
 import { applyDuelModifiers, applyXgModifiers } from "./special-effects";
+import { injuryEffectivenessMultiplier } from "./injuries";
+import {
+  processInjuryUpgrades,
+  syncInjuriesFromState,
+  syncInjuriesToState,
+  tryInflictInjuryOnCtx,
+  processInjuryUpgradesOnCtx,
+} from "./injury-match";
 import {
   applyExtraTimeBuildMod,
   applyBuildUpMod,
@@ -156,10 +165,23 @@ function resolveLineup(setup: TeamSetup): ResolvedPlayer[] {
   });
 }
 
-function initStamina(lineup: ResolvedPlayer[]): Record<string, number> {
+function initStamina(
+  lineup: ResolvedPlayer[],
+  bench: string[],
+  squadStamina?: Record<string, number>,
+  useCarried = false
+): Record<string, number> {
   const map: Record<string, number> = {};
+  const names = new Set<string>();
   for (const p of lineup) {
-    if (p.name !== "Unknown") map[p.name] = 100;
+    if (p.name !== "Unknown") names.add(p.name);
+  }
+  for (const n of bench) names.add(n);
+  for (const name of names) {
+    map[name] =
+      useCarried && squadStamina && squadStamina[name] !== undefined
+        ? squadStamina[name]
+        : 100;
   }
   return map;
 }
@@ -178,13 +200,27 @@ function ratingCtx(
   };
 }
 
+function injuryRatingMult(
+  ctx: AttackContext,
+  team: "home" | "away",
+  playerName: string
+): number {
+  if (!ctx.persistentMatchMode) return 1;
+  const map =
+    team === "home" ? ctx.homeActiveInjuries ?? {} : ctx.awayActiveInjuries ?? {};
+  const row = map[playerName];
+  if (!row || row.subbedOff) return 1;
+  return injuryEffectivenessMultiplier(row.severity);
+}
+
 function effectiveRating(
   player: ResolvedPlayer,
   staminaMap: Record<string, number>,
   formationId: FormationId,
   zoneMod = 0,
   perfCtx?: { playerForm: Record<string, number>; playerStats: Record<string, import("./types").PlayerMatchStats> },
-  teamSetup?: TeamSetup
+  teamSetup?: TeamSetup,
+  injuryCtx?: { ctx: AttackContext; team: "home" | "away" }
 ): number {
   const staminaMult = 0.94 + staminaMultiplier(staminaMap[player.name] ?? 100) * 0.06;
   const zone = slotZone(player.role);
@@ -210,6 +246,9 @@ function effectiveRating(
     ) {
       rating += positionMisfitPenalty(player.stats, player.role, player.naturalRole);
     }
+  }
+  if (injuryCtx) {
+    rating *= injuryRatingMult(injuryCtx.ctx, injuryCtx.team, player.name);
   }
   return rating;
 }
@@ -363,7 +402,13 @@ function recordCard(
 export function createInitialMatchState(
   home: TeamSetup,
   away: TeamSetup,
-  options?: { seasonMeta?: SeasonMatchMeta; playerForm?: Record<string, number> }
+  options?: {
+    seasonMeta?: SeasonMatchMeta;
+    playerForm?: Record<string, number>;
+    persistentMatchMode?: boolean;
+    homeSquadStamina?: Record<string, number>;
+    awaySquadStamina?: Record<string, number>;
+  }
 ): MatchState {
   const homeLineup = resolveLineup(home);
   const awayLineup = resolveLineup(away);
@@ -383,14 +428,25 @@ export function createInitialMatchState(
     awayName
   );
   const kickoffText = say(kickoffSession, "kickoff", { home: homeName, away: awayName });
+  const persistent = options?.persistentMatchMode ?? false;
   return {
     status: "running",
     half: 1,
     tick: 0,
     ticksPerHalf: TICKS_PER_HALF,
     score: { home: 0, away: 0 },
-    homeStamina: initStamina(homeLineup),
-    awayStamina: initStamina(awayLineup),
+    homeStamina: initStamina(
+      homeLineup,
+      home.bench,
+      options?.homeSquadStamina,
+      persistent
+    ),
+    awayStamina: initStamina(
+      awayLineup,
+      away.bench,
+      options?.awaySquadStamina,
+      persistent
+    ),
     commentary: [
       {
         id: commentaryId(),
@@ -414,6 +470,9 @@ export function createInitialMatchState(
     recentCommentaryLines: syncCommentaryMemory(kickoffSession),
     seasonMeta: options?.seasonMeta,
     playerForm: options?.playerForm ?? {},
+    persistentMatchMode: options?.persistentMatchMode ?? false,
+    homeActiveInjuries: {},
+    awayActiveInjuries: {},
     ...seedMatchPlayerStats(home.lineup, away.lineup),
     homeTactics: null,
     awayTactics: null,
@@ -439,14 +498,15 @@ function drainTeamsForTick(
   awayLineup: ResolvedPlayer[],
   homeStamina: Record<string, number>,
   awayStamina: Record<string, number>,
-  attackingTeam: "home" | "away"
+  attackingTeam: "home" | "away",
+  drainScale = 1
 ): void {
   if (attackingTeam === "home") {
-    applyStaminaDrain(homeLineup, homeStamina, "attacking");
-    applyStaminaDrain(awayLineup, awayStamina, "defending");
+    applyStaminaDrain(homeLineup, homeStamina, "attacking", drainScale);
+    applyStaminaDrain(awayLineup, awayStamina, "defending", drainScale);
   } else {
-    applyStaminaDrain(awayLineup, awayStamina, "attacking");
-    applyStaminaDrain(homeLineup, homeStamina, "defending");
+    applyStaminaDrain(awayLineup, awayStamina, "attacking", drainScale);
+    applyStaminaDrain(homeLineup, homeStamina, "defending", drainScale);
   }
 }
 
@@ -459,6 +519,15 @@ function activeLineupPlayers(
   );
   if (active.length > 0) return active;
   return (lineup as ResolvedPlayer[]).filter((p) => p.name !== "Unknown");
+}
+
+function outfieldCount(lineup: ResolvedPlayer[]): number {
+  return lineup.filter((p) => p.name !== "Unknown" && p.role !== "GK").length;
+}
+
+/** Extra build/duel swing per outfield player advantage (red cards, etc.). */
+function numericalAdvantageSwing(atkLineup: ResolvedPlayer[], defLineup: ResolvedPlayer[]): number {
+  return (outfieldCount(atkLineup) - outfieldCount(defLineup)) * 9;
 }
 
 function atkDef(ctx: AttackContext) {
@@ -518,8 +587,10 @@ function runAttackPhase(ctx: AttackContext): CommentaryEvent[] {
   const momBonus = attacking === "home" ? momentum : -momentum;
 
   const atkRc = ratingCtx(ctx, attacking);
-  const defTeamSide = attacking === "home" ? "away" : "home";
-  const defRc = ratingCtx(ctx, defTeamSide);
+  const defTeam: "home" | "away" = attacking === "home" ? "away" : "home";
+  const defRc = ratingCtx(ctx, defTeam);
+  const atkInj = ctx.persistentMatchMode ? { ctx, team: attacking } : undefined;
+  const defInj = ctx.persistentMatchMode ? { ctx, team: defTeam } : undefined;
 
   // --- Set piece (free kick) from prior foul ---
   if (pendingSetPiece?.team === attacking) {
@@ -532,27 +603,26 @@ function runAttackPhase(ctx: AttackContext): CommentaryEvent[] {
   const atkMids = playersByZone(atkLineup, "mid");
   const defMids = playersByZone(defLineup, "mid");
   let atkBuild =
-    avgRating(atkMids.map((p) => effectiveRating(p, atkStamina, atkForm, 0, atkRc, atkSetup))) +
+    avgRating(atkMids.map((p) => effectiveRating(p, atkStamina, atkForm, 0, atkRc, atkSetup, atkInj))) +
     FORMATION_ZONE_MOD[atkForm].mid * 0.4 +
     avgRating(
       atkMids.concat(playersByZone(atkLineup, "att").slice(0, 2)).map((p) =>
-        effectiveRating(p, atkStamina, atkForm, 0, atkRc, atkSetup)
+        effectiveRating(p, atkStamina, atkForm, 0, atkRc, atkSetup, atkInj)
       )
     ) *
       0.35 +
     5;
   let defBuild =
-    avgRating(defMids.map((p) => effectiveRating(p, defStamina, defForm, 0, defRc, defSetup))) +
+    avgRating(defMids.map((p) => effectiveRating(p, defStamina, defForm, 0, defRc, defSetup, defInj))) +
     FORMATION_ZONE_MOD[defForm].mid * 0.4 +
     avgRating(
       defMids.concat(playersByZone(defLineup, "def").filter((p) => p.role !== "GK")).map((p) =>
-        effectiveRating(p, defStamina, defForm, 0, defRc, defSetup)
+        effectiveRating(p, defStamina, defForm, 0, defRc, defSetup, defInj)
       )
     ) *
       0.35 +
     3;
 
-  const defTeam = attacking === "home" ? "away" : "home";
   const atkTactics = activeTactics(ctx, attacking);
   const defTactics = activeTactics(ctx, defTeam);
 
@@ -577,6 +647,12 @@ function runAttackPhase(ctx: AttackContext): CommentaryEvent[] {
     defBuild = et.defBuild;
   }
 
+  const manSwing = numericalAdvantageSwing(atkLineup, defLineup);
+  if (manSwing !== 0) {
+    atkBuild += manSwing;
+    defBuild -= manSwing;
+  }
+
   const turnoverBase =
     0.048 -
     (traitForTeam(ctx, attacking).pressBonus ?? 0) * 0.15 +
@@ -586,7 +662,7 @@ function runAttackPhase(ctx: AttackContext): CommentaryEvent[] {
   if (!rollDuel(atkBuild, defBuild, turnoverBase)) {
     defStats.possessionPhases++;
     const breaker = defMids.length ? pick(defMids) : pick(defLineup);
-    recordTackle(playerStatsMap(ctx, defTeamSide), breaker.name, true);
+    recordTackle(playerStatsMap(ctx, defTeam), breaker.name, true);
     for (const m of atkMids.slice(0, 2)) {
       recordPass(playerStatsMap(ctx, attacking), m.name, false);
     }
@@ -697,11 +773,11 @@ function runAttackPhase(ctx: AttackContext): CommentaryEvent[] {
 
   const defender = pickDefender(defLineup, channel, striker);
   let atkR =
-    effectiveRating(striker, atkStamina, atkForm, 2, atkRc, atkSetup) +
+    effectiveRating(striker, atkStamina, atkForm, 2, atkRc, atkSetup, atkInj) +
     2 +
     roleTacticRatingBonus(striker.role, channel, atkTactics ?? null);
-  const defR =
-    effectiveRating(defender, defStamina, defForm, FORMATION_ZONE_MOD[defForm].def * 0.4, defRc, defSetup) +
+  let defR =
+    effectiveRating(defender, defStamina, defForm, FORMATION_ZONE_MOD[defForm].def * 0.4, defRc, defSetup, defInj) +
     FORMATION_ZONE_MOD[defForm].def * 0.4 +
     defensiveRoleTacticBonus(defender.role, channel, defTactics ?? null);
 
@@ -709,6 +785,12 @@ function runAttackPhase(ctx: AttackContext): CommentaryEvent[] {
   const captain = attacking === "home" ? ctx.homeCaptain : ctx.awayCaptain;
   const capHalf = attacking === "home" ? ctx.homeCaptainHalf : ctx.awayCaptainHalf;
   atkR += captainDuelBonus(captain, capHalf, half, capTicks, striker.name);
+
+  const manShotSwing = numericalAdvantageSwing(atkLineup, defLineup) * 0.55;
+  if (manShotSwing !== 0) {
+    atkR += manShotSwing;
+    defR -= manShotSwing;
+  }
 
   addSpecialCast(ctx, defender.name, attacking === "home" ? "away" : "home", 2);
   flushPhaseSpecial(ctx, events);
@@ -764,11 +846,34 @@ function runAttackPhase(ctx: AttackContext): CommentaryEvent[] {
     if (Math.random() < 0.34) {
       recordCard(ctx, defTeam, defender.name, events, half);
     }
+    const injMinute = ctx.currentMinute;
+    const foulInjury = tryInflictInjuryOnCtx(
+      ctx,
+      attacking,
+      striker.name,
+      atkStamina[striker.name] ?? 100,
+      injMinute,
+      half,
+      "tackle",
+      false
+    );
+    if (foulInjury) events.push(foulInjury);
+    const tacklerInjury = tryInflictInjuryOnCtx(
+      ctx,
+      defTeam,
+      defender.name,
+      defStamina[defender.name] ?? 100,
+      injMinute,
+      half,
+      "tackle",
+      false
+    );
+    if (tacklerInjury) events.push(tacklerInjury);
     return events;
   }
 
   if (!rollDuel(atkR, defR, 0.057)) {
-    const defMap = playerStatsMap(ctx, defTeamSide);
+    const defMap = playerStatsMap(ctx, defTeam);
     if (Math.random() < 0.35) {
       recordClearance(defMap, defender.name);
     } else {
@@ -786,6 +891,20 @@ function runAttackPhase(ctx: AttackContext): CommentaryEvent[] {
           : commLine(ctx, "tackle", { defender: defender.name, attacker: striker.name }, defender.name),
       team: attacking === "home" ? "away" : "home",
     });
+    if (Math.random() < 0.35) {
+      const injMinute = ctx.currentMinute;
+      const tackleInjury = tryInflictInjuryOnCtx(
+        ctx,
+        defTeam,
+        defender.name,
+        defStamina[defender.name] ?? 100,
+        injMinute,
+        half,
+        "tackle",
+        false
+      );
+      if (tackleInjury) events.push(tackleInjury);
+    }
     return events;
   }
 
@@ -885,13 +1004,16 @@ function resolveFreeKick(
   const wall = pickDefender(defLineup, "center", taker);
   const style = pickFreeKickStyle(taker);
   const xgBonus = pendingSetPiece?.xgBonus ?? 0.14;
+  const defTeam: "home" | "away" = attacking === "home" ? "away" : "home";
+  const atkInj = ctx.persistentMatchMode ? { ctx, team: attacking } : undefined;
+  const defInj = ctx.persistentMatchMode ? { ctx, team: defTeam } : undefined;
 
   ctx.freekickTaker = taker.name;
   ctx.playmaker = taker.name;
   mentionPhase(ctx, taker.name);
 
-  let atkR = effectiveRating(taker, atkStamina, atkForm, 4, atkRc, atkSetup);
-  const defR = effectiveRating(wall, defStamina, defForm, 0, defRc, defSetup);
+  let atkR = effectiveRating(taker, atkStamina, atkForm, 4, atkRc, atkSetup, atkInj);
+  const defR = effectiveRating(wall, defStamina, defForm, 0, defRc, defSetup, defInj);
 
   const capTicks = attacking === "home" ? ctx.homeCaptainBoostTicks : ctx.awayCaptainBoostTicks;
   const captain = attacking === "home" ? ctx.homeCaptain : ctx.awayCaptain;
@@ -936,15 +1058,16 @@ function resolveFreeKick(
       team: attacking,
     });
 
-    const headerR = effectiveRating(header, atkStamina, atkForm, 2, atkRc, atkSetup);
+    const headerR = effectiveRating(header, atkStamina, atkForm, 2, atkRc, atkSetup, atkInj);
     const gk = defLineup.find((p) => p.role === "GK") ?? defLineup[0];
     const gkR = effectiveRating(
       gk,
       defStamina,
-      attacking === "home" ? ctx.awayFormation : ctx.homeFormation,
+      defForm,
       0,
       defRc,
-      defSetup
+      defSetup,
+      defInj
     );
     let headerXg =
       0.1 +
@@ -1050,6 +1173,9 @@ function resolveShot(
   const atkMap = playerStatsMap(ctx, attacking);
   const defMap = playerStatsMap(ctx, defSide);
   const defRc = ratingCtx(ctx, defSide);
+  const defInj = ctx.persistentMatchMode
+    ? { ctx, team: defSide as "home" | "away" }
+    : undefined;
   const atkSetup = attacking === "home" ? ctx.homeSetup : ctx.awaySetup;
   const defSetup = attacking === "home" ? ctx.awaySetup : ctx.homeSetup;
   const atkName = attacking === "home" ? ctx.homeName : ctx.awayName;
@@ -1057,13 +1183,15 @@ function resolveShot(
 
   const gk = defLineup.find((p) => p.role === "GK") ?? defLineup[0];
   const defStamina = attacking === "home" ? ctx.awayStamina : ctx.homeStamina;
+  const defForm = attacking === "home" ? ctx.awayFormation : ctx.homeFormation;
   const gkR = effectiveRating(
     gk,
     defStamina,
-    attacking === "home" ? ctx.awayFormation : ctx.homeFormation,
+    defForm,
     0,
     defRc,
-    defSetup
+    defSetup,
+    defInj
   );
 
   recordShot(atkMap, striker.name, false);
@@ -1343,12 +1471,25 @@ function runSimTick(
       ? "home"
       : "away";
 
-  drainTeamsForTick(homeLineup, awayLineup, newState.homeStamina, newState.awayStamina, attackingTeam);
+  drainTeamsForTick(
+    homeLineup,
+    awayLineup,
+    newState.homeStamina,
+    newState.awayStamina,
+    attackingTeam,
+    inStoppage ? STOPPAGE_STAMINA_DRAIN_SCALE : 1
+  );
   const homeName = getUniverse(home.universeId)?.name ?? "Home";
   const awayName = getUniverse(away.universeId)?.name ?? "Away";
   const clockMinute = inStoppage
     ? stoppageClockDisplay(stoppageTick).minute
     : minuteFromTick(half, tick);
+
+  if (newState.persistentMatchMode) {
+    const upgraded = processInjuryUpgrades(newState, clockMinute, half);
+    Object.assign(newState, upgraded.state);
+    events.push(...upgraded.events);
+  }
 
   const attackCtx: AttackContext = {
     attacking: attackingTeam,
@@ -1398,10 +1539,12 @@ function runSimTick(
     ),
     ...createAttackContextExtras(),
   };
+  syncInjuriesFromState(newState, attackCtx);
 
   const phaseEvents = runAttackPhase(attackCtx);
   newState.momentum = attackCtx.momentum;
   newState.pendingSetPiece = attackCtx.pendingSetPiece;
+  Object.assign(newState, syncInjuriesToState(newState, attackCtx));
 
   for (const e of phaseEvents) {
     newState.stoppageCount += stoppageWeightForEvent(e.type);

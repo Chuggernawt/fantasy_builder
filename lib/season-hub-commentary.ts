@@ -6,6 +6,13 @@ import {
   sortTable,
 } from "./season";
 import { SEASON_RELEGATION_ZONE } from "./season-saves";
+import { getSeasonTeamRoster } from "./season-rosters";
+import {
+  userInjuredPlayers,
+} from "./season-injuries";
+import { getPlayerFormValue } from "./instance-form";
+import { getSeasonTeamStamina, userTiredPlayerCount } from "./squad-stamina";
+import { returnTimelineLabel } from "./injuries";
 import type { SeasonFixture, SeasonState } from "./season-types";
 
 export interface SeasonHubCommentaryLine {
@@ -52,7 +59,7 @@ function describeUserResult(season: SeasonState, f: SeasonFixture): string {
   const venue = isHome ? "at home" : "away";
   const outcome =
     userScore > oppScore ? "won" : userScore < oppScore ? "lost" : "drew";
-  return `${outcome} ${userScore}–${oppScore} ${venue} to ${teamName(oppId)} on matchday ${f.matchday}`;
+  return `${outcome} ${userScore}–${oppScore} ${venue} against ${teamName(oppId)} on matchday ${f.matchday}`;
 }
 
 function formSummary(season: SeasonState): string | null {
@@ -210,6 +217,59 @@ export function buildSeasonHubCommentary(season: SeasonState): SeasonHubCommenta
     push("form", `Recent form (latest first): ${form}.`, tone);
   }
 
+  const injured = userInjuredPlayers(season);
+  if (injured.length) {
+    const top = injured.slice(0, 2);
+    const names = top
+      .map((i) => `${i.playerName} (${returnTimelineLabel(i.gamesOut)})`)
+      .join(", ");
+    push(
+      "injuries",
+      `${userName} injury list: ${names}${injured.length > 2 ? ` +${injured.length - 2} more` : ""}.`,
+      injured.length >= 3 ? "negative" : "neutral"
+    );
+  }
+
+  const hotForm = getSeasonTeamRoster(season, userId)
+    .map((e) => ({
+      name: e.playerName,
+      form: getPlayerFormValue(season.playerForm, userId, e.playerName),
+    }))
+    .filter((r) => r.form >= 3)
+    .sort((a, b) => b.form - a.form)
+    .slice(0, 2);
+  if (hotForm.length) {
+    push(
+      "player-form",
+      `In form: ${hotForm.map((r) => r.name).join(", ")} — riding a hot streak.`,
+      "positive"
+    );
+  }
+
+  const userStamina = getSeasonTeamStamina(season, userId);
+  const tiredCount = userTiredPlayerCount(userStamina, 98);
+  const exhausted = Object.entries(userStamina)
+    .filter(([, v]) => v < 96)
+    .sort((a, b) => a[1] - b[1])
+    .slice(0, 2)
+    .map(([name]) => name);
+
+  if (tiredCount >= 3) {
+    push(
+      "squad-fatigue",
+      `${userName}'s squad isn't fully rested — ${tiredCount} players carrying a knock from the last outing.`,
+      "negative"
+    );
+  } else if (exhausted.length) {
+    push(
+      "squad-fatigue",
+      `Fitness watch: ${exhausted.join(", ")} ${exhausted.length === 1 ? "looks" : "look"} a touch short.`,
+      "neutral"
+    );
+  } else if (injured.length === 0 && played >= 3) {
+    push("fit-squad", `${userName} report a fully fit squad heading into the next fixture.`, "positive");
+  }
+
   const last = userPlayedFixtures(season)[0];
   if (last) {
     const resultText = describeUserResult(season, last);
@@ -236,8 +296,9 @@ export function buildSeasonHubCommentary(season: SeasonState): SeasonHubCommenta
     push("next-fixture", preview, "highlight");
   }
 
-  const above = sorted[position - 2];
-  const below = sorted[position];
+  const userIdx = sorted.findIndex((r) => r.universeId === userId);
+  const above = userIdx > 0 ? sorted[userIdx - 1] : undefined;
+  const below = userIdx >= 0 && userIdx < sorted.length - 1 ? sorted[userIdx + 1] : undefined;
   if (above && played > 0) {
     const gapUp = above.points - points;
     if (gapUp <= 3 && gapUp > 0) {

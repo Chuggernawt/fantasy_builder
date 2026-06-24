@@ -125,35 +125,159 @@ export function normalizeAccountProgress(raw: unknown): AccountProgress {
   };
 }
 
+export function mergeSeasonSaveSlots(
+  local: SeasonSaveSlots,
+  remote: SeasonSaveSlots
+): SeasonSaveSlots {
+  return local.map((localSlot, i) => {
+    const remoteSlot = remote[i];
+    if (!localSlot) return remoteSlot;
+    if (!remoteSlot) return localSlot;
+    const localTime = new Date(localSlot.savedAt).getTime();
+    const remoteTime = new Date(remoteSlot.savedAt).getTime();
+    return remoteTime > localTime ? remoteSlot : localSlot;
+  }) as SeasonSaveSlots;
+}
+
+function mergeSeasonHonours(
+  local: SeasonHonour[],
+  remote: SeasonHonour[]
+): SeasonHonour[] {
+  const seen = new Set<string>();
+  const out: SeasonHonour[] = [];
+  for (const honour of [...local, ...remote]) {
+    const key = `${honour.universeId}:${honour.seasonNumber}:${honour.completedAt}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(honour);
+  }
+  return out;
+}
+
+function resolveActiveSeason(
+  season: SeasonState | null,
+  activeSlot: SeasonSaveSlotIndex | null,
+  slots: SeasonSaveSlots
+): SeasonState | null {
+  if (season) return season;
+  if (activeSlot != null && slots[activeSlot]) return slots[activeSlot].season;
+  return null;
+}
+
+/** Cloud-synced fields stored on profiles (career/revealed stay in their own columns). */
+export type ProfileCloudProgress = Pick<
+  AccountProgress,
+  | "seasonSaveSlots"
+  | "activeSeasonSlot"
+  | "season"
+  | "seasonHonours"
+  | "playerForm"
+  | "tournament"
+>;
+
+export function accountProgressToCloudPayload(
+  progress: AccountProgress
+): ProfileCloudProgress {
+  return {
+    seasonSaveSlots: progress.seasonSaveSlots,
+    activeSeasonSlot: progress.activeSeasonSlot,
+    season: progress.season,
+    seasonHonours: progress.seasonHonours,
+    playerForm: progress.playerForm,
+    tournament: progress.tournament,
+  };
+}
+
+export function normalizeProfileCloudProgress(
+  raw: unknown
+): ProfileCloudProgress | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Partial<ProfileCloudProgress>;
+  const seasonSaveSlots = normalizeSeasonSaveSlots(o.seasonSaveSlots);
+  const activeSeasonSlot: SeasonSaveSlotIndex | null =
+    typeof o.activeSeasonSlot === "number" && o.activeSeasonSlot >= 0 && o.activeSeasonSlot <= 2
+      ? (o.activeSeasonSlot as SeasonSaveSlotIndex)
+      : null;
+  return {
+    seasonSaveSlots,
+    activeSeasonSlot,
+    season: (o.season as SeasonState | null) ?? null,
+    seasonHonours: Array.isArray(o.seasonHonours) ? o.seasonHonours : [],
+    playerForm:
+      o.playerForm && typeof o.playerForm === "object"
+        ? (o.playerForm as AccountProgress["playerForm"])
+        : {},
+    tournament: (o.tournament as TournamentState | null) ?? null,
+  };
+}
+
+export function mergeProfileCloudProgress(
+  local: AccountProgress,
+  remote: ProfileCloudProgress | null
+): AccountProgress {
+  if (!remote) return local;
+
+  const seasonSaveSlots = mergeSeasonSaveSlots(local.seasonSaveSlots, remote.seasonSaveSlots);
+  const activeSeasonSlot = remote.activeSeasonSlot ?? local.activeSeasonSlot;
+  const season = resolveActiveSeason(
+    remote.season ?? local.season,
+    activeSeasonSlot,
+    seasonSaveSlots
+  );
+
+  return {
+    ...local,
+    seasonSaveSlots,
+    activeSeasonSlot,
+    season,
+    seasonHonours: mergeSeasonHonours(local.seasonHonours, remote.seasonHonours),
+    playerForm: { ...local.playerForm, ...remote.playerForm },
+    tournament: remote.tournament ?? local.tournament,
+  };
+}
+
 export function mergeAccountProgress(
   primary: AccountProgress,
   secondary: AccountProgress
 ): AccountProgress {
+  const seasonSaveSlots = mergeSeasonSaveSlots(
+    primary.seasonSaveSlots,
+    secondary.seasonSaveSlots
+  );
+  const activeSeasonSlot = primary.activeSeasonSlot ?? secondary.activeSeasonSlot;
   return {
     careerStats: mergeCareerStats(primary.careerStats, secondary.careerStats),
     revealedStats: mergeRevealedStats(primary.revealedStats, secondary.revealedStats),
     playerForm: { ...secondary.playerForm, ...primary.playerForm },
-    seasonHonours: [...secondary.seasonHonours, ...primary.seasonHonours],
-    season: primary.season ?? secondary.season,
-    seasonSaveSlots: primary.seasonSaveSlots.map(
-      (slot, i) => slot ?? secondary.seasonSaveSlots[i] ?? null
-    ) as SeasonSaveSlots,
-    activeSeasonSlot: primary.activeSeasonSlot ?? secondary.activeSeasonSlot,
+    seasonHonours: mergeSeasonHonours(primary.seasonHonours, secondary.seasonHonours),
+    season: resolveActiveSeason(
+      primary.season ?? secondary.season,
+      activeSeasonSlot,
+      seasonSaveSlots
+    ),
+    seasonSaveSlots,
+    activeSeasonSlot,
     tournament: primary.tournament ?? secondary.tournament,
   };
 }
 
 export function reconcileAccountProgressWithProfile(
   local: AccountProgress,
-  profile: Pick<MultiplayerProfile, "career_stats" | "revealed_stats"> | null
+  profile: Pick<
+    MultiplayerProfile,
+    "career_stats" | "revealed_stats" | "account_progress"
+  > | null
 ): AccountProgress {
   if (!profile) return local;
 
   const remoteCareer = normalizeCareerStats(profile.career_stats);
   const remoteRevealed = normalizeRevealedStats(profile.revealed_stats);
+  const remoteCloud = normalizeProfileCloudProgress(profile.account_progress);
+
+  const merged = mergeProfileCloudProgress(local, remoteCloud);
 
   return {
-    ...local,
+    ...merged,
     careerStats: reconcileCareerStats(local.careerStats, remoteCareer),
     revealedStats: mergeRevealedStats(local.revealedStats, remoteRevealed),
   };

@@ -7,12 +7,23 @@ import { BroadcastHeader } from "@/components/BroadcastHeader";
 import { SubstitutionPanel } from "@/components/HalftimePanel";
 import { MatchSquadPanel } from "@/components/MatchSquadPanel";
 import { MatchInfluenceBar } from "@/components/MatchInfluenceBar";
+import { OpponentScoutSheet } from "@/components/OpponentScoutSheet";
 import { MatchPossessionBar } from "@/components/MatchPossessionBar";
 import { MpPauseBanner } from "@/components/MpPauseBanner";
 import { useMultiplayerSync } from "@/hooks/useMultiplayerSync";
 import { useMultiplayerHostLoop } from "@/hooks/useMultiplayerHostLoop";
 import { getAwaySetup, getHomeSetup, useGameStore } from "@/store/game-store";
 import { getUniverse } from "@/lib/squads";
+import { FORMATIONS } from "@/lib/formations";
+import { formatScoutGlance } from "@/lib/tactics";
+import {
+  extractMatchGoals,
+  extractRedCards,
+  formatGoalMinuteTags,
+  goalsForTeam,
+  groupGoalsByScorer,
+  redCardsForTeam,
+} from "@/lib/match-goals";
 import { processTick, TICK_MS } from "@/lib/simulation";
 import { MAX_MATCH_SUBS } from "@/lib/constants";
 import { getMultiplayerSession } from "@/lib/multiplayer-session";
@@ -87,6 +98,7 @@ export function MatchEngine() {
   const [mySetPiecePick, setMySetPiecePick] = useState<number | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [goalFlash, setGoalFlash] = useState(false);
+  const [scoutOpen, setScoutOpen] = useState(false);
   const prevScore = useRef({ home: 0, away: 0 });
   const didStartWhistle = useRef(false);
   const prevStatus = useRef(matchState?.status);
@@ -96,19 +108,23 @@ export function MatchEngine() {
   const home = getUniverse(matchState?.homeUniverseId ?? "");
   const away = getUniverse(matchState?.awayUniverseId ?? "");
 
-  const goalScorers = useMemo(() => {
+  const matchEvents = useMemo(() => {
     if (!matchState) {
-      return { home: [] as { minute: number; name: string }[], away: [] };
+      return {
+        homeGoals: [] as ReturnType<typeof groupGoalsByScorer>,
+        awayGoals: [] as ReturnType<typeof groupGoalsByScorer>,
+        homeReds: [] as ReturnType<typeof extractRedCards>,
+        awayReds: [] as ReturnType<typeof extractRedCards>,
+      };
     }
-    const homeGoals: { minute: number; name: string }[] = [];
-    const awayGoals: { minute: number; name: string }[] = [];
-    for (const e of matchState.commentary) {
-      if (e.type !== "goal") continue;
-      const entry = { minute: e.minute, name: e.playerName ?? "?" };
-      if (e.team === "home") homeGoals.push(entry);
-      else if (e.team === "away") awayGoals.push(entry);
-    }
-    return { home: homeGoals, away: awayGoals };
+    const goals = extractMatchGoals(matchState.commentary);
+    const reds = extractRedCards(matchState.commentary);
+    return {
+      homeGoals: groupGoalsByScorer(goalsForTeam(goals, "home")),
+      awayGoals: groupGoalsByScorer(goalsForTeam(goals, "away")),
+      homeReds: redCardsForTeam(reds, "home"),
+      awayReds: redCardsForTeam(reds, "away"),
+    };
   }, [matchState]);
 
   useEffect(() => {
@@ -355,6 +371,25 @@ export function MatchEngine() {
   const myCaptainHalf = mySide === "home" ? matchState.homeCaptainHalf : matchState.awayCaptainHalf;
   const myCaptain = mySide === "home" ? matchState.homeCaptain : matchState.awayCaptain;
 
+  const opponentSide = mySide === "home" ? "away" : "home";
+  const opponentUni = opponentSide === "home" ? home : away;
+  const opponentSetup = opponentSide === "home" ? getHomeSetup() : getAwaySetup();
+  const opponentLineup = opponentSide === "home" ? displayHomeLineup : displayAwayLineup;
+  const opponentTactics =
+    opponentSide === "home" ? matchState.homeTactics : matchState.awayTactics;
+  const opponentCaptain =
+    opponentSide === "home"
+      ? matchState.homeCaptainHalf === matchState.half
+        ? matchState.homeCaptain
+        : null
+      : matchState.awayCaptainHalf === matchState.half
+        ? matchState.awayCaptain
+        : null;
+  const opponentFormation =
+    FORMATIONS.find((f) => f.id === opponentSetup?.formationId) ?? FORMATIONS[0];
+  const opponentScoutGlance = formatScoutGlance(opponentFormation.label, opponentTactics);
+  const openOpponentScout = () => setScoutOpen(true);
+
   async function handleOpenSubs() {
     if (sharedMp && roomId) {
       await requestMultiplayerSubs(roomId, mySide, isMpHost);
@@ -430,14 +465,36 @@ export function MatchEngine() {
               <p className="broadcast-label text-[10px]" style={{ color: home.accentColor }}>
                 Home
               </p>
-              <p className="truncate font-display text-xs font-semibold uppercase md:text-sm">
-                {home.name}
-              </p>
-              {goalScorers.home.length ? (
+              {mySide === "away" ? (
+                <button
+                  type="button"
+                  onClick={openOpponentScout}
+                  className="w-full truncate text-left font-display text-xs font-semibold uppercase hover:text-broadcast-highlight md:text-sm"
+                  title="Open scout report"
+                >
+                  {home.name}
+                </button>
+              ) : (
+                <p className="truncate font-display text-xs font-semibold uppercase md:text-sm">
+                  {home.name}
+                </p>
+              )}
+              {matchEvents.homeGoals.length ? (
                 <ul className="mt-1 space-y-0.5 font-mono text-[9px] text-slate-400">
-                  {goalScorers.home.map((g, i) => (
-                    <li key={`h-${g.minute}-${g.name}-${i}`}>
-                      {g.minute}&apos; {g.name}
+                  {matchEvents.homeGoals.map((g) => (
+                    <li key={`h-${g.scorer}`}>
+                      <span className="text-slate-300">{g.scorer}</span>{" "}
+                      {formatGoalMinuteTags(g.goals)}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {matchEvents.homeReds.length ? (
+                <ul className="mt-1 space-y-0.5 font-mono text-[9px] text-red-400/90">
+                  {matchEvents.homeReds.map((c) => (
+                    <li key={c.id}>
+                      {c.minute}&apos; {c.playerName}{" "}
+                      <span className="text-red-500">(red)</span>
                     </li>
                   ))}
                 </ul>
@@ -462,14 +519,36 @@ export function MatchEngine() {
               <p className="broadcast-label text-[10px]" style={{ color: away.accentColor }}>
                 Away
               </p>
-              <p className="truncate font-display text-xs font-semibold uppercase md:text-sm">
-                {away.name}
-              </p>
-              {goalScorers.away.length ? (
+              {mySide === "home" ? (
+                <button
+                  type="button"
+                  onClick={openOpponentScout}
+                  className="w-full truncate text-right font-display text-xs font-semibold uppercase hover:text-broadcast-highlight md:text-sm"
+                  title="Open scout report"
+                >
+                  {away.name}
+                </button>
+              ) : (
+                <p className="truncate font-display text-xs font-semibold uppercase md:text-sm">
+                  {away.name}
+                </p>
+              )}
+              {matchEvents.awayGoals.length ? (
                 <ul className="mt-1 space-y-0.5 font-mono text-[9px] text-slate-400">
-                  {goalScorers.away.map((g, i) => (
-                    <li key={`a-${g.minute}-${g.name}-${i}`}>
-                      {g.minute}&apos; {g.name}
+                  {matchEvents.awayGoals.map((g) => (
+                    <li key={`a-${g.scorer}`}>
+                      <span className="text-slate-300">{g.scorer}</span>{" "}
+                      {formatGoalMinuteTags(g.goals)}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {matchEvents.awayReds.length ? (
+                <ul className="mt-1 space-y-0.5 font-mono text-[9px] text-red-400/90">
+                  {matchEvents.awayReds.map((c) => (
+                    <li key={c.id}>
+                      {c.minute}&apos; {c.playerName}{" "}
+                      <span className="text-red-500">(red)</span>
                     </li>
                   ))}
                 </ul>
@@ -629,7 +708,24 @@ export function MatchEngine() {
               onOpenSubs={handleOpenSubs}
               onSetTactic={handleSetTactic}
               onCallCaptain={handleCallCaptain}
+              opponentName={opponentUni?.name}
+              opponentUniverseId={opponentUni?.id}
+              onOpenOpponentScout={openOpponentScout}
             />
+
+            {opponentUni && opponentSetup ? (
+              <OpponentScoutSheet
+                open={scoutOpen}
+                onClose={() => setScoutOpen(false)}
+                teamName={opponentUni.name}
+                accent={opponentUni.accentColor}
+                universeId={opponentSetup.universeId}
+                formationId={opponentSetup.formationId}
+                lineup={opponentLineup}
+                tactics={opponentTactics}
+                captain={opponentCaptain}
+              />
+            ) : null}
 
             <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[minmax(0,11rem)_1fr_minmax(0,11rem)] xl:grid-cols-[minmax(0,13rem)_1fr_minmax(0,13rem)]">
               <div className="order-2 hidden min-h-0 lg:order-1 lg:flex lg:flex-col">
@@ -644,6 +740,10 @@ export function MatchEngine() {
                   captain={
                     matchState.homeCaptainHalf === matchState.half ? matchState.homeCaptain : null
                   }
+                  subtitle={mySide === "away" ? opponentScoutGlance : undefined}
+                  scoutUniverseId={mySide === "away" ? opponentUni?.id : undefined}
+                  scoutAccent={mySide === "away" ? opponentUni?.accentColor : undefined}
+                  onOpenScout={mySide === "away" ? openOpponentScout : undefined}
                 />
               </div>
 
@@ -663,6 +763,10 @@ export function MatchEngine() {
                   captain={
                     matchState.awayCaptainHalf === matchState.half ? matchState.awayCaptain : null
                   }
+                  subtitle={mySide === "home" ? opponentScoutGlance : undefined}
+                  scoutUniverseId={mySide === "home" ? opponentUni?.id : undefined}
+                  scoutAccent={mySide === "home" ? opponentUni?.accentColor : undefined}
+                  onOpenScout={mySide === "home" ? openOpponentScout : undefined}
                 />
               </div>
             </div>
@@ -680,6 +784,10 @@ export function MatchEngine() {
                 captain={
                   matchState.homeCaptainHalf === matchState.half ? matchState.homeCaptain : null
                 }
+                subtitle={mySide === "away" ? opponentScoutGlance : undefined}
+                scoutUniverseId={mySide === "away" ? opponentUni?.id : undefined}
+                scoutAccent={mySide === "away" ? opponentUni?.accentColor : undefined}
+                onOpenScout={mySide === "away" ? openOpponentScout : undefined}
               />
               <MatchSquadPanel
                 compact
@@ -693,6 +801,10 @@ export function MatchEngine() {
                 captain={
                   matchState.awayCaptainHalf === matchState.half ? matchState.awayCaptain : null
                 }
+                subtitle={mySide === "home" ? opponentScoutGlance : undefined}
+                scoutUniverseId={mySide === "home" ? opponentUni?.id : undefined}
+                scoutAccent={mySide === "home" ? opponentUni?.accentColor : undefined}
+                onOpenScout={mySide === "home" ? openOpponentScout : undefined}
               />
             </div>
 

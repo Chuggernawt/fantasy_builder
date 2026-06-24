@@ -2,6 +2,7 @@ import { buildSeasonFixtures, initSeasonTable } from "./season-fixtures";
 import { getUserTablePosition, sortTable } from "./season";
 import { eligibleSeasonUniverseIds, initSeasonRosters, SEASON_LEAGUE_SIZE } from "./season-rosters";
 import { SEASON_RELEGATION_ZONE } from "./season-saves";
+import { initSeasonSquadStamina } from "./squad-stamina";
 import type { SeasonState } from "./season-types";
 
 export { SEASON_RELEGATION_ZONE };
@@ -65,7 +66,7 @@ export function continueSeasonCampaign(
     throw new Error("User team missing from continued league.");
   }
 
-  return {
+  const base: SeasonState = {
     seasonNumber: finished.seasonNumber + 1,
     length: finished.length,
     userUniverseId: userId,
@@ -78,10 +79,18 @@ export function continueSeasonCampaign(
     status: "active",
     championId: null,
     suspensions: {},
+    injuries: {},
+    playerForm: {},
+    cpuLineups: {},
     transfersThisWindow: 0,
     transferHistory: [],
     lastRelegatedIds: relegatedIds,
     lastPromotedIds: replacements,
+  };
+
+  return {
+    ...base,
+    squadStamina: initSeasonSquadStamina(base),
   };
 }
 

@@ -21,7 +21,7 @@ import type { MatchState } from "@/lib/types";
 import type { MpMatchMeta } from "@/lib/multiplayer-types";
 
 const DRAFT_PUSH_MS = 800;
-const CLIENT_POLL_MS = 500;
+const CLIENT_POLL_MS = 350;
 
 function shootoutKicksTaken(state: MatchState): number {
   const ps = state.penaltyShootout;
@@ -40,7 +40,9 @@ function matchProgressRank(state: MatchState): number {
     finished: 10,
   };
   const piecePhase = state.interactiveSetPiece?.phase === "reveal" ? 1 : 0;
+  const stoppageBoost = state.inStoppageTime ? 100_000 + (state.stoppageTick ?? 0) * 100 : 0;
   return (
+    stoppageBoost +
     (statusRank[state.status] ?? 0) * 1_000_000 +
     shootoutKicksTaken(state) * 10_000 +
     state.half * 1_000 +
@@ -62,6 +64,31 @@ export function isSnapshotMatchAhead(
   if (
     prev.status === "set_piece_pause" &&
     (incoming.status === "running" || incoming.status === "finished")
+  ) {
+    return true;
+  }
+
+  if (
+    incoming.status === "extra_time_choice" &&
+    prev.status === "running" &&
+    prev.half === 2 &&
+    !prev.inStoppageTime
+  ) {
+    return true;
+  }
+
+  if (
+    incoming.inStoppageTime &&
+    (incoming.stoppageTick ?? 0) > (prev.stoppageTick ?? 0)
+  ) {
+    return true;
+  }
+
+  if (
+    incoming.inStoppageTime &&
+    !prev.inStoppageTime &&
+    incoming.half === prev.half &&
+    incoming.tick === prev.tick
   ) {
     return true;
   }
@@ -103,7 +130,7 @@ function matchSyncKey(
   mp: MpMatchMeta | null | undefined
 ): string | null {
   if (!state) return null;
-  const base = `${state.status}:${state.half}:${state.tick}:${state.score.home}-${state.score.away}:${state.commentary.length}`;
+  const base = `${state.status}:${state.half}:${state.tick}:${state.inStoppageTime ? 1 : 0}:${state.stoppageTick ?? 0}:${state.stoppageMinutes ?? 0}:${state.score.home}-${state.score.away}:${state.commentary.length}`;
   const piece = state.interactiveSetPiece;
   const setPieceKey = piece
     ? `sp:${piece.kind}:${piece.phase}:${piece.attacking}:${piece.attackerPick ?? ""}:${piece.defenderPick ?? ""}:${piece.goalScored ?? ""}:${piece.chooseEndsAt}:${piece.revealEndsAt ?? ""}`

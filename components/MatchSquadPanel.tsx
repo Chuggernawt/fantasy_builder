@@ -2,6 +2,7 @@
 
 import type { LineupSlot, PlayerMatchStats } from "@/lib/types";
 import { livePlayerMatchRating, ratingDisplayClass } from "@/lib/match-rating";
+import { UniverseTraitDisplay } from "@/components/UniverseTraitDisplay";
 
 interface MatchSquadPanelProps {
   title: string;
@@ -13,6 +14,12 @@ interface MatchSquadPanelProps {
   goalsConceded?: number;
   captain?: string | null;
   compact?: boolean;
+  /** Formation + tactics one-liner for scout glance */
+  subtitle?: string;
+  /** Opponent universe — shows passive trait above tactics line */
+  scoutUniverseId?: string;
+  scoutAccent?: string;
+  onOpenScout?: () => void;
 }
 
 function StatCell({ value, highlight }: { value: number; highlight?: boolean }) {
@@ -37,6 +44,10 @@ export function MatchSquadPanel({
   goalsConceded = 0,
   captain,
   compact = false,
+  subtitle,
+  scoutUniverseId,
+  scoutAccent,
+  onOpenScout,
 }: MatchSquadPanelProps) {
   const rows = lineup.filter((s) => s.playerName);
 
@@ -46,6 +57,32 @@ export function MatchSquadPanel({
         <p className="broadcast-label truncate text-[10px]" style={{ color: accent }}>
           {title}
         </p>
+        {scoutUniverseId ? (
+          <div className="mt-1">
+            <UniverseTraitDisplay
+              universeId={scoutUniverseId}
+              accent={scoutAccent ?? accent}
+              variant="inline"
+            />
+          </div>
+        ) : null}
+        {subtitle ? (
+          onOpenScout ? (
+            <button
+              type="button"
+              onClick={onOpenScout}
+              className="mt-1 w-full text-left text-[10px] leading-snug text-slate-500 hover:text-slate-300"
+              title="Open scout report"
+            >
+              {subtitle}{" "}
+              <span className="text-broadcast-highlight" aria-hidden>
+                ↗
+              </span>
+            </button>
+          ) : (
+            <p className="mt-1 text-[10px] leading-snug text-slate-500">{subtitle}</p>
+          )
+        ) : null}
         <div className="mt-1 grid grid-cols-[1.5rem_1fr_1.75rem_1rem_1rem_1rem_2.5rem] gap-0.5 text-[9px] uppercase tracking-wider text-slate-600">
           <span />
           <span>Player</span>

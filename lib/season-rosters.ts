@@ -1,6 +1,6 @@
 import { getAllUniverses, getPlayer, getUniverse } from "./squads";
 import { isSquadUnlocked } from "./squad-unlocks";
-import type { Player } from "./types";
+import type { LineupSlot, Player } from "./types";
 import type { SeasonRosterEntry, SeasonState } from "./season-types";
 
 export const SEASON_ROSTER_SIZE = 22;
@@ -70,6 +70,11 @@ export function ensureSeasonRosters(season: SeasonState): SeasonState {
     rosters: merged,
     transfersThisWindow: season.transfersThisWindow ?? 0,
     transferHistory: season.transferHistory ?? [],
+    injuries: season.injuries ?? {},
+    playerForm: season.playerForm ?? {},
+    cpuLineups: season.cpuLineups ?? {},
+    squadStamina: season.squadStamina ?? {},
+    lastMatchdayStaminaPlayed: season.lastMatchdayStaminaPlayed ?? {},
   };
 }
 
@@ -108,6 +113,30 @@ export function rosterEntriesToPlayers(entries: SeasonRosterEntry[]): RosterPlay
     if (p) out.push({ ...p, originUniverseId: e.universeId });
   }
   return out;
+}
+
+export function seasonRosterPlayerNames(
+  season: SeasonState,
+  teamUniverseId: string
+): Set<string> {
+  return new Set(getSeasonTeamRoster(season, teamUniverseId).map((e) => e.playerName));
+}
+
+export function sanitizeLineupForSeasonRoster(
+  season: SeasonState | null,
+  teamUniverseId: string | null,
+  lineup: LineupSlot[],
+  matchBench: string[]
+): { lineup: LineupSlot[]; matchBench: string[] } {
+  if (!season?.rosters || !teamUniverseId) return { lineup, matchBench };
+  const names = seasonRosterPlayerNames(season, teamUniverseId);
+  return {
+    lineup: lineup.map((s) => ({
+      ...s,
+      playerName: s.playerName && names.has(s.playerName) ? s.playerName : null,
+    })),
+    matchBench: matchBench.filter((n) => names.has(n)),
+  };
 }
 
 export function rosterAverageOvr(entries: SeasonRosterEntry[]): number {

@@ -8,6 +8,8 @@ import { BroadcastHeader } from "@/components/BroadcastHeader";
 import { PitchView } from "@/components/PitchView";
 import { SquadBench } from "@/components/SquadBench";
 import { MatchBenchPicker } from "@/components/MatchBenchPicker";
+import { PersistentMatchKey } from "@/components/PlayerFormLegend";
+import { UniverseTraitDisplay } from "@/components/UniverseTraitDisplay";
 import { TacticsPreMatchSelect } from "@/components/TacticsPreMatchSelect";
 import { FORMATIONS } from "@/lib/formations";
 import { countAssigned, isMatchReady } from "@/lib/lineup";
@@ -15,9 +17,13 @@ import { getAllUniverses, getPlayer, getUniverse } from "@/lib/squads";
 import { isSquadUnlocked } from "@/lib/squad-unlocks";
 import { getPlayerFixture } from "@/lib/season";
 import { getSeasonTeamRoster, rosterEntriesToPlayers } from "@/lib/season-rosters";
+import { injuryKey, returnTimelineLabel } from "@/lib/injuries";
+import { getPlayerFormValue } from "@/lib/instance-form";
+import { getSeasonTeamStamina, getTournamentSquadStamina } from "@/lib/squad-stamina";
+import { seasonInjuries } from "@/lib/season-injuries";
 import { clearMultiplayerSession } from "@/lib/multiplayer-session";
 import { useGameStore } from "@/store/game-store";
-import type { FormationId } from "@/lib/types";
+import type { FormationId, Player } from "@/lib/types";
 
 export default function DraftPage() {
   const router = useRouter();
@@ -34,6 +40,8 @@ export default function DraftPage() {
     opponentUniverseId,
     season,
     seasonActiveFixtureId,
+    tournamentActiveFixtureId,
+    tournamentInstance,
     setFormation,
     setLineupSlot,
     swapLineupSlots,
@@ -70,9 +78,68 @@ export default function DraftPage() {
       ? getPlayerFixture(season)
       : null;
   const isSeasonDraft = !!seasonFixture;
+  const isTournamentDraft = !!tournamentActiveFixtureId && !isSeasonDraft;
+  const isPersistentDraft = isSeasonDraft || isTournamentDraft;
   const opponentUni = opponentUniverseId ? getUniverse(opponentUniverseId) : null;
-  const draftBackHref = isSeasonDraft ? "/season" : `/squad/${universe?.id ?? ""}`;
-  const draftBackLabel = isSeasonDraft ? "Season" : "Squad";
+
+  const squadPlayers = useMemo(() => {
+    if (isSeasonDraft && season?.rosters && selectedUniverseId) {
+      return rosterEntriesToPlayers(getSeasonTeamRoster(season, selectedUniverseId));
+    }
+    return universe?.players ?? [];
+  }, [isSeasonDraft, season, selectedUniverseId, universe]);
+
+  const draftBackHref = isSeasonDraft ? "/season" : isTournamentDraft ? "/tournament" : `/squad/${universe?.id ?? ""}`;
+  const draftBackLabel = isSeasonDraft ? "Season" : isTournamentDraft ? "Tournament" : "Squad";
+
+  const playerFormMap = useMemo(() => {
+    if (!isPersistentDraft || !selectedUniverseId) return undefined;
+    if (isSeasonDraft && season) {
+      const map: Record<string, number> = {};
+      for (const p of squadPlayers) {
+        map[p.name] = getPlayerFormValue(season.playerForm, selectedUniverseId, p.name);
+      }
+      return map;
+    }
+    if (isTournamentDraft && tournamentInstance) {
+      return { ...tournamentInstance.playerForm };
+    }
+    return undefined;
+  }, [isPersistentDraft, isSeasonDraft, isTournamentDraft, season, selectedUniverseId, squadPlayers, tournamentInstance]);
+
+  const playerStaminaMap = useMemo(() => {
+    if (!isPersistentDraft || !selectedUniverseId) return undefined;
+    if (isSeasonDraft && season) {
+      return getSeasonTeamStamina(season, selectedUniverseId);
+    }
+    if (isTournamentDraft && tournamentInstance) {
+      return getTournamentSquadStamina(
+        tournamentInstance,
+        squadPlayers.map((p) => p.name)
+      );
+    }
+    return undefined;
+  }, [isPersistentDraft, isSeasonDraft, isTournamentDraft, season, selectedUniverseId, squadPlayers, tournamentInstance]);
+
+  const injuryLabelMap = useMemo(() => {
+    if (!isPersistentDraft) return undefined;
+    const labels: Record<string, string> = {};
+    if (isSeasonDraft && season && selectedUniverseId) {
+      const roster = getSeasonTeamRoster(season, selectedUniverseId);
+      const injuries = seasonInjuries(season);
+      for (const e of roster) {
+        const row = injuries[injuryKey(e.universeId, e.playerName)];
+        if (row && row.gamesOut > 0) {
+          labels[e.playerName] = returnTimelineLabel(row.gamesOut);
+        }
+      }
+    } else if (isTournamentDraft && tournamentInstance) {
+      for (const row of Object.values(tournamentInstance.injuries)) {
+        if (row.gamesOut > 0) labels[row.playerName] = returnTimelineLabel(row.gamesOut);
+      }
+    }
+    return labels;
+  }, [isPersistentDraft, isSeasonDraft, isTournamentDraft, season, selectedUniverseId, tournamentInstance]);
 
   const assignedNames = useMemo(
     () => new Set(lineup.map((l) => l.playerName).filter(Boolean)),
@@ -82,24 +149,31 @@ export default function DraftPage() {
   const activeSlotData = formation.slots.find((s) => s.id === activeSlot);
   const activeAssignment = lineup.find((l) => l.slotId === activeSlot);
 
-  const squadPlayers = useMemo(() => {
-    if (isSeasonDraft && season?.rosters && selectedUniverseId) {
-      return rosterEntriesToPlayers(getSeasonTeamRoster(season, selectedUniverseId));
-    }
-    return universe?.players ?? [];
-  }, [isSeasonDraft, season, selectedUniverseId, universe]);
+  const squadPlayerByName = useMemo(() => {
+    const map = new Map<string, Player>();
+    for (const p of squadPlayers) map.set(p.name, p);
+    return map;
+  }, [squadPlayers]);
+
+  const resolveDraftPlayer = useMemo(() => {
+    const uniId = universe?.id ?? "";
+    return (name: string) => squadPlayerByName.get(name) ?? getPlayer(uniId, name);
+  }, [squadPlayerByName, universe?.id]);
 
   const availablePlayers = useMemo(() => {
     return squadPlayers.filter(
       (p) =>
-        !assignedNames.has(p.name) ||
-        activeAssignment?.playerName === p.name
+        (!injuryLabelMap?.[p.name]) &&
+        (!assignedNames.has(p.name) ||
+        activeAssignment?.playerName === p.name)
     );
-  }, [squadPlayers, assignedNames, activeAssignment?.playerName]);
+  }, [squadPlayers, assignedNames, activeAssignment?.playerName, injuryLabelMap]);
 
   const reserves = useMemo(() => {
-    return squadPlayers.filter((p) => !assignedNames.has(p.name));
-  }, [squadPlayers, assignedNames]);
+    return squadPlayers.filter(
+      (p) => !assignedNames.has(p.name) && !injuryLabelMap?.[p.name]
+    );
+  }, [squadPlayers, assignedNames, injuryLabelMap]);
 
   if (!universe) {
     return (
@@ -168,6 +242,25 @@ export default function DraftPage() {
           )}
         </div>
 
+        {universe ? (
+          <div className="mb-2 grid shrink-0 gap-1.5 sm:grid-cols-2">
+            <UniverseTraitDisplay
+              universeId={universe.id}
+              accent={universe.accentColor}
+              variant="strip"
+              prefix="Your trait"
+            />
+            {opponentUni ? (
+              <UniverseTraitDisplay
+                universeId={opponentUni.id}
+                accent={opponentUni.accentColor}
+                variant="strip"
+                prefix="Opponent"
+              />
+            ) : null}
+          </div>
+        ) : null}
+
         <div className="mb-2 flex shrink-0 flex-wrap gap-1.5">
           <button type="button" className="btn-broadcast px-2 py-1 text-[10px]" onClick={autoPickLineup}>
             Random XI
@@ -218,6 +311,11 @@ export default function DraftPage() {
             <p className="broadcast-label mb-1 shrink-0 text-[10px]" style={{ color: universe.accentColor }}>
               {universe.name} — {formation.label}
             </p>
+            {isPersistentDraft ? (
+              <div className="mb-2 shrink-0 border border-broadcast-border bg-black/40 px-2 py-1.5">
+                <PersistentMatchKey />
+              </div>
+            ) : null}
             <div className="min-h-0 flex-1">
               <PitchView
                   formation={formation}
@@ -227,7 +325,9 @@ export default function DraftPage() {
                   activeSlotId={activeSlot}
                   interactive
                   compact
-                  getPlayer={(name) => getPlayer(universe.id, name)}
+                  getPlayer={resolveDraftPlayer}
+                  playerForm={playerFormMap}
+                  squadFitness={playerStaminaMap}
                   onSlotClick={(slotId) =>
                     setActiveSlot((prev) => (prev === slotId ? null : slotId))
                   }
@@ -253,6 +353,10 @@ export default function DraftPage() {
                 roleLabel={activeSlotData?.label}
                 accent={universe.accentColor}
                 assignedSlotPlayer={activeAssignment?.playerName ?? null}
+                playerForm={playerFormMap}
+                playerStamina={playerStaminaMap}
+                injuryLabels={injuryLabelMap}
+                showFormLegend={false}
                 onSelect={(name) => {
                   if (!activeSlot) return;
                   setLineupSlot(activeSlot, name);
@@ -267,7 +371,14 @@ export default function DraftPage() {
               />
             </div>
             {assignedCount === 11 ? (
-              <MatchBenchPicker compact reserves={reserves} accent={universe.accentColor} />
+              <MatchBenchPicker
+                compact
+                reserves={reserves}
+                accent={universe.accentColor}
+                playerForm={playerFormMap}
+                playerStamina={playerStaminaMap}
+                injuryLabels={injuryLabelMap}
+              />
             ) : null}
           </div>
         </div>

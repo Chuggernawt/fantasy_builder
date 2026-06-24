@@ -1,6 +1,7 @@
 import type { MatchState, MatchSummary } from "./types";
 import { emptyTeamStats } from "./types";
 import { getUniverse } from "./squads";
+import { extractMatchGoals, goalsForTeam } from "./match-goals";
 
 export function buildMatchSummary(state: MatchState): MatchSummary | null {
   const home = getUniverse(state.homeUniverseId);
@@ -10,21 +11,19 @@ export function buildMatchSummary(state: MatchState): MatchSummary | null {
   const hs = state.homeStats ?? emptyTeamStats();
   const as = state.awayStats ?? emptyTeamStats();
 
-  const homeGoals: MatchSummary["homeGoals"] = [];
-  const awayGoals: MatchSummary["awayGoals"] = [];
-
-  for (const e of state.commentary) {
-    if (e.type === "goal") {
-      const scorer = e.playerName ?? parseGoalScorer(e.text);
-      const entry = {
-        scorer,
-        assist: e.assistPlayerName ?? null,
-        minute: e.minute,
-      };
-      if (e.team === "home") homeGoals.push(entry);
-      else if (e.team === "away") awayGoals.push(entry);
-    }
-  }
+  const allGoals = extractMatchGoals(state.commentary);
+  const homeGoals = goalsForTeam(allGoals, "home").map((g) => ({
+    scorer: g.scorer,
+    assist: g.assist,
+    minute: g.minute,
+    isPenalty: g.isPenalty,
+  }));
+  const awayGoals = goalsForTeam(allGoals, "away").map((g) => ({
+    scorer: g.scorer,
+    assist: g.assist,
+    minute: g.minute,
+    isPenalty: g.isPenalty,
+  }));
 
   const totalPoss = hs.possessionPhases + as.possessionPhases || 1;
 
@@ -53,31 +52,6 @@ export function buildMatchSummary(state: MatchState): MatchSummary | null {
     manOfTheMatch: state.manOfTheMatch,
     commentary: state.commentary,
   };
-}
-
-function parseGoalScorer(text: string): string {
-  const patterns = [
-    /GOAL!\s*(.+?)\s+finds the net/i,
-    /GOAL!\s*(.+?)\s+buries it/i,
-    /GOAL!\s*What a finish from\s+(.+?)!/i,
-    /GOAL!\s*(.+?)\s+scores/i,
-    /GOAL!\s*(.+?)\s+tucks it away/i,
-    /GOAL!\s*Back of the net!\s*(.+?)\s+with the finish/i,
-    /GOAL!\s*(.+?)\s+makes no mistake/i,
-    /GOAL!\s*Sensational strike by\s+(.+?)!/i,
-    /GOAL!\s*(.+?)\s+thumps it home/i,
-    /GOAL!\s*Clinical from\s+(.+?)!/i,
-    /GOAL!\s*(.+?)\s+— take a bow/i,
-    /GOAL!\s*Top bins!\s*(.+?)\s+with a screamer/i,
-    /GOAL!\s*(.+?)\s+slots it past the keeper/i,
-    /GOAL!\s*.+?\.\.\.\s*(.+?)\s+scores/i,
-    /—\s*(.+?)\s+finds the net/i,
-  ];
-  for (const re of patterns) {
-    const m = text.match(re);
-    if (m?.[1]) return m[1].trim();
-  }
-  return "Unknown";
 }
 
 export { getBenchPlayerNames } from "./match-stats-bench";

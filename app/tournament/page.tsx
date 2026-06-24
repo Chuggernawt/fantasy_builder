@@ -28,8 +28,11 @@ import {
   updateEntrantLobby,
   usedUniverses,
 } from "@/lib/tournament";
+import { returnTimelineLabel } from "@/lib/injuries";
+import { getTournamentSquadStamina } from "@/lib/squad-stamina";
 import { useGameStore } from "@/store/game-store";
 import type { FormationId, LineupSlot } from "@/lib/types";
+import { resolveTournamentCpuLineup, emptyTournamentInstance, newTournamentInstanceKey } from "@/lib/tournament-instance";
 
 export default function OfflineTournamentPage() {
   const router = useRouter();
@@ -43,6 +46,19 @@ export default function OfflineTournamentPage() {
   const [playerCount, setPlayerCount] = useState(4);
   const [penaltyMode, setPenaltyMode] = useState<PenaltyMode>("interactive");
   const [myLobby, setMyLobby] = useState<PlayerLobbyState>(createEmptyLobby());
+  const tournamentInstance = useGameStore((s) => s.tournamentInstance);
+
+  const tournamentInjuryLabels = useMemo(() => {
+    if (!tournamentInstance) return undefined;
+    const labels: Record<string, string> = {};
+    for (const row of Object.values(tournamentInstance.injuries)) {
+      if (row.gamesOut > 0) labels[row.playerName] = returnTimelineLabel(row.gamesOut);
+    }
+    return labels;
+  }, [tournamentInstance]);
+
+  const tournamentFormMap = tournamentInstance?.playerForm;
+
   const [status, setStatus] = useState<string | null>(null);
   const lobbyLoaded = useRef(false);
 
@@ -50,6 +66,13 @@ export default function OfflineTournamentPage() {
     () => tournament?.entrants.find((e) => e.id === tournament.localEntrantId) ?? tournament?.entrants[0],
     [tournament]
   );
+
+  const tournamentStaminaMap = useMemo(() => {
+    if (!tournamentInstance || !localEntrant?.lobby.universeId) return undefined;
+    const names =
+      getUniverse(localEntrant.lobby.universeId)?.players.map((p) => p.name) ?? [];
+    return getTournamentSquadStamina(tournamentInstance, names);
+  }, [tournamentInstance, localEntrant?.lobby.universeId]);
 
   const tournamentFinaleSummary = useMemo(
     () => (tournament?.phase === "finished" ? buildTournamentFinaleSummary(tournament) : null),
@@ -129,6 +152,21 @@ export default function OfflineTournamentPage() {
     const opponent = playerIsHome ? away : home;
     const player = local;
 
+    let opponentFormationId = opponent.lobby.formationId as FormationId;
+    let opponentLineup = opponent.lobby.lineup as LineupSlot[];
+    let opponentBench = opponent.lobby.matchBench;
+    let tournamentInstance =
+      useGameStore.getState().tournamentInstance ??
+      emptyTournamentInstance(newTournamentInstanceKey());
+
+    if (opponent.isCpu && opponent.lobby.universeId) {
+      const cpu = resolveTournamentCpuLineup(tournamentInstance, opponent.lobby.universeId);
+      tournamentInstance = cpu.state;
+      opponentFormationId = cpu.formationId;
+      opponentLineup = cpu.lineup;
+      opponentBench = cpu.bench;
+    }
+
     useGameStore.setState({
       selectedUniverseId: player.lobby.universeId,
       formationId: player.lobby.formationId as FormationId,
@@ -136,9 +174,10 @@ export default function OfflineTournamentPage() {
       matchBench: player.lobby.matchBench,
       plannedTactics: normalizeTeamTactics(player.lobby.plannedTactics),
       opponentUniverseId: opponent.lobby.universeId,
-      opponentFormationId: opponent.lobby.formationId as FormationId,
-      opponentLineup: opponent.lobby.lineup as LineupSlot[],
-      opponentBench: opponent.lobby.matchBench,
+      opponentFormationId,
+      opponentLineup,
+      opponentBench,
+      tournamentInstance,
       seasonActiveFixtureId: null,
       seasonPlayerIsHome: playerIsHome,
       matchState: null,
@@ -245,6 +284,10 @@ export default function OfflineTournamentPage() {
             <MultiplayerLobbyBuilder
               lobby={myLobby}
               takenUniverseIds={takenUniverseIds}
+              playerForm={tournamentFormMap}
+              playerStamina={tournamentStaminaMap}
+              injuryLabels={tournamentInjuryLabels}
+              showFormLegend
               onChange={(next) => {
                 setMyLobby(next);
                 saveLocalLobby(next);

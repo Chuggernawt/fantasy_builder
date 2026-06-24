@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { getUniverse } from "@/lib/squads";
+import { ALL_STAT_KEYS } from "@/lib/reveal";
+import { STAT_SHORT } from "@/lib/stats";
 import {
   evaluateSeasonSwap,
   getTransferHubStatus,
@@ -45,6 +47,7 @@ function PlayerRow({
   subtitle?: string;
 }) {
   const isPlayerFullyRevealed = useGameStore((s) => s.isPlayerFullyRevealed);
+  const isStatRevealed = useGameStore((s) => s.isStatRevealed);
   const revealed = isPlayerFullyRevealed(player.name);
   const origin = getUniverse(entry.universeId);
 
@@ -59,8 +62,8 @@ function PlayerRow({
           : "border-broadcast-border/50 hover:border-broadcast-highlight/60"
       } ${disabled ? "cursor-not-allowed opacity-40" : ""}`}
     >
-      <div className="flex items-center justify-between gap-2">
-        <div className="min-w-0">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
           <p className="truncate font-display font-semibold uppercase text-slate-100">
             {player.name}
           </p>
@@ -68,6 +71,14 @@ function PlayerRow({
             {subtitle ?? origin?.name ?? entry.universeId}
             {revealed ? "" : " · Hidden stats"}
           </p>
+          <div className="mt-1.5 grid grid-cols-3 gap-x-2 gap-y-0.5">
+            {ALL_STAT_KEYS.map((key) => (
+              <span key={key} className="font-mono text-[9px] text-broadcast-highlight">
+                {STAT_SHORT[key]}{" "}
+                {isStatRevealed(player.name, key) ? player.stats[key] : "?"}
+              </span>
+            ))}
+          </div>
         </div>
         <span className="shrink-0 font-mono text-broadcast-highlight">
           {revealed ? player.ovr : "??"}

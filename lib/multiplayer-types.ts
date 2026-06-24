@@ -7,7 +7,7 @@ export type MemberRole = "host" | "away" | "spectator" | "player";
 
 import type { PlayerCareerStats } from "./career-stats";
 import type { StatKey } from "./types";
-import type { AccountProgress } from "./account-progress";
+import type { AccountProgress, ProfileCloudProgress } from "./account-progress";
 
 export interface MultiplayerProfile {
   user_id: string;
@@ -15,6 +15,7 @@ export interface MultiplayerProfile {
   created_at: string;
   career_stats?: PlayerCareerStats | null;
   revealed_stats?: Record<string, StatKey[]> | null;
+  account_progress?: ProfileCloudProgress | null;
 }
 
 import type { PenaltyMode, TournamentFormat, TournamentState } from "./tournament-types";

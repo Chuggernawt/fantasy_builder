@@ -6,6 +6,7 @@ import {
   rosterEntriesToPlayers,
   SEASON_ROSTER_SIZE,
 } from "./season-rosters";
+import { isPlayerInjuredOut, seasonInjuries } from "./season-injuries";
 
 export const TRANSFER_WINDOW_INTERVAL = 4;
 export const MAX_SWAPS_PER_WINDOW = 2;
@@ -17,6 +18,10 @@ function statKey(universeId: string, playerName: string): string {
 
 function isSuspended(season: SeasonState, universeId: string, playerName: string): boolean {
   return (season.suspensions?.[`${universeId}:${playerName}`] ?? 0) > 0;
+}
+
+function isInjured(season: SeasonState, universeId: string, playerName: string): boolean {
+  return isPlayerInjuredOut(seasonInjuries(season), universeId, playerName);
 }
 
 export interface SwapEvaluation {
@@ -89,8 +94,8 @@ export function getTransferHubStatus(season: SeasonState): TransferHubStatus {
       swapsRemaining,
       matchdaysUntilOpen: 0,
       opensAfterMatchday: season.currentMatchday - 1,
-      shortLabel: `Open now · ${swapsRemaining} swap${swapsRemaining === 1 ? "" : "s"} left`,
-      buttonLabel: `Transfer hub (${swapsRemaining} left)`,
+      shortLabel: `Open · ${swapsRemaining} swap${swapsRemaining === 1 ? "" : "s"} this window`,
+      buttonLabel: "Transfer hub (OPEN)",
     };
   }
 
@@ -159,8 +164,14 @@ export function evaluateSeasonSwap(
   if (isSuspended(season, outgoing.universeId, outgoing.playerName)) {
     return { accepted: false, reason: "Suspended players cannot be transferred.", outValue: 0, inValue: 0 };
   }
+  if (isInjured(season, outgoing.universeId, outgoing.playerName)) {
+    return { accepted: false, reason: "Injured players cannot be transferred.", outValue: 0, inValue: 0 };
+  }
   if (isSuspended(season, incoming.universeId, incoming.playerName)) {
     return { accepted: false, reason: "Cannot sign a suspended player.", outValue: 0, inValue: 0 };
+  }
+  if (isInjured(season, incoming.universeId, incoming.playerName)) {
+    return { accepted: false, reason: "Cannot sign an injured player.", outValue: 0, inValue: 0 };
   }
 
   const alreadyDealt = (season.transferHistory ?? []).some(

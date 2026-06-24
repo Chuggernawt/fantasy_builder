@@ -11,7 +11,17 @@ import {
   rosterEntriesToPlayers,
   rosterToOriginMap,
 } from "./season-rosters";
-import type { LiteMatchResult, SeasonCardEvent, SeasonGoalEvent } from "./season-types";
+import type { LiteMatchResult, SeasonCardEvent, SeasonGoalEvent, SeasonInjuryEvent, SeasonState } from "./season-types";
+import {
+  gamesOutForSeverity,
+  pickBodyPartForIncident,
+  pickInitialSeverity,
+} from "./injuries";
+import {
+  mergeSeasonStaminaAfterMatch,
+  simulateLiteMatchStamina,
+} from "./squad-stamina";
+import { resolveCpuMatchLineup } from "./season-injuries";
 
 function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -136,6 +146,28 @@ export function fillLineupRestRandomFromRoster(
   });
 }
 
+function rollLiteInjuries(
+  xi: string[],
+  roster: SeasonRosterEntry[],
+  teamId: string
+): SeasonInjuryEvent[] {
+  const injuries: SeasonInjuryEvent[] = [];
+  for (const name of xi) {
+    if (Math.random() > 0.06) continue;
+    const severity = pickInitialSeverity();
+    const gamesOut = gamesOutForSeverity(severity);
+    if (gamesOut <= 0 && severity === "impact") continue;
+    injuries.push({
+      universeId: originForName(roster, name, teamId),
+      playerName: name,
+      severity,
+      bodyPart: pickBodyPartForIncident(Math.random() < 0.5 ? "tackle" : "collision"),
+      gamesOut: gamesOut > 0 ? gamesOut : gamesOutForSeverity(severity),
+    });
+  }
+  return injuries.filter((i) => i.gamesOut > 0);
+}
+
 export function simulateLiteMatch(
   homeId: string,
   awayId: string,
@@ -152,7 +184,6 @@ export function simulateLiteMatch(
 
   const homeRoster = rosterForTeam(homeId, rosters);
   const awayRoster = rosterForTeam(awayId, rosters);
-
   const homeLineup = cpuRandomLineupFromRoster(homeRoster, "4-3-3");
   const awayLineup = cpuRandomLineupFromRoster(awayRoster, "4-3-3");
   const homeXI = homeLineup.map((s) => s.playerName).filter(Boolean) as string[];
@@ -199,7 +230,116 @@ export function simulateLiteMatch(
     });
   }
 
-  return { homeUniverseId: homeId, awayUniverseId: awayId, homeScore, awayScore, goals, cards };
+  const injuries = [
+    ...rollLiteInjuries(homeXI, homeRoster, homeId),
+    ...rollLiteInjuries(awayXI, awayRoster, awayId),
+  ];
+
+  return { homeUniverseId: homeId, awayUniverseId: awayId, homeScore, awayScore, goals, cards, injuries };
+}
+
+export function simulateLiteMatchInSeason(
+  season: SeasonState,
+  homeId: string,
+  awayId: string
+): { season: SeasonState; result: LiteMatchResult } {
+  const rosters = season.rosters;
+  const exp = expectedGoals(homeId, awayId, rosters);
+  let homeScore = poissonGoals(exp.home);
+  let awayScore = poissonGoals(exp.away);
+
+  if (homeScore === 0 && awayScore === 0 && Math.random() < 0.35) {
+    if (Math.random() < 0.55) homeScore = 1;
+    else awayScore = 1;
+  }
+
+  let nextSeason = season;
+  const homeResolved = resolveCpuMatchLineup(nextSeason, homeId);
+  nextSeason = homeResolved.season;
+  const awayResolved = resolveCpuMatchLineup(nextSeason, awayId);
+  nextSeason = awayResolved.season;
+
+  const homeRoster = rosterForTeam(homeId, rosters);
+  const awayRoster = rosterForTeam(awayId, rosters);
+  const homeXI = homeResolved.lineup.map((s) => s.playerName).filter(Boolean) as string[];
+  const awayXI = awayResolved.lineup.map((s) => s.playerName).filter(Boolean) as string[];
+
+  const goals: SeasonGoalEvent[] = [];
+  const cards: SeasonCardEvent[] = [];
+
+  for (let i = 0; i < homeScore; i++) {
+    const scorer = pick(homeXI);
+    const assist = Math.random() < 0.65 ? pick(homeXI.filter((n) => n !== scorer)) : null;
+    goals.push({
+      universeId: originForName(homeRoster, scorer, homeId),
+      playerName: scorer,
+      minute: 1 + Math.floor(Math.random() * 90),
+      assistUniverseId: assist ? originForName(homeRoster, assist, homeId) : undefined,
+      assistPlayerName: assist ?? undefined,
+    });
+  }
+  for (let i = 0; i < awayScore; i++) {
+    const scorer = pick(awayXI);
+    const assist = Math.random() < 0.65 ? pick(awayXI.filter((n) => n !== scorer)) : null;
+    goals.push({
+      universeId: originForName(awayRoster, scorer, awayId),
+      playerName: scorer,
+      minute: 1 + Math.floor(Math.random() * 90),
+      assistUniverseId: assist ? originForName(awayRoster, assist, awayId) : undefined,
+      assistPlayerName: assist ?? undefined,
+    });
+  }
+
+  const foulRolls = 2 + Math.floor(Math.random() * 5);
+  for (let i = 0; i < foulRolls; i++) {
+    const isHome = Math.random() < 0.5;
+    const roster = isHome ? homeRoster : awayRoster;
+    const xi = isHome ? homeXI : awayXI;
+    if (!xi.length) continue;
+    const player = pick(xi);
+    cards.push({
+      universeId: originForName(roster, player, isHome ? homeId : awayId),
+      playerName: player,
+      minute: 1 + Math.floor(Math.random() * 90),
+      type: Math.random() < 0.08 ? "red" : "yellow",
+    });
+  }
+
+  const injuries = [
+    ...rollLiteInjuries(homeXI, homeRoster, homeId),
+    ...rollLiteInjuries(awayXI, awayRoster, awayId),
+  ];
+
+  const homeEndStamina = simulateLiteMatchStamina(homeXI, homeResolved.bench);
+  nextSeason = mergeSeasonStaminaAfterMatch(
+    nextSeason,
+    homeId,
+    homeEndStamina,
+    homeResolved.lineup,
+    homeResolved.bench
+  );
+
+  const awayEndStamina = simulateLiteMatchStamina(awayXI, awayResolved.bench);
+  nextSeason = mergeSeasonStaminaAfterMatch(
+    nextSeason,
+    awayId,
+    awayEndStamina,
+    awayResolved.lineup,
+    awayResolved.bench
+  );
+
+  return {
+    season: nextSeason,
+    result: {
+      homeUniverseId: homeId,
+      awayUniverseId: awayId,
+      homeScore,
+      awayScore,
+      goals,
+      cards,
+      injuries,
+    },
+  };
 }
 
 export function prepareCpuOpponentForSeason(
