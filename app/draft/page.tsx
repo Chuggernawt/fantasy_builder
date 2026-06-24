@@ -8,6 +8,8 @@ import { BroadcastHeader } from "@/components/BroadcastHeader";
 import { PitchView } from "@/components/PitchView";
 import { SquadBench } from "@/components/SquadBench";
 import { MatchBenchPicker } from "@/components/MatchBenchPicker";
+import { DraftMobileLineup } from "@/components/DraftMobileLineup";
+import { DraftPlayerSheet } from "@/components/DraftPlayerSheet";
 import { PersistentMatchKey } from "@/components/PlayerFormLegend";
 import { UniverseTraitDisplay } from "@/components/UniverseTraitDisplay";
 import { TacticsPreMatchSelect } from "@/components/TacticsPreMatchSelect";
@@ -163,9 +165,8 @@ export default function DraftPage() {
   const availablePlayers = useMemo(() => {
     return squadPlayers.filter(
       (p) =>
-        (!injuryLabelMap?.[p.name]) &&
-        (!assignedNames.has(p.name) ||
-        activeAssignment?.playerName === p.name)
+        !injuryLabelMap?.[p.name] &&
+        (!assignedNames.has(p.name) || activeAssignment?.playerName === p.name)
     );
   }, [squadPlayers, assignedNames, activeAssignment?.playerName, injuryLabelMap]);
 
@@ -174,6 +175,16 @@ export default function DraftPage() {
       (p) => !assignedNames.has(p.name) && !injuryLabelMap?.[p.name]
     );
   }, [squadPlayers, assignedNames, injuryLabelMap]);
+
+  function handleMobileSlotPress(slotId: string) {
+    setActiveSlot((prev) => (prev === slotId ? null : slotId));
+  }
+
+  function handlePickPlayer(name: string) {
+    if (!activeSlot) return;
+    setLineupSlot(activeSlot, name);
+    setActiveSlot(null);
+  }
 
   if (!universe) {
     return (
@@ -189,6 +200,12 @@ export default function DraftPage() {
     );
   }
 
+  const kickOffLabel = ready
+    ? "Kick Off"
+    : assignedCount < 11
+      ? `Need ${11 - assignedCount} in XI`
+      : `Need ${5 - matchBench.length} subs`;
+
   return (
     <>
       <BroadcastHeader
@@ -199,30 +216,39 @@ export default function DraftPage() {
       />
 
       <main className="mx-auto flex h-[calc(100dvh-3.25rem)] max-w-7xl flex-col overflow-hidden px-2 py-2 md:px-3">
-        <div className="mb-2 flex shrink-0 flex-wrap items-center gap-2">
-          {FORMATIONS.map((f) => (
-            <button
-              key={f.id}
-              type="button"
-              onClick={() => {
-                setFormation(f.id as FormationId);
-                setActiveSlot(null);
-              }}
-              className={`px-2 py-1 font-display text-[10px] font-bold uppercase tracking-wider md:px-3 md:py-1.5 md:text-xs ${
-                formationId === f.id
-                  ? "bg-broadcast-highlight text-stadium"
-                  : "border border-broadcast-border text-slate-400 hover:border-broadcast-highlight"
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-          <TacticsPreMatchSelect value={plannedTactics} onChange={setPlannedTactics} />
-          <span className="ml-auto font-mono text-[10px] text-broadcast-highlight md:text-xs">
+        {/* Formation row — horizontal scroll on mobile */}
+        <div className="-mx-2 mb-2 shrink-0 overflow-x-auto px-2 lg:mx-0 lg:overflow-visible lg:px-0">
+          <div className="flex min-w-max items-center gap-2 lg:min-w-0 lg:flex-wrap">
+            {FORMATIONS.map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => {
+                  setFormation(f.id as FormationId);
+                  setActiveSlot(null);
+                }}
+                className={`min-h-10 shrink-0 px-3 py-2 font-display text-xs font-bold uppercase tracking-wider lg:min-h-0 lg:px-3 lg:py-1.5 lg:text-xs ${
+                  formationId === f.id
+                    ? "bg-broadcast-highlight text-stadium"
+                    : "border border-broadcast-border text-slate-400 hover:border-broadcast-highlight"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+            <div className="hidden lg:contents">
+              <TacticsPreMatchSelect value={plannedTactics} onChange={setPlannedTactics} />
+            </div>
+          </div>
+        </div>
+
+        {/* Status + opponent */}
+        <div className="mb-2 flex shrink-0 flex-wrap items-center gap-2 text-xs">
+          <span className="font-mono text-broadcast-highlight">
             XI {assignedCount}/11 · Subs {matchBench.length}/5
           </span>
           {isSeasonDraft && seasonFixture && opponentUni ? (
-            <span className="font-display text-[10px] uppercase text-slate-300 md:text-xs">
+            <span className="font-display uppercase text-slate-300">
               MD{seasonFixture.matchday}: vs {opponentUni.name} (
               {seasonFixture.homeUniverseId === season?.userUniverseId ? "H" : "A"})
             </span>
@@ -230,7 +256,7 @@ export default function DraftPage() {
             <select
               value={opponentUniverseId ?? ""}
               onChange={(e) => setOpponent(e.target.value)}
-              className="border border-broadcast-border bg-black/80 px-2 py-1 text-[10px] md:text-xs"
+              className="min-h-10 border border-broadcast-border bg-black/80 px-2 py-1.5 lg:min-h-0"
               aria-label="CPU opponent"
             >
               {getAllUniverses().map((u) => (
@@ -242,8 +268,16 @@ export default function DraftPage() {
           )}
         </div>
 
-        {universe ? (
-          <div className="mb-2 grid shrink-0 gap-1.5 sm:grid-cols-2">
+        {/* Mobile: collapsible setup panel */}
+        <details className="group mb-2 shrink-0 border border-broadcast-border bg-black/40 lg:hidden">
+          <summary className="cursor-pointer list-none px-3 py-2.5 font-display text-xs font-bold uppercase tracking-wider text-slate-300 marker:content-none">
+            <span className="flex items-center justify-between">
+              Tactics & traits
+              <span className="text-slate-500 group-open:rotate-180">▼</span>
+            </span>
+          </summary>
+          <div className="space-y-2 border-t border-broadcast-border px-3 py-2">
+            <TacticsPreMatchSelect value={plannedTactics} onChange={setPlannedTactics} />
             <UniverseTraitDisplay
               universeId={universe.id}
               accent={universe.accentColor}
@@ -258,55 +292,97 @@ export default function DraftPage() {
                 prefix="Opponent"
               />
             ) : null}
+            {isPersistentDraft ? <PersistentMatchKey /> : null}
           </div>
-        ) : null}
+        </details>
 
-        <div className="mb-2 flex shrink-0 flex-wrap gap-1.5">
-          <button type="button" className="btn-broadcast px-2 py-1 text-[10px]" onClick={autoPickLineup}>
-            Random XI
-          </button>
-          <button
-            type="button"
-            className="btn-broadcast px-2 py-1 text-[10px]"
-            onClick={fillLineupRest}
-          >
-            Fill Rest
-          </button>
-          <button type="button" className="btn-broadcast px-2 py-1 text-[10px]" onClick={clearLineup}>
-            Clear
-          </button>
-          <button
-            type="button"
-            className="btn-broadcast px-2 py-1 text-[10px]"
-            onClick={() => {
-              saveLineup();
-              setSaveNotice("Saved");
-            }}
-          >
-            Save
-          </button>
-          <button
-            type="button"
-            className="btn-broadcast px-2 py-1 text-[10px]"
-            disabled={!canLoadSaved}
-            onClick={() => {
-              if (loadSavedLineup()) {
-                setSaveNotice("Loaded");
-                setActiveSlot(null);
-              }
-            }}
-          >
-            Load
-          </button>
-          {saveNotice ? (
-            <span className="self-center text-[10px] text-broadcast-highlight">{saveNotice}</span>
+        {/* Desktop traits */}
+        <div className="mb-2 hidden shrink-0 gap-1.5 lg:grid lg:grid-cols-2">
+          <UniverseTraitDisplay
+            universeId={universe.id}
+            accent={universe.accentColor}
+            variant="strip"
+            prefix="Your trait"
+          />
+          {opponentUni ? (
+            <UniverseTraitDisplay
+              universeId={opponentUni.id}
+              accent={opponentUni.accentColor}
+              variant="strip"
+              prefix="Opponent"
+            />
           ) : null}
-          <span className="hidden self-center text-[10px] text-slate-500 lg:inline">
-            Drag squad → pitch · × to remove
-          </span>
         </div>
 
-        <div className="grid min-h-0 flex-1 gap-2 lg:grid-cols-[minmax(0,1fr)_minmax(11rem,16rem)]">
+        {/* Utility actions */}
+        <div className="-mx-2 mb-2 shrink-0 overflow-x-auto px-2 lg:mx-0 lg:overflow-visible lg:px-0">
+          <div className="flex min-w-max items-center gap-2 lg:min-w-0 lg:flex-wrap">
+            {(
+              [
+                ["Random XI", autoPickLineup],
+                ["Fill Rest", fillLineupRest],
+                ["Clear", clearLineup],
+                ["Save", () => { saveLineup(); setSaveNotice("Saved"); }],
+                ["Load", () => {
+                  if (loadSavedLineup()) {
+                    setSaveNotice("Loaded");
+                    setActiveSlot(null);
+                  }
+                }],
+              ] as const
+            ).map(([label, action]) => (
+              <button
+                key={label}
+                type="button"
+                className="btn-broadcast min-h-10 shrink-0 px-3 py-2 text-xs lg:min-h-0 lg:px-2 lg:py-1 lg:text-[10px]"
+                disabled={label === "Load" && !canLoadSaved}
+                onClick={action}
+              >
+                {label}
+              </button>
+            ))}
+            {saveNotice ? (
+              <span className="self-center text-xs text-broadcast-highlight lg:text-[10px]">
+                {saveNotice}
+              </span>
+            ) : null}
+            <span className="hidden self-center text-[10px] text-slate-500 lg:inline">
+              Drag squad → pitch · × to remove
+            </span>
+          </div>
+        </div>
+
+        {/* Mobile lineup list */}
+        <div className="flex min-h-0 flex-1 flex-col gap-2 lg:hidden">
+          <DraftMobileLineup
+            formation={formation}
+            lineup={lineup}
+            accent={universe.accentColor}
+            activeSlotId={activeSlot}
+            getPlayer={resolveDraftPlayer}
+            playerForm={playerFormMap}
+            playerStamina={playerStaminaMap}
+            injuryLabels={injuryLabelMap}
+            onSlotPress={handleMobileSlotPress}
+            onClearSlot={(slotId) => {
+              setLineupSlot(slotId, null);
+              if (activeSlot === slotId) setActiveSlot(null);
+            }}
+          />
+          {assignedCount === 11 ? (
+            <MatchBenchPicker
+              compact
+              reserves={reserves}
+              accent={universe.accentColor}
+              playerForm={playerFormMap}
+              playerStamina={playerStaminaMap}
+              injuryLabels={injuryLabelMap}
+            />
+          ) : null}
+        </div>
+
+        {/* Desktop pitch + squad */}
+        <div className="hidden min-h-0 flex-1 gap-2 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(11rem,16rem)]">
           <div className="glass-panel flex min-h-0 flex-1 flex-col overflow-hidden p-2">
             <p className="broadcast-label mb-1 shrink-0 text-[10px]" style={{ color: universe.accentColor }}>
               {universe.name} — {formation.label}
@@ -318,27 +394,27 @@ export default function DraftPage() {
             ) : null}
             <div className="min-h-0 flex-1">
               <PitchView
-                  formation={formation}
-                  formationId={formationId}
-                  lineup={lineup}
-                  accent={universe.accentColor}
-                  activeSlotId={activeSlot}
-                  interactive
-                  compact
-                  getPlayer={resolveDraftPlayer}
-                  playerForm={playerFormMap}
-                  squadFitness={playerStaminaMap}
-                  onSlotClick={(slotId) =>
-                    setActiveSlot((prev) => (prev === slotId ? null : slotId))
-                  }
-                  onAssignPlayer={(slotId, playerName) => {
-                    setLineupSlot(slotId, playerName);
-                    setActiveSlot(null);
-                  }}
-                  onClearSlot={(slotId) => {
-                    setLineupSlot(slotId, null);
-                    if (activeSlot === slotId) setActiveSlot(null);
-                  }}
+                formation={formation}
+                formationId={formationId}
+                lineup={lineup}
+                accent={universe.accentColor}
+                activeSlotId={activeSlot}
+                interactive
+                compact
+                getPlayer={resolveDraftPlayer}
+                playerForm={playerFormMap}
+                squadFitness={playerStaminaMap}
+                onSlotClick={(slotId) =>
+                  setActiveSlot((prev) => (prev === slotId ? null : slotId))
+                }
+                onAssignPlayer={(slotId, playerName) => {
+                  setLineupSlot(slotId, playerName);
+                  setActiveSlot(null);
+                }}
+                onClearSlot={(slotId) => {
+                  setLineupSlot(slotId, null);
+                  if (activeSlot === slotId) setActiveSlot(null);
+                }}
                 onSwapSlots={swapLineupSlots}
               />
             </div>
@@ -360,6 +436,7 @@ export default function DraftPage() {
                 onSelect={(name) => {
                   if (!activeSlot) return;
                   setLineupSlot(activeSlot, name);
+                  setActiveSlot(null);
                 }}
                 onClearSlot={
                   activeSlot
@@ -383,27 +460,42 @@ export default function DraftPage() {
           </div>
         </div>
 
-        <div className="mt-2 flex shrink-0 flex-wrap gap-2">
+        {/* Sticky kick-off on mobile */}
+        <div className="sticky bottom-0 z-20 -mx-2 mt-2 flex shrink-0 gap-2 border-t border-broadcast-border bg-stadium/95 px-2 py-2 backdrop-blur-sm lg:static lg:mx-0 lg:border-0 lg:bg-transparent lg:px-0 lg:py-0 lg:backdrop-blur-none">
           <button
             type="button"
-            className="btn-broadcast-solid text-xs"
+            className="btn-broadcast-solid min-h-11 flex-1 text-sm lg:min-h-0 lg:flex-none lg:text-xs"
             disabled={!ready}
             onClick={() => {
               startMatch();
               router.push("/match");
             }}
           >
-            {ready
-              ? "Kick Off"
-              : assignedCount < 11
-                ? `Need ${11 - assignedCount} in XI`
-                : `Need ${5 - matchBench.length} subs`}
+            {kickOffLabel}
           </button>
-          <Link href={isSeasonDraft ? "/season" : `/squad/${universe.id}`} className="btn-broadcast text-xs">
+          <Link
+            href={isSeasonDraft ? "/season" : `/squad/${universe.id}`}
+            className="btn-broadcast flex min-h-11 items-center px-4 text-sm lg:min-h-0 lg:text-xs"
+          >
             {isSeasonDraft ? "Season Hub" : "Full Squad"}
           </Link>
         </div>
       </main>
+
+      {activeSlotData ? (
+        <DraftPlayerSheet
+          open={!!activeSlot}
+          slotLabel={activeSlotData.label}
+          role={activeSlotData.role}
+          accent={universe.accentColor}
+          players={availablePlayers}
+          playerForm={playerFormMap}
+          playerStamina={playerStaminaMap}
+          injuryLabels={injuryLabelMap}
+          onPick={handlePickPlayer}
+          onClose={() => setActiveSlot(null)}
+        />
+      ) : null}
     </>
   );
 }
